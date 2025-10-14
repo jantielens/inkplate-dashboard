@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-10-14
+
+### Added
+- Automatic retry mechanism for image download failures
+  - Up to 3 total attempts (initial + 2 retries) with 20-second delays between attempts
+  - Silent retries without user feedback during retry attempts
+  - Error message displayed only after all retries are exhausted
+  - RTC memory persistence of retry count across deep sleep cycles
+  - Treats all error types the same (network, HTTP, format errors)
+
+### Changed
+- PowerManager now supports fractional minute sleep durations via float overload
+- Image download failures now sleep for 20 seconds before retry instead of full refresh rate
+- Retry count automatically resets on successful download
+
 ## [0.0.1] - 2025-10-14
 
 ### Added
@@ -38,5 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
 
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/jantielens/inkplate-dashboard/releases/tag/v0.0.1
