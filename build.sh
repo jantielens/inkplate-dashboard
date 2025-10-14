@@ -57,8 +57,11 @@ build_board() {
         --fqbn "$BOARD_FQBN" \
         --build-path "$BUILD_DIR" \
         --library "$COMMON_PATH" \
-        --build-property "compiler.cpp.extra_flags=-I\"$COMMON_PATH\" -I\"$COMMON_PATH/src\"" \
+        --build-property "compiler.cpp.extra_flags=-I\"$COMMON_PATH\" -I\"$COMMON_PATH/src\" -I\"$WORKSPACE_PATH/$SKETCH_PATH\"" \
         "$SKETCH_PATH"
+    
+    # Capture the build result before cleanup
+    BUILD_RESULT=$?
     
     # Clean up copied files after build
     for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
@@ -71,7 +74,7 @@ build_board() {
     # Remove the src directory if empty
     rmdir "$SKETCH_PATH/src" 2>/dev/null || true
     
-    if [ $? -eq 0 ]; then
+    if [ $BUILD_RESULT -eq 0 ]; then
         echo "✅ Build successful!"
         echo "Build artifacts: $BUILD_DIR"
         return 0
