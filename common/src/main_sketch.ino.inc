@@ -173,7 +173,7 @@ void enterConfigMode() {
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(5);  // Default 5 minutes
+        powerManager.enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return;
     }
     
@@ -328,7 +328,7 @@ void performNormalUpdate() {
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(5);  // Default 5 minutes
+        powerManager.enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return;
     }
     
