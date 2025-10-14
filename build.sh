@@ -13,7 +13,7 @@ COMMON_PATH="$WORKSPACE_PATH/common"
 # Extract firmware version from version.h
 VERSION_FILE="$COMMON_PATH/src/version.h"
 if [ -f "$VERSION_FILE" ]; then
-    FIRMWARE_VERSION=$(grep '#define FIRMWARE_VERSION' "$VERSION_FILE" | sed 's/.*"\(.*\)".*/\1/')
+    FIRMWARE_VERSION=$(grep '#define FIRMWARE_VERSION "' "$VERSION_FILE" | sed 's/.*"\(.*\)".*/\1/')
     echo "Firmware version: $FIRMWARE_VERSION"
 else
     echo "⚠️  Warning: version.h not found, using 'unknown' as version"
