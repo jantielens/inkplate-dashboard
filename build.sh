@@ -38,7 +38,7 @@ build_board() {
     mkdir -p "$BUILD_DIR"
     
     # Copy common source files directly to sketch directory for Arduino to compile
-    for file in "$COMMON_PATH/src"/*.cpp; do
+    for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
             cp "$file" "$SKETCH_PATH/$filename"
@@ -58,7 +58,7 @@ build_board() {
         "$SKETCH_PATH"
     
     # Clean up copied files after build
-    for file in "$COMMON_PATH/src"/*.cpp; do
+    for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
             rm -f "$SKETCH_PATH/$filename"
