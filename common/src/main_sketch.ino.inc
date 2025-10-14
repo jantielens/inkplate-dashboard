@@ -246,7 +246,7 @@ void enterConfigMode() {
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         }
     } else {
         // WiFi connection failed - fall back to AP mode
@@ -297,7 +297,7 @@ void enterConfigMode() {
                 displayManager.refresh();
                 delay(3000);
                 powerManager.prepareForSleep();
-                powerManager.enterDeepSleep(config.refreshRate);
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
         } else {
             Serial.println("Failed to start AP mode fallback!");
@@ -309,7 +309,7 @@ void enterConfigMode() {
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         }
     }
 }
@@ -417,7 +417,7 @@ void performNormalUpdate() {
             Serial.println("\nImage display successful - preparing for sleep");
             delay(1000);  // Give user time to see the image
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         } else {
             Serial.println("Failed to download/display image!");
             Serial.println("Retry count: " + String(imageRetryCount));
@@ -429,7 +429,7 @@ void performNormalUpdate() {
                 Serial.println("Will retry in 20 seconds (attempt " + String(imageRetryCount + 1) + " of 3)");
                 
                 powerManager.prepareForSleep();
-                powerManager.enterDeepSleep(20.0 / 60.0);  // 20 seconds as fraction of minutes
+                powerManager.enterDeepSleep((float)(20.0 / 60.0));  // 20 seconds as fraction of minutes
             } else {
                 // Max retries reached - show error and reset count
                 Serial.println("Max retries reached - showing error message");
@@ -467,7 +467,7 @@ void performNormalUpdate() {
                 // Error - still go to sleep and retry later
                 delay(3000);
                 powerManager.prepareForSleep();
-                powerManager.enterDeepSleep(config.refreshRate);
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
         }
     } else {
@@ -500,7 +500,7 @@ void performNormalUpdate() {
         // WiFi error - go to sleep and retry later
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(config.refreshRate);
+        powerManager.enterDeepSleep((uint16_t)config.refreshRate);
     }
 }
 
