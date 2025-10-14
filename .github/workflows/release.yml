@@ -74,6 +74,7 @@ jobs:
           name: firmware-${{ matrix.board }}-${{ steps.get_version.outputs.version }}
           path: build/${{ matrix.board }}/${{ matrix.board }}-v${{ steps.get_version.outputs.version }}.bin
           retention-days: 90
+          if-no-files-found: error
 
   release:
     name: Create GitHub Release
@@ -115,19 +116,24 @@ jobs:
         with:
           path: artifacts
       
-      - name: List downloaded artifacts
+      - name: List and prepare downloaded artifacts
         run: |
           echo "Downloaded artifacts:"
-          ls -R artifacts/
+          ls -lR artifacts/
+          
+          # Move binaries to root of artifacts for easier access
+          find artifacts/ -name "*.bin" -type f -exec cp {} artifacts/ \;
+          
+          echo ""
+          echo "Binaries ready for release:"
+          ls -l artifacts/*.bin
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.get_version.outputs.tag }}
           body_path: release_notes.md
-          files: |
-            artifacts/firmware-inkplate5v2-${{ steps.get_version.outputs.version }}/inkplate5v2-v${{ steps.get_version.outputs.version }}.bin
-            artifacts/firmware-inkplate10-${{ steps.get_version.outputs.version }}/inkplate10-v${{ steps.get_version.outputs.version }}.bin
+          files: artifacts/*.bin
           draft: false
           prerelease: false
         env:
