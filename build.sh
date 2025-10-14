@@ -55,7 +55,6 @@ build_board() {
         --build-path "$BUILD_DIR" \
         --library "$COMMON_PATH" \
         --build-property "compiler.cpp.extra_flags=-I$COMMON_PATH -I$COMMON_PATH/src" \
-        --verbose \
         "$SKETCH_PATH"
     
     # Capture the build result before cleanup
