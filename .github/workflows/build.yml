@@ -19,6 +19,10 @@ on:
           - inkplate5v2
           - inkplate10
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   prepare:
     name: Prepare build matrix
