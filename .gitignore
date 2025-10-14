@@ -1,0 +1,48 @@
+# Build artifacts
+build/
+*.bin
+*.elf
+*.map
+*.d
+
+# Arduino CLI
+.arduino15/
+arduino-cli.yaml
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Editor backups
+*~
+\#*\#
+.\#*

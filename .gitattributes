@@ -1,0 +1,25 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Shell scripts should always use LF
+*.sh text eol=lf
+
+# PowerShell scripts should use CRLF on Windows
+*.ps1 text eol=crlf
+
+# Source code
+*.cpp text
+*.h text
+*.ino text
+*.inc text
+
+# Documentation
+*.md text
+*.txt text
+
+# Binary files
+*.bin binary
+*.elf binary
+*.png binary
+*.jpg binary
+*.gif binary
