@@ -38,11 +38,18 @@ public:
     // refreshRateMinutes: how long to sleep (in minutes)
     void enterDeepSleep(uint16_t refreshRateMinutes);
     
+    // Enter deep sleep with timer wake source (fractional minutes)
+    // refreshRateMinutes: how long to sleep (in minutes, supports fractions)
+    void enterDeepSleep(float refreshRateMinutes);
+    
     // Prepare for sleep (shutdown WiFi, display, etc.)
     void prepareForSleep();
     
     // Get sleep duration in microseconds
     uint64_t getSleepDuration(uint16_t refreshRateMinutes);
+    
+    // Get sleep duration in microseconds (fractional minutes)
+    uint64_t getSleepDuration(float refreshRateMinutes);
     
     // Print wakeup reason to serial
     void printWakeupReason();
