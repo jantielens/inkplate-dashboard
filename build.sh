@@ -37,11 +37,14 @@ build_board() {
     # Create build directory if it doesn't exist
     mkdir -p "$BUILD_DIR"
     
-    # Copy common source files directly to sketch directory for Arduino to compile
+    # Create src subdirectory in sketch directory for common files
+    mkdir -p "$SKETCH_PATH/src"
+    
+    # Copy common source files to sketch/src directory for Arduino to compile
     for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
-            cp "$file" "$SKETCH_PATH/$filename"
+            cp "$file" "$SKETCH_PATH/src/$filename"
             echo "Copied $filename to sketch directory"
         fi
     done
@@ -61,9 +64,12 @@ build_board() {
     for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
-            rm -f "$SKETCH_PATH/$filename"
+            rm -f "$SKETCH_PATH/src/$filename"
         fi
     done
+    
+    # Remove the src directory if empty
+    rmdir "$SKETCH_PATH/src" 2>/dev/null || true
     
     if [ $? -eq 0 ]; then
         echo "✅ Build successful!"
