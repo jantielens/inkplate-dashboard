@@ -1,0 +1,103 @@
+name: Create Release Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (e.g., 0.0.1 without the v prefix)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    name: Create and Push Tag
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Validate version format
+        id: validate
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          
+          # Check if version matches semver pattern (X.Y.Z)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Invalid version format '$VERSION'"
+            echo "Version must be in format X.Y.Z (e.g., 0.0.1)"
+            exit 1
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version format valid: $VERSION"
+      
+      - name: Verify version in version.h
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+          VERSION_H=$(grep '#define FIRMWARE_VERSION "' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          
+          if [ "$VERSION_H" != "$VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "   version.h: $VERSION_H"
+            echo "   Input version: $VERSION"
+            echo ""
+            echo "Please update common/src/version.h to match the desired version."
+            exit 1
+          fi
+          
+          echo "✅ Version in version.h matches: $VERSION"
+      
+      - name: Check if tag already exists
+        run: |
+          TAG="${{ steps.validate.outputs.tag }}"
+          
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "❌ Error: Tag $TAG already exists!"
+            echo ""
+            echo "If you want to recreate the tag, delete it first:"
+            echo "  git tag -d $TAG"
+            echo "  git push origin :refs/tags/$TAG"
+            exit 1
+          fi
+          
+          echo "✅ Tag $TAG does not exist yet"
+      
+      - name: Verify CHANGELOG has entry
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+          
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "⚠️ Warning: CHANGELOG.md does not have an entry for version $VERSION"
+            echo "Consider adding a changelog entry before creating the release."
+            echo ""
+            echo "Continuing anyway..."
+          else
+            echo "✅ CHANGELOG.md has entry for version $VERSION"
+          fi
+      
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.validate.outputs.tag }}"
+          VERSION="${{ steps.validate.outputs.version }}"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create the tag
+          git tag -a "$TAG" -m "Release $VERSION"
+          
+          # Push the tag
+          git push origin "$TAG"
+          
+          echo "✅ Tag $TAG created and pushed successfully!"
+          echo ""
+          echo "🚀 Release workflow will now build the firmware and create a GitHub Release."
+          echo "Check: https://github.com/${{ github.repository }}/actions"
