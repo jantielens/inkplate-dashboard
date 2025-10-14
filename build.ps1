@@ -11,6 +11,22 @@ param(
 $WORKSPACE_PATH = (Get-Location).Path
 $COMMON_PATH = Join-Path $WORKSPACE_PATH "common"
 
+# Extract firmware version from version.h
+$VERSION_FILE = Join-Path $COMMON_PATH "src\version.h"
+if (Test-Path $VERSION_FILE) {
+    $versionLine = Get-Content $VERSION_FILE | Where-Object { $_ -match '#define FIRMWARE_VERSION "' }
+    if ($versionLine -match '"([^"]+)"') {
+        $FIRMWARE_VERSION = $matches[1]
+        Write-Host "Firmware version: $FIRMWARE_VERSION" -ForegroundColor Cyan
+    } else {
+        Write-Host "Warning: Could not parse version from version.h" -ForegroundColor Yellow
+        $FIRMWARE_VERSION = "unknown"
+    }
+} else {
+    Write-Host "Warning: version.h not found, using 'unknown' as version" -ForegroundColor Yellow
+    $FIRMWARE_VERSION = "unknown"
+}
+
 # Board configurations
 $boards = @{
     'inkplate5v2' = @{
@@ -66,8 +82,19 @@ function Build-Board {
     }
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "Build successful!" -ForegroundColor Green
-        Write-Host "Build artifacts: $BUILD_DIR" -ForegroundColor Cyan
+        # Rename binary to include version
+        $ORIGINAL_BIN = Join-Path $BUILD_DIR "$BoardKey.ino.bin"
+        $VERSIONED_BIN = Join-Path $BUILD_DIR "$BoardKey-v$FIRMWARE_VERSION.bin"
+        
+        if (Test-Path $ORIGINAL_BIN) {
+            Copy-Item -Path $ORIGINAL_BIN -Destination $VERSIONED_BIN -Force
+            Write-Host "Build successful!" -ForegroundColor Green
+            Write-Host "Build artifacts: $BUILD_DIR" -ForegroundColor Cyan
+            Write-Host "Firmware binary: $BoardKey-v$FIRMWARE_VERSION.bin" -ForegroundColor Cyan
+        } else {
+            Write-Host "Build successful (binary not found for renaming)!" -ForegroundColor Green
+            Write-Host "Build artifacts: $BUILD_DIR" -ForegroundColor Cyan
+        }
         return $true
     } else {
         Write-Host "Build failed!" -ForegroundColor Red
