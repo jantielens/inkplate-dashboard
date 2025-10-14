@@ -49,9 +49,15 @@ build_board() {
         fi
     done
     
+    # Debug: List what's in the src directory
+    echo "Files in $SKETCH_PATH/src:"
+    ls -la "$SKETCH_PATH/src/" || echo "Directory doesn't exist!"
+    
     # Compile the sketch with custom library path and build properties
     echo "Compiling $SKETCH_PATH..."
     echo "Including common libraries from: $COMMON_PATH"
+    echo "Sketch absolute path: $WORKSPACE_PATH/$SKETCH_PATH"
+    echo "Build include flags: -I\"$COMMON_PATH\" -I\"$COMMON_PATH/src\" -I\"$WORKSPACE_PATH/$SKETCH_PATH\""
     
     arduino-cli compile \
         --fqbn "$BOARD_FQBN" \
