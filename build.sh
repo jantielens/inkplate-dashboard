@@ -37,27 +37,18 @@ build_board() {
     # Create build directory if it doesn't exist
     mkdir -p "$BUILD_DIR"
     
-    # Create src subdirectory in sketch directory for common files
-    mkdir -p "$SKETCH_PATH/src"
-    
-    # Copy common source files to sketch/src directory for Arduino to compile
-    for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
+    # Copy common source files directly to sketch directory for Arduino to compile (only .cpp files)
+    for file in "$COMMON_PATH/src"/*.cpp; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
-            cp "$file" "$SKETCH_PATH/src/$filename"
+            cp "$file" "$SKETCH_PATH/$filename"
             echo "Copied $filename to sketch directory"
         fi
     done
     
-    # Debug: List what's in the src directory
-    echo "Files in $SKETCH_PATH/src:"
-    ls -la "$SKETCH_PATH/src/" || echo "Directory doesn't exist!"
-    
     # Compile the sketch with custom library path and build properties
     echo "Compiling $SKETCH_PATH..."
     echo "Including common libraries from: $COMMON_PATH"
-    echo "Sketch absolute path: $WORKSPACE_PATH/$SKETCH_PATH"
-    echo "Build include flags: -I\"$COMMON_PATH\" -I\"$COMMON_PATH/src\" -I\"$WORKSPACE_PATH/$SKETCH_PATH\""
     
     arduino-cli compile \
         --fqbn "$BOARD_FQBN" \
@@ -69,16 +60,13 @@ build_board() {
     # Capture the build result before cleanup
     BUILD_RESULT=$?
     
-    # Clean up copied files after build
-    for file in "$COMMON_PATH/src"/*.cpp "$COMMON_PATH/src"/*.h "$COMMON_PATH/src"/*.inc; do
+    # Clean up copied files after build (only .cpp files)
+    for file in "$COMMON_PATH/src"/*.cpp; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
-            rm -f "$SKETCH_PATH/src/$filename"
+            rm -f "$SKETCH_PATH/$filename"
         fi
     done
-    
-    # Remove the src directory if empty
-    rmdir "$SKETCH_PATH/src" 2>/dev/null || true
     
     if [ $BUILD_RESULT -eq 0 ]; then
         echo "✅ Build successful!"
