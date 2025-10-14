@@ -19,6 +19,10 @@ on:
           - inkplate5v2
           - inkplate10
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   prepare:
     name: Prepare build matrix
@@ -69,7 +73,7 @@ jobs:
       
       - name: Install Arduino core and libraries
         run: |
-          arduino-cli config init
+          arduino-cli config init --overwrite
           arduino-cli config set library.enable_unsafe_install true
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/master/package_Dasduino_Boards_index.json
           arduino-cli core install Inkplate_Boards:esp32 --additional-urls https://raw.githubusercontent.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/master/package_Dasduino_Boards_index.json

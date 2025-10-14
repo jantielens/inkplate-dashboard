@@ -1,4 +1,5 @@
 #include "config_portal.h"
+#include "version.h"
 
 ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager)
     : _configManager(configManager), _wifiManager(wifiManager), 
@@ -511,6 +512,11 @@ String ConfigPortal::generateConfigPage() {
         html += "</script>";
     }
     
+    // Footer with version
+    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
+    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
+    html += "</div>";
+    
     html += "</body></html>";
     
     return html;
@@ -530,6 +536,9 @@ String ConfigPortal::generateSuccessPage() {
     html += "<p style='margin-top: 15px;'>Configuration saved successfully.</p>";
     html += "<p style='margin-top: 10px;'>The device will restart and connect to your WiFi network.</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>";
+    html += "</div>";
+    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
+    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
     html += "</div>";
     html += "</div>";
     html += "</body></html>";
@@ -551,6 +560,9 @@ String ConfigPortal::generateErrorPage(const String& error) {
     html += "<p style='margin-top: 15px;'>" + error + "</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>";
     html += "</div>";
+    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
+    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
+    html += "</div>";
     html += "</div>";
     html += "</body></html>";
     
@@ -570,6 +582,9 @@ String ConfigPortal::generateFactoryResetPage() {
     html += "<p style='margin-top: 15px;'>All configuration has been erased.</p>";
     html += "<p style='margin-top: 10px;'>The device will reboot now and start in setup mode.</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
+    html += "</div>";
+    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
+    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
     html += "</div>";
     html += "</div>";
     html += "</body></html>";

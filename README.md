@@ -329,6 +329,69 @@ When adding features:
 2. Use board-specific constants from `board_config.h`
 3. Test on all boards: `.\build.ps1 all`
 4. Update documentation
+5. Increment version in `common/src/version.h`
+6. Update `CHANGELOG.md` with your changes
+
+## Versioning & Releases
+
+This project follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** (e.g., `1.0.0`): Breaking changes (config format changes requiring factory reset)
+- **MINOR** (e.g., `0.1.0`): New features (backward compatible)
+- **PATCH** (e.g., `0.0.1`): Bug fixes (backward compatible)
+
+### Making a Release
+
+1. **Update version** in `common/src/version.h`:
+   ```cpp
+   #define FIRMWARE_VERSION "0.0.2"
+   ```
+
+2. **Update CHANGELOG.md** with your changes:
+   ```markdown
+   ## [0.0.2] - 2025-10-15
+   ### Added
+   - New feature description
+   ### Fixed
+   - Bug fix description
+   ```
+
+3. **Commit and push** your changes to `main`:
+   ```bash
+   git add .
+   git commit -m "Release v0.0.2"
+   git push origin main
+   ```
+
+4. **Create and push a tag**:
+   ```bash
+   git tag v0.0.2
+   git push origin v0.0.2
+   ```
+
+5. **Automated release**:
+   - GitHub Actions automatically builds both board variants
+   - Creates a GitHub Release with CHANGELOG excerpt
+   - Attaches firmware binaries:
+     - `inkplate5v2-v0.0.2.bin`
+     - `inkplate10-v0.0.2.bin`
+
+### Version Display
+
+The firmware version is displayed:
+- In the configuration portal footer
+- Reported to Home Assistant via MQTT (device software version)
+- In firmware binary filenames
+
+### Pull Request Workflow
+
+When you create a PR:
+- **Version check workflow** runs automatically
+- Compares version in your PR vs. main branch
+- **Warns (but doesn't block)** if version unchanged
+- Helpful reminder to increment version for code changes
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 

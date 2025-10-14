@@ -1,4 +1,5 @@
 #include "mqtt_manager.h"
+#include "version.h"
 #include <WiFi.h>
 
 MQTTManager::MQTTManager(ConfigManager* configManager)
@@ -208,7 +209,8 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "\"identifiers\":[\"" + deviceId + "\"],";
         payload += "\"name\":\"" + deviceName + "\",";
         payload += "\"manufacturer\":\"Soldered Electronics\",";
-        payload += "\"model\":\"" + modelName + "\"";
+        payload += "\"model\":\"" + modelName + "\",";
+        payload += "\"sw_version\":\"" + String(FIRMWARE_VERSION) + "\"";
         payload += "}";
         payload += "}";
         
