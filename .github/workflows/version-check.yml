@@ -24,13 +24,21 @@ jobs:
         id: versions
         run: |
           # Get version from PR branch
-          PR_VERSION=$(grep '#define FIRMWARE_VERSION' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          PR_VERSION=$(grep '#define FIRMWARE_VERSION "' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
           echo "pr_version=$PR_VERSION" >> $GITHUB_OUTPUT
           
           # Get version from base branch (main)
           git fetch origin main:main
           git checkout main
-          MAIN_VERSION=$(grep '#define FIRMWARE_VERSION' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          
+          # Check if version.h exists on main branch
+          if [ -f "common/src/version.h" ]; then
+            MAIN_VERSION=$(grep '#define FIRMWARE_VERSION "' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          else
+            # If version.h doesn't exist, assume it's the initial version (0.0.0)
+            MAIN_VERSION="0.0.0"
+          fi
+          
           echo "main_version=$MAIN_VERSION" >> $GITHUB_OUTPUT
           
           echo "Main branch version: $MAIN_VERSION"
