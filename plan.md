@@ -121,13 +121,16 @@ If the device fails to connect to the wifi network, or if it fails to download t
 36. [✅] Add build caching for faster CI runs
 
 ### Phase 10: Versioning & Release Management
-37. [ ] Add semantic versioning to firmware (MAJOR.MINOR.PATCH)
-38. [ ] Store version in dedicated version.h file
-39. [ ] Display version on config portal footer
-40. [ ] Report version to Home Assistant via MQTT discovery
-41. [ ] Create CHANGELOG.md with versioning guidelines
-42. [ ] Add GitHub Release workflow to create releases from tags
-43. [ ] Include firmware binaries in GitHub Releases automatically
+37. [✅] Add semantic versioning to firmware (MAJOR.MINOR.PATCH)
+38. [✅] Store version in dedicated version.h file
+39. [✅] Display version on config portal footer
+40. [✅] Report version to Home Assistant via MQTT discovery
+41. [✅] Create CHANGELOG.md with versioning guidelines
+42. [✅] Add GitHub Release workflow to create releases from tags
+43. [✅] Include firmware binaries in GitHub Releases automatically
+44. [✅] Add version check workflow for PRs (warns if version not incremented)
+45. [✅] Update build scripts to include version in binary filenames
+46. [✅] Update README.md with versioning and release process documentation
 
 ## Feature: rework configuration UI
 
@@ -328,3 +331,43 @@ The device should send log messages to Home Assistant using MQTT as a **text sen
   - MQTT connection failure - "MQTT connection failed" (warning, not error)
 - [x] Test all three new sensors/events appear correctly in Home Assistant
 - [x] Verify events appear in Home Assistant Logbook with correct device attribution
+
+## Feature: version numbering and changelog
+The firmware should use semantic versioning (MAJOR.MINOR.PATCH) to track changes and releases. The version number should be stored in a dedicated `version.h` file and included in the firmware build. The version should be displayed on the configuration portal page footer.
+The version should also be reported to Home Assistant using MQTT as part of the device information during auto-discovery.
+A `CHANGELOG.md` file should be maintained to document changes for each version, following the "Keep a Changelog" format.
+The generated firmwares should be tagged with the version number in the GitHub repository. (and their filenames should include the version number)
+A workflow should be created to check if the version is increased when a pr is merged into the main branch.
+
+### Versioning Guidelines
+Follow semantic versioning standards:
+- **MAJOR**: Breaking changes (e.g., config format changes requiring factory reset, incompatible API changes)
+- **MINOR**: New features (backward compatible additions)
+- **PATCH**: Bug fixes (backward compatible fixes)
+
+### Technical Decisions
+- **Version file location**: `common/src/version.h`
+- **MQTT field**: Add `"sw_version":"0.0.1"` to device object in Home Assistant discovery
+- **Config portal display**: Footer on all portal pages
+- **Firmware naming**: `inkplate5v2-v0.0.1.bin` and `inkplate10-v0.0.1.bin`
+- **GitHub releases**: Automatic on tag push (e.g., `v0.0.1`), includes both board binaries and CHANGELOG excerpt
+- **Version check workflow**: Warns on PR if version not incremented (does not block merge)
+- **Initial version**: `0.0.1`
+
+### Implementation Steps
+- [✅] Create `common/src/version.h` with version constants (FIRMWARE_VERSION, VERSION_MAJOR/MINOR/PATCH)
+- [✅] Update `mqtt_manager.cpp` `publishDiscovery()` to include `sw_version` in device object
+- [✅] Update `config_portal.cpp` `generateConfigPage()` to display version in footer on all pages
+- [✅] Modify `build.sh` and `build.ps1` to rename output binaries with version number
+- [✅] Create `CHANGELOG.md` following "Keep a Changelog" format with initial v0.0.1 entry
+- [✅] Create `.github/workflows/release.yml` to:
+  - Trigger on version tags (e.g., `v*.*.*`)
+  - Build both board variants (inkplate5v2 and inkplate10)
+  - Create GitHub Release with CHANGELOG excerpt for that version
+  - Upload both firmware binaries as release assets with versioned filenames
+- [✅] Create `.github/workflows/version-check.yml` to:
+  - Run on PRs to main branch
+  - Parse version.h from base and head branches
+  - Verify version was incremented
+  - Add warning comment to PR if version unchanged (does not block merge)
+- [✅] Update README.md with versioning information and release process

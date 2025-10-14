@@ -1,0 +1,210 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'common/src/**'
+      - 'boards/**'
+      - '.github/workflows/**'
+
+jobs:
+  check-version:
+    name: Check Version Increment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get versions
+        id: versions
+        run: |
+          # Get version from PR branch
+          PR_VERSION=$(grep '#define FIRMWARE_VERSION' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          echo "pr_version=$PR_VERSION" >> $GITHUB_OUTPUT
+          
+          # Get version from base branch (main)
+          git fetch origin main:main
+          git checkout main
+          MAIN_VERSION=$(grep '#define FIRMWARE_VERSION' common/src/version.h | sed 's/.*"\(.*\)".*/\1/')
+          echo "main_version=$MAIN_VERSION" >> $GITHUB_OUTPUT
+          
+          echo "Main branch version: $MAIN_VERSION"
+          echo "PR branch version: $PR_VERSION"
+      
+      - name: Compare versions
+        id: compare
+        run: |
+          MAIN_VERSION="${{ steps.versions.outputs.main_version }}"
+          PR_VERSION="${{ steps.versions.outputs.pr_version }}"
+          
+          # Function to compare semantic versions
+          version_gt() {
+            test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+          }
+          
+          if [ "$PR_VERSION" = "$MAIN_VERSION" ]; then
+            echo "status=unchanged" >> $GITHUB_OUTPUT
+            echo "⚠️ Version unchanged: $PR_VERSION"
+          elif version_gt "$PR_VERSION" "$MAIN_VERSION"; then
+            echo "status=incremented" >> $GITHUB_OUTPUT
+            echo "✅ Version incremented: $MAIN_VERSION → $PR_VERSION"
+          else
+            echo "status=decremented" >> $GITHUB_OUTPUT
+            echo "❌ Version decreased: $MAIN_VERSION → $PR_VERSION"
+          fi
+      
+      - name: Comment on PR - Version Unchanged
+        if: steps.compare.outputs.status == 'unchanged'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mainVersion = '${{ steps.versions.outputs.main_version }}';
+            const prVersion = '${{ steps.versions.outputs.pr_version }}';
+            
+            const comment = `### ⚠️ Version Not Incremented
+            
+            The firmware version has not been updated in this PR.
+            
+            **Current version:** \`${mainVersion}\`
+            **PR version:** \`${prVersion}\`
+            
+            If this PR includes code changes, please consider incrementing the version in \`common/src/version.h\` following semantic versioning:
+            
+            - **PATCH** (e.g., \`0.0.1\` → \`0.0.2\`): Bug fixes
+            - **MINOR** (e.g., \`0.0.1\` → \`0.1.0\`): New features (backward compatible)
+            - **MAJOR** (e.g., \`0.0.1\` → \`1.0.0\`): Breaking changes
+            
+            Don't forget to update \`CHANGELOG.md\` with your changes!
+            
+            *This is a warning, not a blocker. The PR can still be merged.*`;
+            
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Version Not Incremented')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+      
+      - name: Comment on PR - Version Incremented
+        if: steps.compare.outputs.status == 'incremented'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mainVersion = '${{ steps.versions.outputs.main_version }}';
+            const prVersion = '${{ steps.versions.outputs.pr_version }}';
+            
+            const comment = `### ✅ Version Incremented
+            
+            The firmware version has been updated in this PR.
+            
+            **Main branch version:** \`${mainVersion}\`
+            **New version:** \`${prVersion}\`
+            
+            Make sure you've updated \`CHANGELOG.md\` with details of your changes!
+            
+            After merge, create a release by pushing a tag:
+            \`\`\`bash
+            git tag v${prVersion}
+            git push origin v${prVersion}
+            \`\`\``;
+            
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              (comment.body.includes('Version Incremented') || comment.body.includes('Version Not Incremented'))
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+      
+      - name: Comment on PR - Version Decreased
+        if: steps.compare.outputs.status == 'decremented'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mainVersion = '${{ steps.versions.outputs.main_version }}';
+            const prVersion = '${{ steps.versions.outputs.pr_version }}';
+            
+            const comment = `### ❌ Version Decreased
+            
+            **Warning:** The version number has been decreased in this PR, which is unusual.
+            
+            **Main branch version:** \`${mainVersion}\`
+            **PR version:** \`${prVersion}\`
+            
+            Please verify this is intentional. Typically, version numbers should only increase.
+            
+            *This is a warning, not a blocker. The PR can still be merged if intentional.*`;
+            
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              (comment.body.includes('Version Decreased') || comment.body.includes('Version Not Incremented') || comment.body.includes('Version Incremented'))
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }

@@ -10,6 +10,16 @@ BOARD="${1:-inkplate5v2}"
 WORKSPACE_PATH="$(pwd)"
 COMMON_PATH="$WORKSPACE_PATH/common"
 
+# Extract firmware version from version.h
+VERSION_FILE="$COMMON_PATH/src/version.h"
+if [ -f "$VERSION_FILE" ]; then
+    FIRMWARE_VERSION=$(grep '#define FIRMWARE_VERSION' "$VERSION_FILE" | sed 's/.*"\(.*\)".*/\1/')
+    echo "Firmware version: $FIRMWARE_VERSION"
+else
+    echo "⚠️  Warning: version.h not found, using 'unknown' as version"
+    FIRMWARE_VERSION="unknown"
+fi
+
 # Board configurations
 declare -A BOARDS=(
     [inkplate5v2]="Inkplate 5 V2|Inkplate_Boards:esp32:Inkplate5V2|boards/inkplate5v2"
@@ -69,8 +79,19 @@ build_board() {
     done
     
     if [ $BUILD_RESULT -eq 0 ]; then
-        echo "✅ Build successful!"
-        echo "Build artifacts: $BUILD_DIR"
+        # Rename binary to include version
+        ORIGINAL_BIN="$BUILD_DIR/${BOARD_KEY}.ino.bin"
+        VERSIONED_BIN="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
+        
+        if [ -f "$ORIGINAL_BIN" ]; then
+            cp "$ORIGINAL_BIN" "$VERSIONED_BIN"
+            echo "✅ Build successful!"
+            echo "Build artifacts: $BUILD_DIR"
+            echo "Firmware binary: ${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
+        else
+            echo "✅ Build successful (binary not found for renaming)!"
+            echo "Build artifacts: $BUILD_DIR"
+        fi
         return 0
     else
         echo "❌ Build failed!"
