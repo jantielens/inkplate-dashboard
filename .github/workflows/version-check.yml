@@ -70,6 +70,34 @@ jobs:
             echo "❌ Version decreased: $MAIN_VERSION → $PR_VERSION"
           fi
       
+      - name: Check CHANGELOG
+        id: changelog
+        if: steps.compare.outputs.status == 'incremented'
+        run: |
+          PR_VERSION="${{ steps.versions.outputs.pr_version }}"
+          
+          # Switch back to PR branch
+          git checkout ${{ github.head_ref }}
+          
+          # Check if CHANGELOG.md exists
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "has_entry=false" >> $GITHUB_OUTPUT
+            echo "❌ CHANGELOG.md not found"
+            exit 0
+          fi
+          
+          echo "exists=true" >> $GITHUB_OUTPUT
+          
+          # Check if CHANGELOG has an entry for the new version
+          if grep -q "## \[$PR_VERSION\]" CHANGELOG.md; then
+            echo "has_entry=true" >> $GITHUB_OUTPUT
+            echo "✅ CHANGELOG.md has entry for v$PR_VERSION"
+          else
+            echo "has_entry=false" >> $GITHUB_OUTPUT
+            echo "⚠️ CHANGELOG.md missing entry for v$PR_VERSION"
+          fi
+      
       - name: Comment on PR - Version Unchanged
         if: steps.compare.outputs.status == 'unchanged'
         uses: actions/github-script@v7
@@ -130,21 +158,38 @@ jobs:
           script: |
             const mainVersion = '${{ steps.versions.outputs.main_version }}';
             const prVersion = '${{ steps.versions.outputs.pr_version }}';
+            const changelogExists = '${{ steps.changelog.outputs.exists }}' === 'true';
+            const changelogHasEntry = '${{ steps.changelog.outputs.has_entry }}' === 'true';
             
-            const comment = `### ✅ Version Incremented
+            let comment = `### ✅ Version Incremented\n\n`;
+            comment += `The firmware version has been updated in this PR.\n\n`;
+            comment += `**Main branch version:** \`${mainVersion}\`\n`;
+            comment += `**New version:** \`${prVersion}\`\n\n`;
             
-            The firmware version has been updated in this PR.
+            // CHANGELOG check
+            if (!changelogExists) {
+              comment += `### ⚠️ CHANGELOG.md Not Found\n\n`;
+              comment += `Please create a \`CHANGELOG.md\` file following the [Keep a Changelog](https://keepachangelog.com/) format.\n\n`;
+            } else if (!changelogHasEntry) {
+              comment += `### ⚠️ CHANGELOG.md Missing Entry\n\n`;
+              comment += `Please add an entry for version \`${prVersion}\` in \`CHANGELOG.md\`.\n\n`;
+              comment += `Example:\n`;
+              comment += `\`\`\`markdown\n`;
+              comment += `## [${prVersion}] - ${new Date().toISOString().split('T')[0]}\n`;
+              comment += `### Added\n`;
+              comment += `- New feature description\n\n`;
+              comment += `### Fixed\n`;
+              comment += `- Bug fix description\n`;
+              comment += `\`\`\`\n\n`;
+            } else {
+              comment += `✅ CHANGELOG.md has been updated with version \`${prVersion}\`\n\n`;
+            }
             
-            **Main branch version:** \`${mainVersion}\`
-            **New version:** \`${prVersion}\`
-            
-            Make sure you've updated \`CHANGELOG.md\` with details of your changes!
-            
-            After merge, create a release by pushing a tag:
-            \`\`\`bash
-            git tag v${prVersion}
-            git push origin v${prVersion}
-            \`\`\``;
+            comment += `After merge, create a release by pushing a tag:\n`;
+            comment += `\`\`\`bash\n`;
+            comment += `git tag v${prVersion}\n`;
+            comment += `git push origin v${prVersion}\n`;
+            comment += `\`\`\``;
             
             // Find existing bot comment
             const { data: comments } = await github.rest.issues.listComments({
