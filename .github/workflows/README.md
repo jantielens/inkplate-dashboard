@@ -8,6 +8,7 @@ This directory contains GitHub Actions workflows for automated firmware builds.
 
 **Triggers:**
 - Pull requests (except for changes to `.md` files, `docs/`, `LICENSE`, `.gitignore`)
+- Manual dispatch (workflow_dispatch) with board selection
 
 **What it does:**
 1. Builds firmware for both `inkplate5v2` and `inkplate10` in parallel
@@ -43,6 +44,25 @@ To speed up builds, the workflow caches:
 Cache key includes:
 - Arduino CLI version (1.3.1)
 - Hash of `setup.ps1` and `arduino-cli.yaml` (if present)
+
+## Manual Triggering
+
+You can manually trigger builds from the GitHub Actions UI:
+
+1. Go to your repository on GitHub
+2. Click on the **Actions** tab
+3. Select **Build Firmware** workflow
+4. Click **Run workflow** button
+5. Select the board to build:
+   - **all** - Build both boards (default)
+   - **inkplate5v2** - Build only Inkplate 5 V2
+   - **inkplate10** - Build only Inkplate 10
+6. Click **Run workflow**
+
+This is useful for:
+- Testing builds without creating a PR
+- Building specific boards only
+- Verifying CI/CD setup after changes
 
 ## Local Testing
 
@@ -85,6 +105,7 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  workflow_dispatch:  # Keep manual trigger
 ```
 
 ### Changing Arduino CLI Version

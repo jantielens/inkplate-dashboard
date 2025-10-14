@@ -137,17 +137,30 @@ To verify cache is working:
 2. File is named `build.yml` (not `build.yaml`)
 3. Trigger conditions are met (not just MD changes)
 
-**Manual trigger:**
+### Manual trigger:**
 You can add `workflow_dispatch` to test manually:
 ```yaml
 on:
   pull_request:
     paths-ignore:
       - '**.md'
-  workflow_dispatch:  # Add this
+  workflow_dispatch:  # Already configured!
+    inputs:
+      board:
+        description: 'Board to build'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - inkplate5v2
+          - inkplate10
 ```
 
-Then go to Actions → Build Firmware → Run workflow
+**To trigger manually:**
+1. Go to Actions → Build Firmware → Run workflow
+2. Select branch and board
+3. Click "Run workflow"
 
 ### Size Comment Not Appearing
 

@@ -7,17 +7,46 @@ on:
       - 'docs/**'
       - 'LICENSE'
       - '.gitignore'
+  workflow_dispatch:
+    inputs:
+      board:
+        description: 'Board to build (inkplate5v2, inkplate10, or all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - inkplate5v2
+          - inkplate10
 
 jobs:
+  prepare:
+    name: Prepare build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.board }}" = "all" ]; then
+              echo 'matrix=["inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
+            else
+              echo 'matrix=["${{ github.event.inputs.board }}"]' >> $GITHUB_OUTPUT
+            fi
+          else
+            echo 'matrix=["inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
+          fi
+  
   build:
     name: Build ${{ matrix.board }}
     runs-on: ubuntu-latest
+    needs: prepare
     
     strategy:
       matrix:
-        board:
-          - inkplate5v2
-          - inkplate10
+        board: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     
     steps:
       - name: Checkout repository
