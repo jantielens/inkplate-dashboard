@@ -408,7 +408,7 @@ void performNormalUpdate() {
         
         if (imageManager.downloadAndDisplay(config.imageURL.c_str())) {
             Serial.println("Image displayed successfully!");
-            displayManager.refresh();
+            displayManager.refresh(false);
             
             // Reset retry count on success
             imageRetryCount = 0;

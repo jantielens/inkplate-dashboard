@@ -9,7 +9,7 @@ public:
     
     void init(bool clearOnInit = true);
     void clear();
-    void refresh();
+    void refresh(bool includeVersion = true);
     void showMessage(const char* message, int x, int y, int textSize);
     void drawCentered(const char* message, int y, int textSize);
     
@@ -19,6 +19,7 @@ public:
     
 private:
     Inkplate* _display;
+    void drawVersionLabel();
 };
 
 #endif // DISPLAY_MANAGER_H
