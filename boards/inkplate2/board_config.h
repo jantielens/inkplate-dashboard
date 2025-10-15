@@ -33,13 +33,16 @@
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 8000  // Smaller display, shorter timeout
 
-// Font and layout scaling for small screen
-// Inkplate 2 is ~1/6 the height of larger boards (104 vs 720-825)
-#define FONT_SCALE_FACTOR 0.33    // Scale fonts to 33% of original
-#define LAYOUT_SCALE_FACTOR 0.20  // Scale Y positions to 20% (104/720 ≈ 0.14, round up for readability)
+// Font sizes for text hierarchy (smaller for tiny screen)
+#define FONT_HEADING1 1   // Large headings (e.g., "Dashboard", screen titles)
+#define FONT_HEADING2 1   // Medium headings (e.g., section titles)
+#define FONT_NORMAL 1     // Normal text (e.g., descriptions, status messages)
+
+// Line spacing (pixels between lines of text - tight on small screen)
+#define LINE_SPACING 1
 
 // Margins (no margins on tiny screen to maximize space)
-#define LEFT_MARGIN 0
-#define INDENT_MARGIN 0
+#define MARGIN 0           // General margin (left, top)
+#define INDENT_MARGIN 5    // Indentation for nested content
 
 #endif // BOARD_CONFIG_H

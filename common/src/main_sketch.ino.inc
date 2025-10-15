@@ -66,10 +66,15 @@ void setup() {
     displayManager.init(shouldShowSplash);
     
     if (shouldShowSplash) {
-        displayManager.showMessage("Dashboard", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(8));
-        displayManager.showMessage(BOARD_NAME, LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(4));
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("Dashboard", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+        
+        displayManager.showMessage(BOARD_NAME, MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
         String dimensions = String(SCREEN_WIDTH) + "x" + String(SCREEN_HEIGHT);
-        displayManager.showMessage(dimensions.c_str(), LEFT_MARGIN, displayManager.scaleY(160), displayManager.scaleFont(3));
+        displayManager.showMessage(dimensions.c_str(), MARGIN, y, FONT_NORMAL);
     }
 
     if (!configInitialized) {
@@ -77,7 +82,8 @@ void setup() {
         if (!shouldShowSplash) {
             displayManager.clear();
         }
-        displayManager.showMessage("ERROR: Config Init Failed", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
+        int y = 240;
+        displayManager.showMessage("ERROR: Config Init Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         return;
     }
@@ -155,8 +161,10 @@ void setup() {
 
 // Helper function: Enter AP mode (first boot, no configuration)
 void enterAPMode() {
-    displayManager.showMessage("Status: First Boot", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
-    displayManager.showMessage("Starting AP Mode...", LEFT_MARGIN, displayManager.scaleY(270), displayManager.scaleFont(2));
+    int y = 240;
+    displayManager.showMessage("Status: First Boot", MARGIN, y, FONT_NORMAL);
+    y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager.showMessage("Starting AP Mode...", MARGIN, y, FONT_NORMAL);
     displayManager.refresh();
     
     if (wifiManager.startAccessPoint()) {
@@ -164,14 +172,24 @@ void enterAPMode() {
         String apIP = wifiManager.getAPIPAddress();
         
         displayManager.clear();
-        displayManager.showMessage("Setup - Step 1", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-        displayManager.showMessage("Connect WiFi", LEFT_MARGIN, displayManager.scaleY(80), displayManager.scaleFont(4));
-        displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(120), displayManager.scaleFont(2));
-        displayManager.showMessage("1. Connect to WiFi:", LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(3));
-        displayManager.showMessage(apName.c_str(), INDENT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(3));
-        displayManager.showMessage("2. Open browser to:", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(3));
-        displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, displayManager.scaleY(280), displayManager.scaleFont(3));
-        displayManager.showMessage("3. Enter WiFi settings", LEFT_MARGIN, displayManager.scaleY(340), displayManager.scaleFont(3));
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Connect WiFi", MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("1. Connect to WiFi:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(apName.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("2. Open browser to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("3. Enter WiFi settings", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         
         // Start configuration portal in BOOT_MODE
@@ -186,12 +204,14 @@ void enterAPMode() {
             Serial.println("=================================\n");
         } else {
             Serial.println("Failed to start configuration portal!");
-            displayManager.showMessage("ERROR: Portal Failed", LEFT_MARGIN, displayManager.scaleY(400), displayManager.scaleFont(2));
+            int y = 400;
+            displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
         }
     } else {
         Serial.println("Failed to start Access Point!");
-        displayManager.showMessage("ERROR: AP Start Failed", LEFT_MARGIN, displayManager.scaleY(300), displayManager.scaleFont(2));
+        int y = 300;
+        displayManager.showMessage("ERROR: AP Start Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
     }
 }
@@ -204,7 +224,8 @@ void enterConfigMode() {
     // For partial config, we may not have a full config to load
     if (!hasPartialConfig && !configManager.loadConfig(config)) {
         Serial.println("Failed to load config in config mode!");
-        displayManager.showMessage("ERROR: Config Load Failed", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
+        int y = 240;
+        displayManager.showMessage("ERROR: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(3000);
         
@@ -225,16 +246,21 @@ void enterConfigMode() {
     
     // Show config mode message
     displayManager.clear();
+    int y = MARGIN;  // Start at top margin
     if (hasPartialConfig) {
-        displayManager.showMessage("Setup - Step 2", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-        displayManager.showMessage("Configure Dashboard", LEFT_MARGIN, displayManager.scaleY(80), displayManager.scaleFont(4));
+        displayManager.showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        displayManager.showMessage("Configure Dashboard", MARGIN, y, FONT_HEADING2);
     } else {
-        displayManager.showMessage("Config Mode", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-        displayManager.showMessage("Active for 2 minutes", LEFT_MARGIN, displayManager.scaleY(120), displayManager.scaleFont(3));
+        displayManager.showMessage("Config Mode", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        displayManager.showMessage("Active for 2 minutes", MARGIN, y, FONT_NORMAL);
     }
-    displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(160), displayManager.scaleFont(2));
-    displayManager.showMessage("Connecting to WiFi...", LEFT_MARGIN, displayManager.scaleY(200), displayManager.scaleFont(3));
-    displayManager.showMessage(config.wifiSSID.c_str(), INDENT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
+    y += displayManager.getFontHeight(hasPartialConfig ? FONT_HEADING2 : FONT_NORMAL) + LINE_SPACING * 2;
+    
+    displayManager.showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
+    y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager.showMessage(config.wifiSSID.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
     displayManager.refresh();
     
     // Connect to configured WiFi
@@ -251,18 +277,22 @@ void enterConfigMode() {
         }
         
         displayManager.clear();
+        int y = MARGIN;  // Start at top margin
         if (hasPartialConfig) {
-            displayManager.showMessage("Setup - Step 2", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-            displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(2));
+            displayManager.showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
         } else {
-            displayManager.showMessage("Config Mode Active", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-            displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(2));
+            displayManager.showMessage("Config Mode Active", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
         }
-        displayManager.showMessage("Open browser to:", LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(3));
-        displayManager.showMessage(("http://" + localIP).c_str(), INDENT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(4));
-        displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
+        
+        displayManager.showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("http://" + localIP).c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
         if (!hasPartialConfig) {
-            displayManager.showMessage("Timeout: 2 minutes", LEFT_MARGIN, displayManager.scaleY(280), displayManager.scaleFont(2));
+            displayManager.showMessage("Timeout: 2 minutes", MARGIN, y, FONT_NORMAL);
         }
         displayManager.refresh();
         
@@ -281,7 +311,8 @@ void enterConfigMode() {
             Serial.println("=================================\n");
         } else {
             Serial.println("Failed to start configuration portal!");
-            displayManager.showMessage("ERROR: Portal Failed", LEFT_MARGIN, displayManager.scaleY(320), displayManager.scaleFont(2));
+            int y = 320;
+            displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             delay(3000);
             
@@ -296,11 +327,16 @@ void enterConfigMode() {
         Serial.println("WiFi connection failed in config mode - falling back to AP mode!");
         
         displayManager.clear();
-        displayManager.showMessage("WiFi Failed", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(5));
-        displayManager.showMessage("Cannot connect to:", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(3));
-        displayManager.showMessage(config.wifiSSID.c_str(), LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(2));
-        displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(2));
-        displayManager.showMessage("Starting AP mode...", LEFT_MARGIN, displayManager.scaleY(220), displayManager.scaleFont(3));
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("WiFi Failed", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Cannot connect to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(config.wifiSSID.c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Starting AP mode...", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(2000);
         
@@ -310,13 +346,21 @@ void enterConfigMode() {
             String apIP = wifiManager.getAPIPAddress();
             
             displayManager.clear();
-            displayManager.showMessage("Config Mode (AP)", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(6));
-            displayManager.showMessage("WiFi connection failed", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(3));
-            displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(2));
-            displayManager.showMessage("Connect to WiFi:", LEFT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(3));
-            displayManager.showMessage(apName.c_str(), INDENT_MARGIN, displayManager.scaleY(220), displayManager.scaleFont(3));
-            displayManager.showMessage("Open browser to:", LEFT_MARGIN, displayManager.scaleY(280), displayManager.scaleFont(3));
-            displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, displayManager.scaleY(320), displayManager.scaleFont(3));
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Config Mode (AP)", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("WiFi connection failed", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Connect to WiFi:", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            displayManager.showMessage(apName.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             // Start configuration portal in CONFIG_MODE (with AP)
@@ -336,7 +380,8 @@ void enterConfigMode() {
                 Serial.println("=================================\n");
             } else {
                 Serial.println("Failed to start AP mode fallback!");
-                displayManager.showMessage("ERROR: AP Failed", LEFT_MARGIN, displayManager.scaleY(380), displayManager.scaleFont(2));
+                int y = 380;
+                displayManager.showMessage("ERROR: AP Failed", MARGIN, y, FONT_NORMAL);
                 displayManager.refresh();
                 delay(3000);
                 powerManager.prepareForSleep();
@@ -345,10 +390,14 @@ void enterConfigMode() {
         } else {
             Serial.println("Failed to start AP mode fallback!");
             displayManager.clear();
-            displayManager.showMessage("Config Mode Failed", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(5));
-            displayManager.showMessage("Cannot start AP", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(3));
-            displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(2));
-            displayManager.showMessage("Going to sleep...", LEFT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(2));
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Config Mode Failed", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Cannot start AP", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
@@ -367,7 +416,8 @@ void performNormalUpdate() {
     DashboardConfig config;
     if (!configManager.loadConfig(config)) {
         Serial.println("Failed to load config!");
-        displayManager.showMessage("Status: Config Load Failed", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
+        int y = 240;
+        displayManager.showMessage("Status: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
@@ -377,10 +427,17 @@ void performNormalUpdate() {
     
     const bool showDebug = config.debugMode;
     if (showDebug) {
-        displayManager.showMessage("Status: Configured", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
-        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), LEFT_MARGIN, displayManager.scaleY(270), displayManager.scaleFont(2));
-        displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), LEFT_MARGIN, displayManager.scaleY(300), displayManager.scaleFont(2));
-        displayManager.showMessage("Connecting to WiFi...", LEFT_MARGIN, displayManager.scaleY(330), displayManager.scaleFont(2));
+        int y = 240;
+        displayManager.showMessage("Status: Configured", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
     }
     
@@ -433,10 +490,15 @@ void performNormalUpdate() {
         
         if (showDebug) {
             displayManager.clear();
-            displayManager.showMessage("Downloading...", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(4));
-            displayManager.showMessage(config.imageURL.c_str(), LEFT_MARGIN, displayManager.scaleY(80), displayManager.scaleFont(2));
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Downloading...", MARGIN, y, FONT_HEADING2);
+            y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+            
+            displayManager.showMessage(config.imageURL.c_str(), MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            
             if (mqttSuccess) {
-                displayManager.showMessage("MQTT: Connected", LEFT_MARGIN, displayManager.scaleY(120), displayManager.scaleFont(2));
+                displayManager.showMessage("MQTT: Connected", MARGIN, y, FONT_NORMAL);
             }
             displayManager.refresh();
         }
@@ -491,18 +553,28 @@ void performNormalUpdate() {
                 imageRetryCount = 0;
                 
                 displayManager.clear();
-                displayManager.showMessage("Image Error!", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(5));
-                displayManager.showMessage("Failed to download", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(3));
-                displayManager.showMessage(config.imageURL.c_str(), LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(2));
-                displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(180), displayManager.scaleFont(2));
-                displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), LEFT_MARGIN, displayManager.scaleY(210), displayManager.scaleFont(2));
-                displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(250), displayManager.scaleFont(2));
-                displayManager.showMessage("Will retry on next wake", LEFT_MARGIN, displayManager.scaleY(280), displayManager.scaleFont(2));
-                displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), LEFT_MARGIN, displayManager.scaleY(310), displayManager.scaleFont(2));
-                displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(350), displayManager.scaleFont(2));
-                displayManager.showMessage("If you want to update the", LEFT_MARGIN, displayManager.scaleY(380), displayManager.scaleFont(2));
-                displayManager.showMessage("Image URL, hold the button", 10, displayManager.scaleY(410), displayManager.scaleFont(2));
-                displayManager.showMessage("to enter config mode.", LEFT_MARGIN, displayManager.scaleY(440), displayManager.scaleFont(2));
+                int y = MARGIN;  // Start at top margin
+                displayManager.showMessage("Image Error!", MARGIN, y, FONT_HEADING1);
+                y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("Failed to download", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage(config.imageURL.c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("If you want to update the", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage("Image URL, hold the button", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage("to enter config mode.", MARGIN, y, FONT_NORMAL);
                 displayManager.refresh();
                 
                 // Calculate loop time and publish to MQTT
@@ -540,13 +612,20 @@ void performNormalUpdate() {
         // Note: Can't publish WiFi failure event to MQTT since WiFi failed
         
         displayManager.clear();
-        displayManager.showMessage("WiFi Error!", LEFT_MARGIN, displayManager.scaleY(20), displayManager.scaleFont(5));
-        displayManager.showMessage("Failed to connect", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(3));
-        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), LEFT_MARGIN, displayManager.scaleY(140), displayManager.scaleFont(2));
-        displayManager.showMessage(("Status: " + wifiManager.getStatusString()).c_str(), LEFT_MARGIN, displayManager.scaleY(170), displayManager.scaleFont(2));
-        displayManager.showMessage("", LEFT_MARGIN, displayManager.scaleY(210), displayManager.scaleFont(2));
-        displayManager.showMessage("Will retry on next wake", LEFT_MARGIN, displayManager.scaleY(240), displayManager.scaleFont(2));
-        displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), LEFT_MARGIN, displayManager.scaleY(270), displayManager.scaleFont(2));
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("WiFi Error!", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Failed to connect", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("Status: " + wifiManager.getStatusString()).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         
         // Calculate loop time (even though we failed, measure what we did)
@@ -581,8 +660,10 @@ void loop() {
             Serial.println("=================================\n");
             
             displayManager.clear();
-            displayManager.showMessage("WiFi Configured!", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(5));
-            displayManager.showMessage("Restarting...", LEFT_MARGIN, displayManager.scaleY(200), displayManager.scaleFont(3));
+            int y = 100;
+            displayManager.showMessage("WiFi Configured!", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+            displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(3000);
@@ -609,8 +690,10 @@ void loop() {
             }
             
             displayManager.clear();
-            displayManager.showMessage("Settings Updated!", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(5));
-            displayManager.showMessage("Restarting...", LEFT_MARGIN, displayManager.scaleY(200), displayManager.scaleFont(3));
+            int y = 100;
+            displayManager.showMessage("Settings Updated!", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+            displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(3000);
@@ -635,8 +718,10 @@ void loop() {
             }
             
             displayManager.clear();
-            displayManager.showMessage("Config Mode Timeout", LEFT_MARGIN, displayManager.scaleY(100), displayManager.scaleFont(4));
-            displayManager.showMessage("Going to sleep...", LEFT_MARGIN, displayManager.scaleY(160), displayManager.scaleFont(3));
+            int y = 100;
+            displayManager.showMessage("Config Mode Timeout", MARGIN, y, FONT_HEADING2);
+            y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+            displayManager.showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(2000);
@@ -657,3 +742,4 @@ void loop() {
     }
     // Note: Normal operation doesn't reach loop() - it goes directly to deep sleep from setup()
 }
+

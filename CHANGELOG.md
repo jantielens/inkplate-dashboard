@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-15
+
+### Added
+- Inkplate 2 board support with dedicated configuration
+- MODES.md documentation explaining device modes and configuration behavior
+- Board-specific font sizes (FONT_HEADING1, FONT_HEADING2, FONT_NORMAL) for different display sizes
+- Board-specific line spacing (LINE_SPACING) for optimal text layout
+- Configurable margins (MARGIN, INDENT_MARGIN) in board configurations
+- NVS-based device running detection to distinguish between reset button and power-on
+- Conditional button handling for boards with/without wake button capability
+- Debug logging for wake/button detection and button-absent flows
+
+### Changed
+- DisplayManager now uses board-specific font sizes and layout positioning
+- Common UI elements now use configurable font sizes and margins instead of hard-coded values
+- PowerManager enhanced with Preferences/NVS handling and markDeviceRunning() functionality
+- Wake source reconfiguration before deep sleep
+- Build, upload, and setup scripts updated to include Inkplate 2
+- README updated with Inkplate 2 information and example commands
+
+### Fixed
+- Text overlap issue on small displays (text lines appearing on top of each other)
+- Incorrect top margin calculation causing text to not start at the actual top margin
+- Version label now respects board-specific MARGIN setting
+
+### Technical Details
+- ESP reset reason detection using esp_reset_reason()
+- RTC running flag set before deep sleep
+- Build toolchain updated to include Inkplate 2 in include paths
+
 ## [0.1.1] - 2025-10-15
 
 ### Added
@@ -59,7 +89,8 @@
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
 
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/jantielens/inkplate-dashboard/releases/tag/v0.0.1

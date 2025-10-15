@@ -29,12 +29,16 @@
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 10000
 
-// Font and layout scaling (1.0 = no scaling for this board)
-#define FONT_SCALE_FACTOR 1.0
-#define LAYOUT_SCALE_FACTOR 1.0
+// Font sizes for text hierarchy
+#define FONT_HEADING1 6   // Large headings (e.g., "Dashboard", screen titles)
+#define FONT_HEADING2 4   // Medium headings (e.g., section titles)
+#define FONT_NORMAL 2     // Normal text (e.g., descriptions, status messages)
+
+// Line spacing (pixels between lines of text)
+#define LINE_SPACING 10
 
 // Margins
-#define LEFT_MARGIN 10
-#define INDENT_MARGIN 30
+#define MARGIN 10          // General margin (left, top)
+#define INDENT_MARGIN 30   // Indentation for nested content
 
 #endif // BOARD_CONFIG_H
