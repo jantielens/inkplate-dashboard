@@ -11,7 +11,7 @@
 #define BOARD_ROTATION 0  // 0, 1, 2, or 3
 
 // Display mode
-#define DISPLAY_MODE INKPLATE_3BIT  // 1-bit black and white
+#define DISPLAY_MODE INKPLATE_3BIT  // 3-bit grayscale
 
 // Board-specific features
 #define HAS_TOUCHSCREEN true
