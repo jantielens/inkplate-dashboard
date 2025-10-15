@@ -260,7 +260,7 @@ For boards without a wake button (`HAS_BUTTON = false`):
 | Storage Type | Survives Reset Button | Survives Power Cycle | Used For |
 |--------------|----------------------|---------------------|----------|
 | RAM | ❌ | ❌ | Runtime variables |
-| RTC Memory | ❌ (on Inkplate 2) | ❌ | Wake source, boot count |
+| RTC Memory | ❌ | ❌ | Wake source, boot count |
 | NVS Flash | ✅ | ✅ | Reset detection (Inkplate 2 only), config |
 
 **Key insight**: Inkplate 2's reset button performs a full power cycle (clears RTC memory), but NVS persists across all resets.
