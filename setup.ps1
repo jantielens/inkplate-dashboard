@@ -4,7 +4,7 @@
 # Configuration
 $BOARD_URL = "https://raw.githubusercontent.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/master/package_Dasduino_Boards_index.json"
 $BOARD_PACKAGE = "Inkplate_Boards:esp32"
-$REQUIRED_BOARDS = @("Inkplate2", "Inkplate5V2", "Inkplate10")
+$REQUIRED_BOARDS = @("Inkplate2", "Inkplate5V2", "Inkplate10", "Inkplate6Flick")
 
 Write-Host "=== Arduino CLI Setup for Multiple Inkplate Boards ===" -ForegroundColor Cyan
 

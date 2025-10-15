@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'all')]
+    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'inkplate6flick', 'all')]
     [string]$Board = "inkplate5v2"
 )
 
@@ -43,6 +43,11 @@ $boards = @{
         Name = "Inkplate 10"
         FQBN = "Inkplate_Boards:esp32:Inkplate10"
         Path = "boards/inkplate10"
+    }
+    'inkplate6flick' = @{
+        Name = "Inkplate 6 Flick"
+        FQBN = "Inkplate_Boards:esp32:Inkplate6Flick"
+        Path = "boards/inkplate6flick"
     }
 }
 
