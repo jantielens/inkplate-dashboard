@@ -74,13 +74,12 @@ jobs:
           VERSION="${{ steps.validate.outputs.version }}"
           
           if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
-            echo "⚠️ Warning: CHANGELOG.md does not have an entry for version $VERSION"
-            echo "Consider adding a changelog entry before creating the release."
-            echo ""
-            echo "Continuing anyway..."
-          else
-            echo "✅ CHANGELOG.md has entry for version $VERSION"
+            echo "❌ Error: CHANGELOG.md does not have an entry for version $VERSION"
+            echo "Please add a changelog entry before creating the release."
+            exit 1
           fi
+          
+          echo "✅ CHANGELOG.md has entry for version $VERSION"
       
       - name: Create and push tag
         run: |
