@@ -13,6 +13,9 @@ public:
     void showMessage(const char* message, int x, int y, int textSize);
     void drawCentered(const char* message, int y, int textSize);
     
+    // Helper to calculate font height in pixels (approximate)
+    int getFontHeight(int textSize);
+    
     // Board-specific adaptations can be added here
     int getWidth();
     int getHeight();

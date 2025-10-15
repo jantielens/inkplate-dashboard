@@ -10,12 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       board:
-        description: 'Board to build (inkplate5v2, inkplate10, or all)'
+        description: 'Board to build (inkplate2, inkplate5v2, inkplate10, or all)'
         required: false
         default: 'all'
         type: choice
         options:
           - all
+          - inkplate2
           - inkplate5v2
           - inkplate10
 
@@ -35,12 +36,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ "${{ github.event.inputs.board }}" = "all" ]; then
-              echo 'matrix=["inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
+              echo 'matrix=["inkplate2","inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
             else
               echo 'matrix=["${{ github.event.inputs.board }}"]' >> $GITHUB_OUTPUT
             fi
           else
-            echo 'matrix=["inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
+            echo 'matrix=["inkplate2","inkplate5v2","inkplate10"]' >> $GITHUB_OUTPUT
           fi
   
   build:

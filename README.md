@@ -4,6 +4,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 
 ## Supported Devices
 
+- ✅ **Inkplate 2** (212x104, 1-bit black & white) - _No physical button_
 - ✅ **Inkplate 5 V2** (1280x720, 3-bit grayscale)
 - ✅ **Inkplate 10** (1200x825, 1-bit black & white)
 
@@ -30,10 +31,10 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 .\setup.ps1
 
 # Build firmware for your device
-.\build.ps1 inkplate5v2    # or inkplate10
+.\build.ps1 inkplate2        # or inkplate5v2, inkplate10
 
 # Upload to device (replace COM7 with your port)
-.\upload.ps1 -board inkplate5v2 -port COM7
+.\upload.ps1 -board inkplate2 -port COM7
 ```
 
 ### 2. Two-Step Onboarding Flow
@@ -82,11 +83,14 @@ The device will:
   - Access web interface for 2 minutes to update settings (all fields available)
   - Device automatically restarts or returns to sleep after timeout
 
+> **Note for Inkplate 2**: This device does not have a physical button. Configuration must be done during the initial setup or by performing a factory reset through the web interface while in config mode.
+
 ## Project Structure
 
 ```
 inkplate-dashboard-new/
 ├── boards/              # Board-specific sketches
+│   ├── inkplate2/      # Inkplate 2 specific code
 │   ├── inkplate5v2/    # Inkplate 5 V2 specific code
 │   └── inkplate10/     # Inkplate 10 specific code
 ├── common/             # Shared code library

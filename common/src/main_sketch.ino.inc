@@ -14,7 +14,12 @@
 #include <src/mqtt_manager.h>
 
 // Create Inkplate instance
+// Inkplate 2 uses a different constructor (no display mode parameter)
+#ifdef DISPLAY_MODE_INKPLATE2
+Inkplate display;
+#else
 Inkplate display(DISPLAY_MODE);
+#endif
 DisplayManager displayManager(&display);
 ConfigManager configManager;
 WiFiManager wifiManager(&configManager);
@@ -61,10 +66,15 @@ void setup() {
     displayManager.init(shouldShowSplash);
     
     if (shouldShowSplash) {
-        displayManager.showMessage("Dashboard", 10, 20, 8);
-        displayManager.showMessage(BOARD_NAME, 10, 100, 4);
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("Dashboard", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+        
+        displayManager.showMessage(BOARD_NAME, MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
         String dimensions = String(SCREEN_WIDTH) + "x" + String(SCREEN_HEIGHT);
-        displayManager.showMessage(dimensions.c_str(), 10, 160, 3);
+        displayManager.showMessage(dimensions.c_str(), MARGIN, y, FONT_NORMAL);
     }
 
     if (!configInitialized) {
@@ -72,7 +82,8 @@ void setup() {
         if (!shouldShowSplash) {
             displayManager.clear();
         }
-        displayManager.showMessage("ERROR: Config Init Failed", 10, 240, 2);
+        int y = 240;
+        displayManager.showMessage("ERROR: Config Init Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         return;
     }
@@ -80,6 +91,25 @@ void setup() {
     // Determine mode based on wake reason and configuration status
     bool hasWiFi = configManager.hasWiFiConfig();
     bool isFullyConfigured = configManager.isFullyConfigured();
+    
+    // RESET BUTTON PRESSED -> Enter config mode (only for button-less boards)
+    #if !defined(HAS_BUTTON) || HAS_BUTTON == false
+    if (wakeReason == WAKEUP_RESET_BUTTON) {
+        Serial.println("Hardware reset button detected (button-less board) - entering config mode");
+        if (isFullyConfigured) {
+            enterConfigMode();
+        } else {
+            enterAPMode();
+        }
+        return;
+    }
+    #else
+    if (wakeReason == WAKEUP_RESET_BUTTON) {
+        Serial.println("Hardware reset button detected - ignoring (wake button available)");
+        // For boards with wake button, ignore reset button and continue to normal operation
+        // Users should use long press on wake button for config mode
+    }
+    #endif
     
     // FIRST BOOT (no WiFi configuration) -> AP Mode (Boot Mode)
     if (!hasWiFi && wakeReason == WAKEUP_FIRST_BOOT) {
@@ -99,6 +129,9 @@ void setup() {
     // This allows users to enter config mode by holding button during power-on/reset
     if (isFullyConfigured) {
         ButtonPressType pressType = powerManager.detectButtonPressType();
+        
+        Serial.printf("DEBUG: pressType=%d, wakeReason=%d (WAKEUP_BUTTON=%d)\n", 
+                     pressType, wakeReason, WAKEUP_BUTTON);
         
         if (pressType == BUTTON_PRESS_LONG) {
             Serial.println("Long button press detected - entering config mode");
@@ -128,8 +161,10 @@ void setup() {
 
 // Helper function: Enter AP mode (first boot, no configuration)
 void enterAPMode() {
-    displayManager.showMessage("Status: First Boot", 10, 240, 2);
-    displayManager.showMessage("Starting AP Mode...", 10, 270, 2);
+    int y = 240;
+    displayManager.showMessage("Status: First Boot", MARGIN, y, FONT_NORMAL);
+    y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager.showMessage("Starting AP Mode...", MARGIN, y, FONT_NORMAL);
     displayManager.refresh();
     
     if (wifiManager.startAccessPoint()) {
@@ -137,14 +172,24 @@ void enterAPMode() {
         String apIP = wifiManager.getAPIPAddress();
         
         displayManager.clear();
-        displayManager.showMessage("Setup - Step 1", 10, 20, 6);
-        displayManager.showMessage("Connect WiFi", 10, 80, 4);
-        displayManager.showMessage("", 10, 120, 2);
-        displayManager.showMessage("1. Connect to WiFi:", 10, 140, 3);
-        displayManager.showMessage(apName.c_str(), 30, 180, 3);
-        displayManager.showMessage("2. Open browser to:", 10, 240, 3);
-        displayManager.showMessage(("http://" + apIP).c_str(), 30, 280, 3);
-        displayManager.showMessage("3. Enter WiFi settings", 10, 340, 3);
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Connect WiFi", MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("1. Connect to WiFi:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(apName.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("2. Open browser to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("3. Enter WiFi settings", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         
         // Start configuration portal in BOOT_MODE
@@ -159,12 +204,14 @@ void enterAPMode() {
             Serial.println("=================================\n");
         } else {
             Serial.println("Failed to start configuration portal!");
-            displayManager.showMessage("ERROR: Portal Failed", 10, 400, 2);
+            int y = 400;
+            displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
         }
     } else {
         Serial.println("Failed to start Access Point!");
-        displayManager.showMessage("ERROR: AP Start Failed", 10, 300, 2);
+        int y = 300;
+        displayManager.showMessage("ERROR: AP Start Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
     }
 }
@@ -177,9 +224,14 @@ void enterConfigMode() {
     // For partial config, we may not have a full config to load
     if (!hasPartialConfig && !configManager.loadConfig(config)) {
         Serial.println("Failed to load config in config mode!");
-        displayManager.showMessage("ERROR: Config Load Failed", 10, 240, 2);
+        int y = 240;
+        displayManager.showMessage("ERROR: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(3000);
+        
+        // Mark device as running (one-time NVS write for reset detection)
+        powerManager.markDeviceRunning();
+        
         powerManager.prepareForSleep();
         powerManager.enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return;
@@ -194,16 +246,21 @@ void enterConfigMode() {
     
     // Show config mode message
     displayManager.clear();
+    int y = MARGIN;  // Start at top margin
     if (hasPartialConfig) {
-        displayManager.showMessage("Setup - Step 2", 10, 20, 6);
-        displayManager.showMessage("Configure Dashboard", 10, 80, 4);
+        displayManager.showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        displayManager.showMessage("Configure Dashboard", MARGIN, y, FONT_HEADING2);
     } else {
-        displayManager.showMessage("Config Mode", 10, 20, 6);
-        displayManager.showMessage("Active for 2 minutes", 10, 120, 3);
+        displayManager.showMessage("Config Mode", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        displayManager.showMessage("Active for 2 minutes", MARGIN, y, FONT_NORMAL);
     }
-    displayManager.showMessage("", 10, 160, 2);
-    displayManager.showMessage("Connecting to WiFi...", 10, 200, 3);
-    displayManager.showMessage(config.wifiSSID.c_str(), 30, 240, 2);
+    y += displayManager.getFontHeight(hasPartialConfig ? FONT_HEADING2 : FONT_NORMAL) + LINE_SPACING * 2;
+    
+    displayManager.showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
+    y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager.showMessage(config.wifiSSID.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
     displayManager.refresh();
     
     // Connect to configured WiFi
@@ -220,18 +277,22 @@ void enterConfigMode() {
         }
         
         displayManager.clear();
+        int y = MARGIN;  // Start at top margin
         if (hasPartialConfig) {
-            displayManager.showMessage("Setup - Step 2", 10, 20, 6);
-            displayManager.showMessage("", 10, 100, 2);
+            displayManager.showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
         } else {
-            displayManager.showMessage("Config Mode Active", 10, 20, 6);
-            displayManager.showMessage("", 10, 100, 2);
+            displayManager.showMessage("Config Mode Active", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
         }
-        displayManager.showMessage("Open browser to:", 10, 140, 3);
-        displayManager.showMessage(("http://" + localIP).c_str(), 30, 180, 4);
-        displayManager.showMessage("", 10, 240, 2);
+        
+        displayManager.showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("http://" + localIP).c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        
         if (!hasPartialConfig) {
-            displayManager.showMessage("Timeout: 2 minutes", 10, 280, 2);
+            displayManager.showMessage("Timeout: 2 minutes", MARGIN, y, FONT_NORMAL);
         }
         displayManager.refresh();
         
@@ -250,9 +311,14 @@ void enterConfigMode() {
             Serial.println("=================================\n");
         } else {
             Serial.println("Failed to start configuration portal!");
-            displayManager.showMessage("ERROR: Portal Failed", 10, 320, 2);
+            int y = 320;
+            displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             delay(3000);
+            
+            // Mark device as running (one-time NVS write for reset detection)
+            powerManager.markDeviceRunning();
+            
             powerManager.prepareForSleep();
             powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         }
@@ -261,11 +327,16 @@ void enterConfigMode() {
         Serial.println("WiFi connection failed in config mode - falling back to AP mode!");
         
         displayManager.clear();
-        displayManager.showMessage("WiFi Failed", 10, 20, 5);
-        displayManager.showMessage("Cannot connect to:", 10, 100, 3);
-        displayManager.showMessage(config.wifiSSID.c_str(), 10, 140, 2);
-        displayManager.showMessage("", 10, 180, 2);
-        displayManager.showMessage("Starting AP mode...", 10, 220, 3);
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("WiFi Failed", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Cannot connect to:", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(config.wifiSSID.c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Starting AP mode...", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(2000);
         
@@ -275,13 +346,21 @@ void enterConfigMode() {
             String apIP = wifiManager.getAPIPAddress();
             
             displayManager.clear();
-            displayManager.showMessage("Config Mode (AP)", 10, 20, 6);
-            displayManager.showMessage("WiFi connection failed", 10, 100, 3);
-            displayManager.showMessage("", 10, 140, 2);
-            displayManager.showMessage("Connect to WiFi:", 10, 180, 3);
-            displayManager.showMessage(apName.c_str(), 30, 220, 3);
-            displayManager.showMessage("Open browser to:", 10, 280, 3);
-            displayManager.showMessage(("http://" + apIP).c_str(), 30, 320, 3);
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Config Mode (AP)", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("WiFi connection failed", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Connect to WiFi:", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            displayManager.showMessage(apName.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            displayManager.showMessage(("http://" + apIP).c_str(), INDENT_MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             // Start configuration portal in CONFIG_MODE (with AP)
@@ -301,7 +380,8 @@ void enterConfigMode() {
                 Serial.println("=================================\n");
             } else {
                 Serial.println("Failed to start AP mode fallback!");
-                displayManager.showMessage("ERROR: AP Failed", 10, 380, 2);
+                int y = 380;
+                displayManager.showMessage("ERROR: AP Failed", MARGIN, y, FONT_NORMAL);
                 displayManager.refresh();
                 delay(3000);
                 powerManager.prepareForSleep();
@@ -310,10 +390,14 @@ void enterConfigMode() {
         } else {
             Serial.println("Failed to start AP mode fallback!");
             displayManager.clear();
-            displayManager.showMessage("Config Mode Failed", 10, 20, 5);
-            displayManager.showMessage("Cannot start AP", 10, 100, 3);
-            displayManager.showMessage("", 10, 140, 2);
-            displayManager.showMessage("Going to sleep...", 10, 180, 2);
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Config Mode Failed", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Cannot start AP", MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+            
+            displayManager.showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
@@ -332,7 +416,8 @@ void performNormalUpdate() {
     DashboardConfig config;
     if (!configManager.loadConfig(config)) {
         Serial.println("Failed to load config!");
-        displayManager.showMessage("Status: Config Load Failed", 10, 240, 2);
+        int y = 240;
+        displayManager.showMessage("Status: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
@@ -342,10 +427,17 @@ void performNormalUpdate() {
     
     const bool showDebug = config.debugMode;
     if (showDebug) {
-        displayManager.showMessage("Status: Configured", 10, 240, 2);
-        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), 10, 270, 2);
-        displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), 10, 300, 2);
-        displayManager.showMessage("Connecting to WiFi...", 10, 330, 2);
+        int y = 240;
+        displayManager.showMessage("Status: Configured", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        displayManager.showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
     }
     
@@ -398,10 +490,15 @@ void performNormalUpdate() {
         
         if (showDebug) {
             displayManager.clear();
-            displayManager.showMessage("Downloading...", 10, 20, 4);
-            displayManager.showMessage(config.imageURL.c_str(), 10, 80, 2);
+            int y = MARGIN;  // Start at top margin
+            displayManager.showMessage("Downloading...", MARGIN, y, FONT_HEADING2);
+            y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+            
+            displayManager.showMessage(config.imageURL.c_str(), MARGIN, y, FONT_NORMAL);
+            y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+            
             if (mqttSuccess) {
-                displayManager.showMessage("MQTT: Connected", 10, 120, 2);
+                displayManager.showMessage("MQTT: Connected", MARGIN, y, FONT_NORMAL);
             }
             displayManager.refresh();
         }
@@ -429,6 +526,10 @@ void performNormalUpdate() {
             // Success - go to deep sleep
             Serial.println("\nImage display successful - preparing for sleep");
             delay(1000);  // Give user time to see the image
+            
+            // Mark device as running (one-time NVS write for reset detection)
+            powerManager.markDeviceRunning();
+            
             powerManager.prepareForSleep();
             powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         } else {
@@ -441,6 +542,9 @@ void performNormalUpdate() {
                 imageRetryCount++;
                 Serial.println("Will retry in 20 seconds (attempt " + String(imageRetryCount + 1) + " of 3)");
                 
+                // Mark device as running (one-time NVS write for reset detection)
+                powerManager.markDeviceRunning();
+                
                 powerManager.prepareForSleep();
                 powerManager.enterDeepSleep((float)(20.0 / 60.0));  // 20 seconds as fraction of minutes
             } else {
@@ -449,18 +553,28 @@ void performNormalUpdate() {
                 imageRetryCount = 0;
                 
                 displayManager.clear();
-                displayManager.showMessage("Image Error!", 10, 20, 5);
-                displayManager.showMessage("Failed to download", 10, 100, 3);
-                displayManager.showMessage(config.imageURL.c_str(), 10, 140, 2);
-                displayManager.showMessage("", 10, 180, 2);
-                displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), 10, 210, 2);
-                displayManager.showMessage("", 10, 250, 2);
-                displayManager.showMessage("Will retry on next wake", 10, 280, 2);
-                displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), 10, 310, 2);
-                displayManager.showMessage("", 10, 350, 2);
-                displayManager.showMessage("If you want to update the", 10, 380, 2);
-                displayManager.showMessage("Image URL, hold the button", 10, 410, 2);
-                displayManager.showMessage("to enter config mode.", 10, 440, 2);
+                int y = MARGIN;  // Start at top margin
+                displayManager.showMessage("Image Error!", MARGIN, y, FONT_HEADING1);
+                y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("Failed to download", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage(config.imageURL.c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                
+                displayManager.showMessage("If you want to update the", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage("Image URL, hold the button", MARGIN, y, FONT_NORMAL);
+                y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                displayManager.showMessage("to enter config mode.", MARGIN, y, FONT_NORMAL);
                 displayManager.refresh();
                 
                 // Calculate loop time and publish to MQTT
@@ -479,6 +593,10 @@ void performNormalUpdate() {
                 
                 // Error - still go to sleep and retry later
                 delay(3000);
+                
+                // Mark device as running (one-time NVS write for reset detection)
+                powerManager.markDeviceRunning();
+                
                 powerManager.prepareForSleep();
                 powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
@@ -494,13 +612,20 @@ void performNormalUpdate() {
         // Note: Can't publish WiFi failure event to MQTT since WiFi failed
         
         displayManager.clear();
-        displayManager.showMessage("WiFi Error!", 10, 20, 5);
-        displayManager.showMessage("Failed to connect", 10, 100, 3);
-        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), 10, 140, 2);
-        displayManager.showMessage(("Status: " + wifiManager.getStatusString()).c_str(), 10, 170, 2);
-        displayManager.showMessage("", 10, 210, 2);
-        displayManager.showMessage("Will retry on next wake", 10, 240, 2);
-        displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), 10, 270, 2);
+        int y = MARGIN;  // Start at top margin
+        displayManager.showMessage("WiFi Error!", MARGIN, y, FONT_HEADING1);
+        y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Failed to connect", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("Status: " + wifiManager.getStatusString()).c_str(), MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        
+        displayManager.showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
+        y += displayManager.getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
         
         // Calculate loop time (even though we failed, measure what we did)
@@ -512,6 +637,10 @@ void performNormalUpdate() {
         
         // WiFi error - go to sleep and retry later
         delay(3000);
+        
+        // Mark device as running (one-time NVS write for reset detection)
+        powerManager.markDeviceRunning();
+        
         powerManager.prepareForSleep();
         powerManager.enterDeepSleep((uint16_t)config.refreshRate);
     }
@@ -531,8 +660,10 @@ void loop() {
             Serial.println("=================================\n");
             
             displayManager.clear();
-            displayManager.showMessage("WiFi Configured!", 10, 100, 5);
-            displayManager.showMessage("Restarting...", 10, 200, 3);
+            int y = 100;
+            displayManager.showMessage("WiFi Configured!", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+            displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(3000);
@@ -559,8 +690,10 @@ void loop() {
             }
             
             displayManager.clear();
-            displayManager.showMessage("Settings Updated!", 10, 100, 5);
-            displayManager.showMessage("Restarting...", 10, 200, 3);
+            int y = 100;
+            displayManager.showMessage("Settings Updated!", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+            displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(3000);
@@ -585,8 +718,10 @@ void loop() {
             }
             
             displayManager.clear();
-            displayManager.showMessage("Config Mode Timeout", 10, 100, 4);
-            displayManager.showMessage("Going to sleep...", 10, 160, 3);
+            int y = 100;
+            displayManager.showMessage("Config Mode Timeout", MARGIN, y, FONT_HEADING2);
+            y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+            displayManager.showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
             
             delay(2000);
@@ -598,9 +733,13 @@ void loop() {
                 sleepMinutes = config.refreshRate;
             }
             
+            // Mark device as running (one-time NVS write for reset detection)
+            powerManager.markDeviceRunning();
+            
             powerManager.prepareForSleep();
             powerManager.enterDeepSleep(sleepMinutes);
         }
     }
     // Note: Normal operation doesn't reach loop() - it goes directly to deep sleep from setup()
 }
+

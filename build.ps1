@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [ValidateSet('inkplate5v2', 'inkplate10', 'all')]
+    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'all')]
     [string]$Board = "inkplate5v2"
 )
 
@@ -29,6 +29,11 @@ if (Test-Path $VERSION_FILE) {
 
 # Board configurations
 $boards = @{
+    'inkplate2' = @{
+        Name = "Inkplate 2"
+        FQBN = "Inkplate_Boards:esp32:Inkplate2"
+        Path = "boards/inkplate2"
+    }
     'inkplate5v2' = @{
         Name = "Inkplate 5 V2"
         FQBN = "Inkplate_Boards:esp32:Inkplate5V2"
@@ -73,7 +78,9 @@ function Build-Board {
     Write-Host "Compiling $SKETCH_PATH..." -ForegroundColor Yellow
     Write-Host "Including common libraries from: $COMMON_PATH" -ForegroundColor Gray
     
-    arduino-cli compile --fqbn $BOARD_FQBN --build-path $BUILD_DIR --library $COMMON_PATH --build-property "compiler.cpp.extra_flags=-I`"$COMMON_PATH`" -I`"$COMMON_PATH\src`"" $SKETCH_PATH
+    # Add board config directory to include path so .cpp files can find board_config.h
+    $BOARD_CONFIG_PATH = Join-Path $WORKSPACE_PATH $SKETCH_PATH
+    arduino-cli compile --fqbn $BOARD_FQBN --build-path $BUILD_DIR --library $COMMON_PATH --build-property "compiler.cpp.extra_flags=-I`"$COMMON_PATH`" -I`"$COMMON_PATH\src`" -I`"$BOARD_CONFIG_PATH`" -include board_config.h" $SKETCH_PATH
     
     # Clean up copied files after build
     foreach ($file in $commonSrcFiles) {
