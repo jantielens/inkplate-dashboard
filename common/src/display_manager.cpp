@@ -53,7 +53,7 @@ int DisplayManager::getHeight() {
 }
 
 void DisplayManager::drawVersionLabel() {
-    static const char versionLabel[] = "FW " FIRMWARE_VERSION;
+    static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
     _display->setTextSize(2);
     _display->setTextColor(BLACK);
 
