@@ -25,6 +25,7 @@ declare -A BOARDS=(
     [inkplate2]="Inkplate 2|Inkplate_Boards:esp32:Inkplate2|boards/inkplate2"
     [inkplate5v2]="Inkplate 5 V2|Inkplate_Boards:esp32:Inkplate5V2|boards/inkplate5v2"
     [inkplate10]="Inkplate 10|Inkplate_Boards:esp32:Inkplate10|boards/inkplate10"
+    [inkplate6flick]="Inkplate 6 Flick|Inkplate_Boards:esp32:Inkplate6Flick|boards/inkplate6flick"
 )
 
 # Function to build a board

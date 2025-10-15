@@ -249,7 +249,7 @@ Add your board to the supported boards list:
 - ✅ Inkplate 2 (212x104, monochrome)
 - ✅ Inkplate 5 V2 (1280x720, grayscale)
 - ✅ Inkplate 10 (1200x825, grayscale)
-- ✅ Inkplate NewBoard (WIDTHxHEIGHT, color/grayscale)
+- ✅ Inkplate 6 Flick (1024x758, grayscale)
 ```
 
 Add build and upload examples for your board:

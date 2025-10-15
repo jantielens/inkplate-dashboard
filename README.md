@@ -7,6 +7,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 - ✅ **Inkplate 2** (212x104, 1-bit black & white) - _No physical button_
 - ✅ **Inkplate 5 V2** (1280x720, 3-bit grayscale)
 - ✅ **Inkplate 10** (1200x825, 1-bit black & white)
+- ✅ **Inkplate 6 Flick** (1024x758, 3-bit grayscale)
 
 ## Features
 
@@ -31,10 +32,11 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 .\setup.ps1
 
 # Build firmware for your device
-.\build.ps1 inkplate2        # or inkplate5v2, inkplate10
+\.\build.ps1 inkplate2        # or inkplate5v2, inkplate10, inkplate6flick
 
 # Upload to device (replace COM7 with your port)
-.\upload.ps1 -board inkplate2 -port COM7
+\.\upload.ps1 -board inkplate2 -port COM7
+\.\upload.ps1 -board inkplate6flick -port COM7
 ```
 
 ### 2. Two-Step Onboarding Flow

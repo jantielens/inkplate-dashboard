@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-15
+
+### Added
+- Inkplate 6 Flick board support with dedicated configuration
+
 ## [0.2.0] - 2025-10-15
 
 ### Added
