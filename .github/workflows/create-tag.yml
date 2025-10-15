@@ -20,7 +20,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+          fetch-tags: true
+
+      - name: Ensure main branch is up to date
+        run: |
+          git fetch origin main --prune --tags
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          MAIN_COMMIT=$(git rev-parse origin/main)
+
+          if [ "$CURRENT_COMMIT" != "$MAIN_COMMIT" ]; then
+            echo "❌ Error: Checked out commit $CURRENT_COMMIT does not match origin/main $MAIN_COMMIT"
+            echo "The create-tag workflow must run from the latest main branch."
+            exit 1
+          fi
+
+          echo "✅ Checked out commit matches origin/main: $CURRENT_COMMIT"
       
       - name: Validate version format
         id: validate
