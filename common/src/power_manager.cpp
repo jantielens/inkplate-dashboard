@@ -134,6 +134,17 @@ uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
     return microseconds;
 }
 
+uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
+    // Convert minutes to microseconds
+    // 1 minute = 60 seconds = 60,000,000 microseconds
+    uint64_t microseconds = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
+    
+    Serial.printf("Sleep duration: %.2f minutes = %llu microseconds\n", 
+                  refreshRateMinutes, microseconds);
+    
+    return microseconds;
+}
+
 void PowerManager::prepareForSleep() {
     Serial.println("\n=================================");
     Serial.println("Preparing for deep sleep...");
@@ -158,6 +169,27 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
     esp_sleep_enable_timer_wakeup(sleepDuration);
     
     Serial.printf("\nEntering deep sleep for %u minutes...\n", refreshRateMinutes);
+    Serial.println("Wake sources: TIMER + BUTTON");
+    Serial.println("=================================\n");
+    
+    // Flush serial before sleeping
+    Serial.flush();
+    
+    // Enter deep sleep
+    // The device will wake up either from:
+    // 1. Timer (after refreshRateMinutes)
+    // 2. Button press (ext0 wake source configured in begin())
+    esp_deep_sleep_start();
+}
+
+void PowerManager::enterDeepSleep(float refreshRateMinutes) {
+    // Calculate sleep duration
+    uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+    
+    // Configure timer wake source
+    esp_sleep_enable_timer_wakeup(sleepDuration);
+    
+    Serial.printf("\nEntering deep sleep for %.2f minutes...\n", refreshRateMinutes);
     Serial.println("Wake sources: TIMER + BUTTON");
     Serial.println("=================================\n");
     

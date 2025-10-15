@@ -106,7 +106,9 @@ jobs:
             const mainVersion = '${{ steps.versions.outputs.main_version }}';
             const prVersion = '${{ steps.versions.outputs.pr_version }}';
             
-            const comment = `### ⚠️ Version Not Incremented
+            const commentMarker = '<!-- version-check-bot -->';
+            const comment = `${commentMarker}
+            ### ⚠️ Version Not Incremented
             
             The firmware version has not been updated in this PR.
             
@@ -132,7 +134,7 @@ jobs:
             
             const botComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
-              comment.body.includes('Version Not Incremented')
+              comment.body.includes(commentMarker)
             );
             
             if (botComment) {
@@ -161,7 +163,8 @@ jobs:
             const changelogExists = '${{ steps.changelog.outputs.exists }}' === 'true';
             const changelogHasEntry = '${{ steps.changelog.outputs.has_entry }}' === 'true';
             
-            let comment = `### ✅ Version Incremented\n\n`;
+            const commentMarker = '<!-- version-check-bot -->';
+            let comment = `${commentMarker}\n### ✅ Version Incremented\n\n`;
             comment += `The firmware version has been updated in this PR.\n\n`;
             comment += `**Main branch version:** \`${mainVersion}\`\n`;
             comment += `**New version:** \`${prVersion}\`\n\n`;
@@ -200,7 +203,7 @@ jobs:
             
             const botComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
-              (comment.body.includes('Version Incremented') || comment.body.includes('Version Not Incremented'))
+              comment.body.includes(commentMarker)
             );
             
             if (botComment) {
@@ -227,7 +230,9 @@ jobs:
             const mainVersion = '${{ steps.versions.outputs.main_version }}';
             const prVersion = '${{ steps.versions.outputs.pr_version }}';
             
-            const comment = `### ❌ Version Decreased
+            const commentMarker = '<!-- version-check-bot -->';
+            const comment = `${commentMarker}
+            ### ❌ Version Decreased
             
             **Warning:** The version number has been decreased in this PR, which is unusual.
             
@@ -247,7 +252,7 @@ jobs:
             
             const botComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
-              (comment.body.includes('Version Decreased') || comment.body.includes('Version Not Incremented') || comment.body.includes('Version Incremented'))
+              comment.body.includes(commentMarker)
             );
             
             if (botComment) {

@@ -30,6 +30,9 @@ bool normalUpdateActive = false;  // Normal update triggered by short button pre
 unsigned long configModeStartTime = 0;
 const unsigned long CONFIG_MODE_TIMEOUT_MS = 2 * 60 * 1000;  // 2 minutes
 
+// RTC memory for retry mechanism (persists across deep sleep)
+RTC_DATA_ATTR uint8_t imageRetryCount = 0;
+
 // Forward declarations
 void enterAPMode();
 void enterConfigMode();
@@ -170,7 +173,7 @@ void enterConfigMode() {
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(5);  // Default 5 minutes
+        powerManager.enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return;
     }
     
@@ -243,7 +246,7 @@ void enterConfigMode() {
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         }
     } else {
         // WiFi connection failed - fall back to AP mode
@@ -294,7 +297,7 @@ void enterConfigMode() {
                 displayManager.refresh();
                 delay(3000);
                 powerManager.prepareForSleep();
-                powerManager.enterDeepSleep(config.refreshRate);
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
         } else {
             Serial.println("Failed to start AP mode fallback!");
@@ -306,7 +309,7 @@ void enterConfigMode() {
             displayManager.refresh();
             delay(3000);
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         }
     }
 }
@@ -325,7 +328,7 @@ void performNormalUpdate() {
         displayManager.refresh();
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(5);  // Default 5 minutes
+        powerManager.enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return;
     }
     
@@ -394,6 +397,9 @@ void performNormalUpdate() {
             Serial.println("Image displayed successfully!");
             displayManager.refresh();
             
+            // Reset retry count on success
+            imageRetryCount = 0;
+            
             // Calculate loop time and publish to MQTT
             loopDuration = millis() - loopStartTime;
             loopTimeSeconds = loopDuration / 1000.0;
@@ -411,43 +417,58 @@ void performNormalUpdate() {
             Serial.println("\nImage display successful - preparing for sleep");
             delay(1000);  // Give user time to see the image
             powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
+            powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         } else {
             Serial.println("Failed to download/display image!");
+            Serial.println("Retry count: " + String(imageRetryCount));
             
-            displayManager.clear();
-            displayManager.showMessage("Image Error!", 10, 20, 5);
-            displayManager.showMessage("Failed to download", 10, 100, 3);
-            displayManager.showMessage(config.imageURL.c_str(), 10, 140, 2);
-            displayManager.showMessage("", 10, 180, 2);
-            displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), 10, 210, 2);
-            displayManager.showMessage("", 10, 250, 2);
-            displayManager.showMessage("Will retry on next wake", 10, 280, 2);
-            displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), 10, 310, 2);
-            displayManager.showMessage("", 10, 350, 2);
-            displayManager.showMessage("If you want to update the", 10, 380, 2);
-            displayManager.showMessage("Image URL, hold the button", 10, 410, 2);
-            displayManager.showMessage("to enter config mode.", 10, 440, 2);
-            displayManager.refresh();
-            
-            // Calculate loop time and publish to MQTT
-            loopDuration = millis() - loopStartTime;
-            loopTimeSeconds = loopDuration / 1000.0;
-            Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
-            
-            // Publish loop time to MQTT (if configured)
-            if (mqttManager.isConfigured()) {
-                if (mqttManager.connect()) {
-                    mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
-                    mqttManager.publishLastLog(deviceId, "Image download failed: " + String(imageManager.getLastError()), "error");
-                    mqttManager.disconnect();
+            // Check if we should retry silently
+            if (imageRetryCount < 2) {
+                // Increment retry count and sleep for 20 seconds
+                imageRetryCount++;
+                Serial.println("Will retry in 20 seconds (attempt " + String(imageRetryCount + 1) + " of 3)");
+                
+                powerManager.prepareForSleep();
+                powerManager.enterDeepSleep((float)(20.0 / 60.0));  // 20 seconds as fraction of minutes
+            } else {
+                // Max retries reached - show error and reset count
+                Serial.println("Max retries reached - showing error message");
+                imageRetryCount = 0;
+                
+                displayManager.clear();
+                displayManager.showMessage("Image Error!", 10, 20, 5);
+                displayManager.showMessage("Failed to download", 10, 100, 3);
+                displayManager.showMessage(config.imageURL.c_str(), 10, 140, 2);
+                displayManager.showMessage("", 10, 180, 2);
+                displayManager.showMessage(("Error: " + String(imageManager.getLastError())).c_str(), 10, 210, 2);
+                displayManager.showMessage("", 10, 250, 2);
+                displayManager.showMessage("Will retry on next wake", 10, 280, 2);
+                displayManager.showMessage(("(" + String(config.refreshRate) + " minutes)").c_str(), 10, 310, 2);
+                displayManager.showMessage("", 10, 350, 2);
+                displayManager.showMessage("If you want to update the", 10, 380, 2);
+                displayManager.showMessage("Image URL, hold the button", 10, 410, 2);
+                displayManager.showMessage("to enter config mode.", 10, 440, 2);
+                displayManager.refresh();
+                
+                // Calculate loop time and publish to MQTT
+                loopDuration = millis() - loopStartTime;
+                loopTimeSeconds = loopDuration / 1000.0;
+                Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
+                
+                // Publish loop time to MQTT (if configured)
+                if (mqttManager.isConfigured()) {
+                    if (mqttManager.connect()) {
+                        mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
+                        mqttManager.publishLastLog(deviceId, "Image download failed: " + String(imageManager.getLastError()), "error");
+                        mqttManager.disconnect();
+                    }
                 }
+                
+                // Error - still go to sleep and retry later
+                delay(3000);
+                powerManager.prepareForSleep();
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
-            
-            // Error - still go to sleep and retry later
-            delay(3000);
-            powerManager.prepareForSleep();
-            powerManager.enterDeepSleep(config.refreshRate);
         }
     } else {
         Serial.println("WiFi connection failed!");
@@ -479,7 +500,7 @@ void performNormalUpdate() {
         // WiFi error - go to sleep and retry later
         delay(3000);
         powerManager.prepareForSleep();
-        powerManager.enterDeepSleep(config.refreshRate);
+        powerManager.enterDeepSleep((uint16_t)config.refreshRate);
     }
 }
 
