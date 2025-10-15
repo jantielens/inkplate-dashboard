@@ -4,9 +4,11 @@ DisplayManager::DisplayManager(Inkplate* display) {
     _display = display;
 }
 
-void DisplayManager::init() {
+void DisplayManager::init(bool clearOnInit) {
     _display->begin();
-    _display->clearDisplay();
+    if (clearOnInit) {
+        _display->clearDisplay();
+    }
 }
 
 void DisplayManager::clear() {

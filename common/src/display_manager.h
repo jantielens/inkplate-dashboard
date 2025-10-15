@@ -7,7 +7,7 @@ class DisplayManager {
 public:
     DisplayManager(Inkplate* display);
     
-    void init();
+    void init(bool clearOnInit = true);
     void clear();
     void refresh();
     void showMessage(const char* message, int x, int y, int textSize);
