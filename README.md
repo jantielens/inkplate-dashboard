@@ -250,6 +250,40 @@ See [BUILD_SYSTEM.md](BUILD_SYSTEM.md) for complete architecture explanation.
 
 All installed automatically by `setup.ps1`.
 
+### Local build prerequisites (Linux/macOS)
+
+When running `./build.sh` outside of the PowerShell setup flow, make sure these manual steps are completed first:
+
+1. Install Arduino CLI and put it on your `PATH`:
+  ```bash
+  cd /tmp
+  curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh -o install-arduino-cli.sh
+  sudo BINDIR=/usr/local/bin sh install-arduino-cli.sh
+  ```
+2. Register the Inkplate board package index:
+  ```bash
+  arduino-cli core update-index \
+    --additional-urls https://raw.githubusercontent.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/master/package_Dasduino_Boards_index.json
+  ```
+3. Install the Inkplate ESP32 core (includes toolchain and flashing utilities):
+  ```bash
+  arduino-cli core install Inkplate_Boards:esp32 \
+    --additional-urls https://raw.githubusercontent.com/SolderedElectronics/Dasduino-Board-Definitions-for-Arduino-IDE/master/package_Dasduino_Boards_index.json
+  ```
+4. Install required Arduino libraries:
+  ```bash
+  arduino-cli lib install "InkplateLibrary"
+  arduino-cli lib install "PubSubClient"
+  ```
+5. Install the Python serial dependency used by `esptool.py` during compilation:
+  ```bash
+  python3 -m pip install --user pyserial
+  ```
+
+After these prerequisites are in place you can call `./build.sh` and the script will compile both Inkplate targets.
+
+> ℹ️ GitHub Codespaces automatically runs these steps via `.devcontainer/postCreate.sh`, so builds work out of the box when using the provided dev container.
+
 ## Documentation
 
 **📚 [Documentation Index](DOCS_INDEX.md) - Complete guide to all documentation**

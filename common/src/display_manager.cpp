@@ -1,19 +1,25 @@
 #include "display_manager.h"
+#include <src/version.h>
 
 DisplayManager::DisplayManager(Inkplate* display) {
     _display = display;
 }
 
-void DisplayManager::init() {
+void DisplayManager::init(bool clearOnInit) {
     _display->begin();
-    _display->clearDisplay();
+    if (clearOnInit) {
+        _display->clearDisplay();
+    }
 }
 
 void DisplayManager::clear() {
     _display->clearDisplay();
 }
 
-void DisplayManager::refresh() {
+void DisplayManager::refresh(bool includeVersion) {
+    if (includeVersion) {
+        drawVersionLabel();
+    }
     _display->display();
 }
 
@@ -44,4 +50,29 @@ int DisplayManager::getWidth() {
 
 int DisplayManager::getHeight() {
     return _display->height();
+}
+
+void DisplayManager::drawVersionLabel() {
+    static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
+    _display->setTextSize(2);
+    _display->setTextColor(BLACK);
+
+    int16_t x1 = 0;
+    int16_t y1 = 0;
+    uint16_t w = 0;
+    uint16_t h = 0;
+    _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
+
+    int margin = 8;
+    int x = getWidth() - w - margin;
+    int y = getHeight() - h - margin;
+    if (x < margin) {
+        x = margin;
+    }
+    if (y < margin) {
+        y = margin;
+    }
+
+    _display->setCursor(x, y);
+    _display->print(versionLabel);
 }

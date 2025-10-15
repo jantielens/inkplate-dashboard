@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-10-15
+
+### Added
+- Added Debug option in the configuration portal to enable/disable debug messages on the screen (disabled by default)
+- On-screen firmware version label rendered during display refreshes
+- Dev container setup for consistent local development environment
+- Display cycle documentation describing normal operation flow
+
+### Changed
+- Version label now shows the full "Firmware" prefix for clarity
+
 ## [0.1.0] - 2025-10-14
 
 ### Added
@@ -48,7 +59,8 @@
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
 
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/jantielens/inkplate-dashboard/releases/tag/v0.0.1
 

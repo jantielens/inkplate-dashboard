@@ -71,6 +71,7 @@ void ConfigPortal::handleSubmit() {
     String mqttBroker = _server->arg("mqttbroker");
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
+    bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     
     // Validate input
     if (ssid.length() == 0) {
@@ -105,6 +106,7 @@ void ConfigPortal::handleSubmit() {
     config.refreshRate = refreshRate;
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
+    config.debugMode = debugMode;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -425,6 +427,18 @@ String ConfigPortal::generateConfigPage() {
             html += "<input type='number' id='refresh' name='refresh' min='1' value='5' placeholder='5'>";
         }
         html += "<div class='help-text'>How often to update the image (default: 5 minutes)</div>";
+        html += "</div>";
+
+        // Debug mode toggle
+        html += "<div class='form-group'>";
+        html += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
+        html += "<input type='checkbox' id='debugmode' name='debugmode'";
+        if (hasConfig && currentConfig.debugMode) {
+            html += " checked";
+        }
+        html += "> Enable on-screen debug messages";
+        html += "</label>";
+        html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         html += "</div>";
         
         // MQTT Configuration - optional section in CONFIG_MODE

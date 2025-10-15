@@ -14,6 +14,7 @@
 #define PREF_MQTT_BROKER "mqtt_broker"
 #define PREF_MQTT_USER "mqtt_user"
 #define PREF_MQTT_PASS "mqtt_pass"
+#define PREF_DEBUG_MODE "debug_mode"
 
 // Default values
 #define DEFAULT_REFRESH_RATE 5  // 5 minutes
@@ -28,6 +29,7 @@ struct DashboardConfig {
     String mqttUsername;
     String mqttPassword;
     bool isConfigured;
+    bool debugMode;
     
     // Constructor with defaults
     DashboardConfig() : 
@@ -38,7 +40,8 @@ struct DashboardConfig {
         mqttBroker(""),
         mqttUsername(""),
         mqttPassword(""),
-        isConfigured(false) {}
+        isConfigured(false),
+        debugMode(false) {}
 };
 
 class ConfigManager {
@@ -75,12 +78,14 @@ public:
     String getMQTTBroker();
     String getMQTTUsername();
     String getMQTTPassword();
+    bool getDebugMode();
     
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
     void setImageURL(const String& url);
     void setRefreshRate(int minutes);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
+    void setDebugMode(bool enabled);
     
     // Mark device as configured
     void markAsConfigured();

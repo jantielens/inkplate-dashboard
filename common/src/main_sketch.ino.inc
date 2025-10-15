@@ -48,22 +48,30 @@ void setup() {
     // Initialize power manager first to detect wake reason
     powerManager.begin(WAKE_BUTTON_PIN);
     WakeupReason wakeReason = powerManager.getWakeupReason();
+
+    // Initialize configuration early to determine debug behavior
+    bool configInitialized = configManager.begin();
+    bool debugModeEnabled = false;
+    if (configInitialized && configManager.isConfigured()) {
+        debugModeEnabled = configManager.getDebugMode();
+    }
+    bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled;
     
     // Initialize display
-    displayManager.init();
-    displayManager.clear();
+    displayManager.init(shouldShowSplash);
     
-    // Show board information
-    displayManager.showMessage("Dashboard", 10, 20, 8);
-    displayManager.showMessage(BOARD_NAME, 10, 100, 4);
-    
-    // Show screen dimensions
-    String dimensions = String(SCREEN_WIDTH) + "x" + String(SCREEN_HEIGHT);
-    displayManager.showMessage(dimensions.c_str(), 10, 160, 3);
-    
-    // Initialize configuration manager
-    if (!configManager.begin()) {
+    if (shouldShowSplash) {
+        displayManager.showMessage("Dashboard", 10, 20, 8);
+        displayManager.showMessage(BOARD_NAME, 10, 100, 4);
+        String dimensions = String(SCREEN_WIDTH) + "x" + String(SCREEN_HEIGHT);
+        displayManager.showMessage(dimensions.c_str(), 10, 160, 3);
+    }
+
+    if (!configInitialized) {
         Serial.println("Failed to initialize ConfigManager!");
+        if (!shouldShowSplash) {
+            displayManager.clear();
+        }
         displayManager.showMessage("ERROR: Config Init Failed", 10, 240, 2);
         displayManager.refresh();
         return;
@@ -332,11 +340,14 @@ void performNormalUpdate() {
         return;
     }
     
-    displayManager.showMessage("Status: Configured", 10, 240, 2);
-    displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), 10, 270, 2);
-    displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), 10, 300, 2);
-    displayManager.showMessage("Connecting to WiFi...", 10, 330, 2);
-    displayManager.refresh();
+    const bool showDebug = config.debugMode;
+    if (showDebug) {
+        displayManager.showMessage("Status: Configured", 10, 240, 2);
+        displayManager.showMessage(("SSID: " + config.wifiSSID).c_str(), 10, 270, 2);
+        displayManager.showMessage(("Refresh: " + String(config.refreshRate) + " min").c_str(), 10, 300, 2);
+        displayManager.showMessage("Connecting to WiFi...", 10, 330, 2);
+        displayManager.refresh();
+    }
     
     // Generate device ID and name for MQTT (needed for both success and error paths)
     String deviceId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
@@ -385,17 +396,19 @@ void performNormalUpdate() {
         // Download and display image
         Serial.println("\nDownloading image from: " + config.imageURL);
         
-        displayManager.clear();
-        displayManager.showMessage("Downloading...", 10, 20, 4);
-        displayManager.showMessage(config.imageURL.c_str(), 10, 80, 2);
-        if (mqttSuccess) {
-            displayManager.showMessage("MQTT: Connected", 10, 120, 2);
+        if (showDebug) {
+            displayManager.clear();
+            displayManager.showMessage("Downloading...", 10, 20, 4);
+            displayManager.showMessage(config.imageURL.c_str(), 10, 80, 2);
+            if (mqttSuccess) {
+                displayManager.showMessage("MQTT: Connected", 10, 120, 2);
+            }
+            displayManager.refresh();
         }
-        displayManager.refresh();
         
         if (imageManager.downloadAndDisplay(config.imageURL.c_str())) {
             Serial.println("Image displayed successfully!");
-            displayManager.refresh();
+            displayManager.refresh(false);
             
             // Reset retry count on success
             imageRetryCount = 0;

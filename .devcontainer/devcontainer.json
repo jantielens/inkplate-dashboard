@@ -1,0 +1,12 @@
+{
+  "name": "Inkplate Dashboard",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vsciot-vscode.vscode-arduino"
+      ]
+    }
+  }
+}

@@ -70,6 +70,7 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.mqttBroker = _preferences.getString(PREF_MQTT_BROKER, "");
     config.mqttUsername = _preferences.getString(PREF_MQTT_USER, "");
     config.mqttPassword = _preferences.getString(PREF_MQTT_PASS, "");
+    config.debugMode = _preferences.getBool(PREF_DEBUG_MODE, false);
     
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
@@ -120,6 +121,7 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putString(PREF_MQTT_USER, config.mqttUsername);
     _preferences.putString(PREF_MQTT_PASS, config.mqttPassword);
     _preferences.putBool(PREF_CONFIGURED, true);
+    _preferences.putBool(PREF_DEBUG_MODE, config.debugMode);
     
     Serial.println("Configuration saved successfully");
     
@@ -185,6 +187,13 @@ String ConfigManager::getMQTTPassword() {
     return _preferences.getString(PREF_MQTT_PASS, "");
 }
 
+bool ConfigManager::getDebugMode() {
+    if (!_initialized && !begin()) {
+        return false;
+    }
+    return _preferences.getBool(PREF_DEBUG_MODE, false);
+}
+
 void ConfigManager::setWiFiCredentials(const String& ssid, const String& password) {
     if (!_initialized && !begin()) {
         Serial.println("ConfigManager not initialized");
@@ -231,6 +240,16 @@ void ConfigManager::setMQTTConfig(const String& broker, const String& username, 
     _preferences.putString(PREF_MQTT_USER, username);
     _preferences.putString(PREF_MQTT_PASS, password);
     Serial.println("MQTT configuration updated");
+}
+
+void ConfigManager::setDebugMode(bool enabled) {
+    if (!_initialized && !begin()) {
+        Serial.println("ConfigManager not initialized");
+        return;
+    }
+
+    _preferences.putBool(PREF_DEBUG_MODE, enabled);
+    Serial.println("Debug mode updated: " + String(enabled ? "ON" : "OFF"));
 }
 
 void ConfigManager::markAsConfigured() {
