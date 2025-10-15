@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       board:
-  description: 'Board to build (inkplate2, inkplate5v2, inkplate10, inkplate6flick, or all)'
+        description: 'Board to build (inkplate2, inkplate5v2, inkplate10, inkplate6flick, or all)'
         required: false
         default: 'all'
         type: choice
