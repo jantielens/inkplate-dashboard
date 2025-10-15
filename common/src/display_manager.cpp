@@ -1,3 +1,4 @@
+#include "board_config.h"
 #include "display_manager.h"
 #include <src/version.h>
 
