@@ -54,7 +54,7 @@ int DisplayManager::getHeight() {
 
 void DisplayManager::drawVersionLabel() {
     static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
-    _display->setTextSize(2);
+    _display->setTextSize(scaleFont(2));  // Scale the version label font
     _display->setTextColor(BLACK);
 
     int16_t x1 = 0;
@@ -63,7 +63,7 @@ void DisplayManager::drawVersionLabel() {
     uint16_t h = 0;
     _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
 
-    int margin = 8;
+    int margin = scaleY(8);  // Scale the margin too
     int x = getWidth() - w - margin;
     int y = getHeight() - h - margin;
     if (x < margin) {
@@ -75,4 +75,22 @@ void DisplayManager::drawVersionLabel() {
 
     _display->setCursor(x, y);
     _display->print(versionLabel);
+}
+
+// Board-specific scaling helpers
+int DisplayManager::scaleFont(int baseSize) {
+    #ifdef FONT_SCALE_FACTOR
+    int scaled = (int)(baseSize * FONT_SCALE_FACTOR + 0.5);  // Round to nearest
+    return scaled < 1 ? 1 : scaled;  // Minimum font size is 1
+    #else
+    return baseSize;  // No scaling if not defined
+    #endif
+}
+
+int DisplayManager::scaleY(int baseY) {
+    #ifdef LAYOUT_SCALE_FACTOR
+    return (int)(baseY * LAYOUT_SCALE_FACTOR + 0.5);  // Round to nearest
+    #else
+    return baseY;  // No scaling if not defined
+    #endif
 }

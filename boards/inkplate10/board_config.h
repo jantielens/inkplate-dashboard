@@ -18,6 +18,7 @@
 #define HAS_TOUCHSCREEN true
 #define HAS_FRONTLIGHT false
 #define HAS_BATTERY true
+#define HAS_BUTTON true  // Inkplate 10 has a wake button
 
 // Board-specific pins
 // Inkplate 10 specific pins
@@ -29,5 +30,13 @@
 
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 15000  // Larger display, longer timeout
+
+// Font and layout scaling (1.0 = no scaling for this board)
+#define FONT_SCALE_FACTOR 1.0
+#define LAYOUT_SCALE_FACTOR 1.0
+
+// Margins
+#define LEFT_MARGIN 10
+#define INDENT_MARGIN 30
 
 #endif // BOARD_CONFIG_H

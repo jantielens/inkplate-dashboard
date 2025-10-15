@@ -17,6 +17,7 @@
 #define HAS_TOUCHSCREEN false
 #define HAS_FRONTLIGHT false
 #define HAS_BATTERY true
+#define HAS_BUTTON true  // Inkplate 5 V2 has a wake button
 
 // Board-specific pins
 #define WAKE_BUTTON_PIN 36  // GPIO36 - Wake button for config mode
@@ -27,5 +28,13 @@
 
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 10000
+
+// Font and layout scaling (1.0 = no scaling for this board)
+#define FONT_SCALE_FACTOR 1.0
+#define LAYOUT_SCALE_FACTOR 1.0
+
+// Margins
+#define LEFT_MARGIN 10
+#define INDENT_MARGIN 30
 
 #endif // BOARD_CONFIG_H

@@ -9,6 +9,7 @@ enum WakeupReason {
     WAKEUP_TIMER,
     WAKEUP_BUTTON,
     WAKEUP_FIRST_BOOT,
+    WAKEUP_RESET_BUTTON,    // Hardware reset button pressed
     WAKEUP_UNKNOWN
 };
 
@@ -58,6 +59,11 @@ public:
     // Returns battery voltage (0.0 if reading fails)
     // inkplate: pointer to Inkplate display object (uses Inkplate's readBattery method)
     float readBatteryVoltage(void* inkplate = nullptr);
+    
+    // Mark that device is now running (for reset button detection)
+    // This sets a flag in NVS that persists across resets
+    // Should be called once when device enters normal operation
+    void markDeviceRunning();
     
 private:
     uint8_t _buttonPin;
