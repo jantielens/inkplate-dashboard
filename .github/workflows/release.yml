@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        board: [inkplate5v2, inkplate10]
+        board: [inkplate2, inkplate5v2, inkplate10]
     
     steps:
       - name: Checkout repository
