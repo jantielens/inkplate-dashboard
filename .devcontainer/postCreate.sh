@@ -38,7 +38,7 @@ fi
 
 ensure_library() {
     local library="$1"
-    if arduino-cli lib list --format json | python3 - "$library" <<'PY' >/dev/null 2>&1; then
+    if arduino-cli lib list --format json | python3 - "$library" <<'PY' >/dev/null 2>&1
 import json
 import sys
 
