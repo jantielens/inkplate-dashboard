@@ -1,0 +1,712 @@
+# Inkplate Dashboard - User Guide
+
+A complete guide for using your Inkplate Dashboard to display images on your e-ink display.
+
+---
+
+## Table of Contents
+
+1. [Getting Started](#getting-started)
+2. [Initial Setup & Configuration](#initial-setup--configuration)
+3. [Configuration Options](#configuration-options)
+4. [Normal Operation](#normal-operation)
+5. [Manual Updates](#manual-updates)
+6. [Entering Different Modes](#entering-different-modes)
+7. [Troubleshooting](#troubleshooting)
+
+---
+
+## Getting Started
+
+### What You Need
+
+- **Inkplate Device** (Inkplate 2, Inkplate 5 V2, Inkplate 10, or Inkplate 6 Flick)
+- **USB Cable** for initial programming
+- **WiFi Network** (2.4GHz - 5GHz is not supported)
+- **Computer** with USB port for flashing firmware
+- **Image URL** - A web URL hosting your PNG image (can be on your local network or public internet)
+
+### Downloading the Firmware
+
+1. **Visit the releases page**: [https://github.com/jantielens/inkplate-dashboard/releases](https://github.com/jantielens/inkplate-dashboard/releases)
+
+2. **Download the firmware** for your device:
+   - `inkplate2-vX.X.X.bin` - For Inkplate 2
+   - `inkplate5v2-vX.X.X.bin` - For Inkplate 5 V2
+   - `inkplate10-vX.X.X.bin` - For Inkplate 10
+   - `inkplate6flick-vX.X.X.bin` - For Inkplate 6 Flick
+
+3. **Choose the latest version** (highest version number) unless you have a specific reason to use an older version.
+
+### Flashing the Firmware
+
+#### Windows
+
+1. **Download esptool**: Get the latest release from [https://github.com/espressif/esptool/releases](https://github.com/espressif/esptool/releases)
+   - Download `esptool-vX.X.X-win64.zip`
+   - Extract to a folder
+
+2. **Connect your Inkplate** via USB cable
+
+3. **Find your COM port**:
+   - Open Device Manager (Windows key + X, then select Device Manager)
+   - Expand "Ports (COM & LPT)"
+   - Look for "USB-SERIAL CH340" or similar - note the COM port (e.g., COM7)
+
+4. **Flash the firmware**:
+   ```cmd
+   esptool.exe --port COM7 --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
+   ```
+   Replace `COM7` with your actual port and use the correct filename for your device.
+
+5. **Wait for completion** - you'll see progress bars and "Hash of data verified" when done.
+
+6. **Press the reset button** on your Inkplate or unplug/replug the USB cable.
+
+#### macOS / Linux
+
+1. **Install esptool**:
+   ```bash
+   pip install esptool
+   ```
+
+2. **Connect your Inkplate** via USB cable
+
+3. **Find your port**:
+   ```bash
+   # macOS
+   ls /dev/cu.usb*
+   
+   # Linux
+   ls /dev/ttyUSB*
+   ```
+
+4. **Flash the firmware**:
+   ```bash
+   # macOS
+   esptool.py --port /dev/cu.usbserial-XXXX --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
+   
+   # Linux
+   esptool.py --port /dev/ttyUSB0 --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
+   ```
+
+5. **Press the reset button** on your Inkplate or unplug/replug the USB cable.
+
+---
+
+## Initial Setup & Configuration
+
+The setup process is divided into two steps to make it easier to configure your device.
+
+### Step 1: WiFi Setup (Boot Mode)
+
+When you first power on your device (or after a factory reset), it will create its own WiFi network.
+
+**What You'll See on the Display:**
+
+```
+Setup - Step 1
+Connect WiFi
+
+1. Connect to WiFi:
+   inkplate-dashb-XXXXXX
+2. Open browser to:
+   http://192.168.4.1
+3. Enter WiFi settings
+```
+
+**How to Configure:**
+
+1. **Look at your device's screen** - it will show the WiFi network name (something like `inkplate-dashb-A1B2C3`)
+
+2. **Connect your phone or computer** to this WiFi network:
+   - Network name: As shown on the screen
+   - Password: None (open network)
+
+3. **Open a web browser** and go to: `http://192.168.4.1`
+   - **Note**: Use `http://` not `https://`
+   - On phones, you may need to disable mobile data
+
+4. **Enter your WiFi credentials**:
+   - **WiFi SSID**: Your home/office WiFi network name
+   - **WiFi Password**: Your WiFi password (leave blank if no password)
+   
+5. **Click "Save WiFi Settings"**
+
+6. **Wait for the device to restart** - it will now connect to your WiFi network.
+
+### Step 2: Dashboard Configuration (Auto Config Mode)
+
+After the device connects to your WiFi, it will automatically enter configuration mode because you haven't set up the image URL yet.
+
+**What You'll See on the Display:**
+
+```
+Setup - Step 2
+Configure Dashboard
+
+Open browser to:
+  http://192.168.1.XXX
+```
+
+**How to Configure:**
+
+1. **Connect to your regular WiFi network** (the same one you configured in Step 1)
+
+2. **Look at the device's screen** - it will show an IP address (e.g., `http://192.168.1.123`)
+
+3. **Open a web browser** and go to the IP address shown on the screen
+
+4. **Complete your dashboard settings**:
+   - **Image URL**: Full URL to your PNG image (e.g., `http://example.com/dashboard.png`)
+   - **Refresh Rate**: How often to update (in minutes, default is 5)
+   - **MQTT Settings** (optional): For Home Assistant integration
+   - **Debug Mode** (optional): Shows status messages on the display
+
+5. **Click "Save Configuration"**
+
+6. **Device will restart** and begin normal operation - downloading and displaying your image!
+
+---
+
+## Configuration Options
+
+### Required Settings
+
+#### WiFi SSID
+- **What it is**: Your WiFi network name
+- **Required**: Yes (in Step 1)
+- **Case sensitive**: Yes
+- **Example**: `MyHomeWiFi`
+
+#### WiFi Password
+- **What it is**: Your WiFi password
+- **Required**: Only if your network requires a password
+- **Case sensitive**: Yes
+- **Example**: `MySecurePassword123`
+
+#### Image URL
+- **What it is**: Full web address to your PNG image
+- **Required**: Yes (in Step 2)
+- **Format**: Must start with `http://` or `https://`
+- **Can be local**: Works with local web servers (e.g., `http://192.168.1.50/dashboard.png`) as long as it's on the same network
+- **Can be public**: Works with public URLs (e.g., `https://example.com/images/dashboard.png`)
+- **Example**: `http://192.168.1.100:8123/local/dashboard.png` (Home Assistant) or `https://example.com/dashboard.png`
+
+**Image Requirements:**
+- **Format**: PNG only (JPG/GIF not supported)
+- **Resolution**: Must match your screen exactly:
+  - Inkplate 2: 212×104 pixels
+  - Inkplate 5 V2: 1280×720 pixels
+  - Inkplate 10: 1200×825 pixels
+  - Inkplate 6 Flick: 1024×758 pixels
+- **Accessibility**: Must be reachable from the device's network - can be a local server on your network or a public URL on the internet
+
+#### Refresh Rate
+- **What it is**: How often the device updates the image (in minutes)
+- **Required**: Yes (in Step 2)
+- **Default**: 5 minutes
+- **Minimum**: 1 minute
+- **Example**: 15 (updates every 15 minutes)
+
+### Optional Settings
+
+#### Debug Mode
+- **What it is**: Shows status messages on the display during updates
+- **Default**: Disabled
+- **When to enable**: If you want to see WiFi connection status, download progress, etc.
+- **When to disable**: For a cleaner display that only shows your image
+
+#### MQTT Broker (Home Assistant Integration)
+- **What it is**: Address of your MQTT broker for Home Assistant
+- **Format**: `mqtt://hostname:port` or `mqtt://IP:port`
+- **Example**: `mqtt://192.168.1.50:1883`
+- **What it does**: Enables battery voltage reporting to Home Assistant
+
+#### MQTT Username
+- **What it is**: Username for MQTT authentication
+- **Required**: Only if your MQTT broker requires authentication
+- **Example**: `homeassistant`
+
+#### MQTT Password
+- **What it is**: Password for MQTT authentication
+- **Required**: Only if your MQTT broker requires authentication
+- **Example**: `MyMQTTPassword`
+
+---
+
+## Normal Operation
+
+Once your device is fully configured, it operates automatically:
+
+### Normal Cycle Behavior
+
+Your device follows a simple cycle that repeats automatically. When the device wakes up from deep sleep based on your configured refresh rate, you may notice the status LED briefly flash if your board has one. The first thing the device does is connect to your WiFi network, which usually takes between 3 and 5 seconds depending on signal strength.
+
+Once connected, the device downloads the PNG image from your configured URL. The download time varies based on your image size and network speed, but typically takes between 2 and 10 seconds for a dashboard image. After the download completes, the device clears the e-ink screen and renders the downloaded image. The e-ink refresh process takes a few seconds - this is normal behavior for e-ink displays as they physically move particles to create the image.
+
+If you have MQTT enabled for Home Assistant integration, the device will publish status information including battery voltage, WiFi signal strength, and loop time (how long the entire update took). Finally, the device enters deep sleep mode to conserve power. During deep sleep, the device consumes almost no power - just 20 microamps - which is why battery life can extend for months. The device will wake automatically after the configured refresh interval and repeat the entire cycle.
+
+### What You'll See
+
+When debug mode is disabled (which is the default setting), your display shows only your image with a clean, professional appearance and no status messages cluttering the screen. This is ideal for a polished dashboard that looks like a finished product.
+
+With debug mode enabled, you'll see brief status messages appear during the update process. First, the display shows information about your configuration including the network name, refresh rate, and connection status. Then as the download begins, you'll see the image URL and MQTT connection status if you have that configured. These messages help you understand what's happening during each update cycle, which can be useful for troubleshooting or just satisfying your curiosity about the process. After the status messages, your actual image appears on the display.
+
+### Power Consumption
+
+Your device uses different amounts of power depending on what it's doing. During active mode when WiFi is on and the device is downloading, it typically draws between 80 and 120 milliamps. When refreshing the display, power consumption drops to around 40 to 60 milliamps. The real magic happens during deep sleep, where the device uses only 0.02 milliamps (20 microamps) - barely any power at all.
+
+To give you a practical example, if you're using a 3000mAh battery with a 15-minute refresh interval, your device wakes up 96 times per day. Each wake cycle takes about 15 seconds, so the device is only active for about 24 minutes per day. The rest of the time it's in deep sleep mode. With this usage pattern, you can expect your battery to last between 2 and 4 months, though the actual duration depends on factors like WiFi signal strength and image download time.
+
+---
+
+## Manual Updates
+
+You can manually trigger an immediate update without waiting for the automatic refresh cycle.
+
+### Devices with a Wake Button (Inkplate 5 V2, 10, 6 Flick)
+
+If your device has a wake button, triggering a manual update is simple. Just press and quickly release the wake button with a short press - don't hold it down. The device wakes immediately and shows you visual feedback with a message saying "Manual Refresh" and "Button pressed - updating..." so you know your button press was registered. The update then proceeds just like a normal automatic cycle, connecting to WiFi, downloading the image, and displaying it. After showing the updated image, the device returns to sleep and resumes its normal schedule.
+
+You can find the button in different locations depending on your device. On the Inkplate 5 V2, look for a small button labeled "WAKE" on the board itself. The Inkplate 10 has a large round button prominently placed on the front panel, making it easy to press. The Inkplate 6 Flick features a button on the side of the device for convenient access.
+
+This manual refresh feature is particularly useful when you've updated the source image and want to see it immediately without waiting for the next automatic cycle. It's also great for testing your configuration or showing someone the latest version of your dashboard on demand.
+
+### Devices without a Wake Button (Inkplate 2)
+
+The Inkplate 2 doesn't have a physical wake button, which means the manual refresh feature isn't available on this device. Your display will only update according to the automatic schedule you've configured. If you need more frequent updates, you can reduce the refresh rate to as low as 1 minute in the configuration settings, though this isn't recommended if you're running on battery power as it will drain much faster. Alternatively, you can use the reset button to enter config mode, which will trigger an update when you save your settings.
+
+---
+
+## Entering Different Modes
+
+Your device can operate in three different modes. Here's how to access each one:
+
+### Boot Mode (AP Mode)
+
+**When It Happens Automatically:**
+- First time you power on the device
+- After a factory reset
+- When WiFi credentials are erased
+
+**What It's For:**
+- Initial WiFi setup
+- Configuring WiFi credentials only
+
+**Display Shows:**
+```
+Setup - Step 1
+Connect WiFi
+
+1. Connect to WiFi:
+   inkplate-dashb-XXXXXX
+2. Open browser to:
+   http://192.168.4.1
+3. Enter WiFi settings
+```
+
+**How to Access Manually:**
+- Perform a factory reset (see below)
+
+---
+
+### Config Mode
+
+**When It Happens Automatically:**
+- After WiFi is configured but image URL is missing (Step 2 of setup)
+- Immediately after saving WiFi settings in Boot Mode
+
+**What It's For:**
+- Configuring image URL and refresh rate (Step 2)
+- Changing any settings after initial setup
+- Factory reset
+- Viewing current configuration
+
+**Display Shows:**
+```
+Config Mode
+Active for 2 minutes
+
+Open browser to:
+  http://192.168.1.XXX
+```
+
+**How to Enter Manually:**
+
+#### Inkplate 5 V2 / 10 / 6 Flick (Devices with Wake Button)
+
+1. **Press and hold** the wake button
+2. **Keep holding** for at least 2.5 seconds
+3. **Release** the button
+4. **Device enters config mode** and displays the URL
+
+**Tips:**
+- Make sure you hold long enough (count to 3)
+- The button should feel like a deliberate action
+- If it doesn't work, try holding slightly longer
+
+#### Inkplate 2 (No Wake Button)
+
+1. **Wait** for the device to complete at least one sleep cycle (after initial setup)
+2. **Press the small reset button** on the board (usually near the USB port)
+3. **Device restarts** and enters config mode automatically
+
+**Important Notes:**
+- Reset button only works after the device has slept at least once
+- On first power-on, reset button will just restart the device
+- This is the **only** way to enter config mode on Inkplate 2
+
+**Config Mode Timeout:**
+- Config mode automatically exits after **2 minutes** of inactivity
+- Device will return to sleep or continue normal operation
+- To re-enter, use the button/reset method again
+
+---
+
+### Normal Operation Mode
+
+**When It Happens Automatically:**
+- After completing both setup steps (WiFi + Image URL)
+- After exiting config mode (timeout or restart)
+- On every timer-based wake-up
+
+**What It's For:**
+- Regular, automatic image updates
+- Normal day-to-day operation
+- Power-efficient operation
+
+**How to Enter:**
+- Just wait! After configuration is complete, the device automatically operates in this mode
+- Or wait for config mode to timeout (2 minutes)
+
+---
+
+## Troubleshooting
+
+### Can't See the WiFi Network (Boot Mode)
+
+**Problem**: The WiFi network `inkplate-dashb-XXXXXX` doesn't appear in your WiFi list.
+
+**Solutions:**
+1. **Wait 30-60 seconds** after powering on - it takes time to start the access point
+2. **Check the display** - make sure it shows "Setup - Step 1" with WiFi instructions
+3. **Move closer** - e-ink devices have limited WiFi range in AP mode
+4. **Restart the device** - unplug and replug the USB cable or battery
+5. **Check your phone/computer** - ensure WiFi is enabled and scanning for networks
+
+### Can't Access Configuration Page (http://192.168.4.1)
+
+**Problem**: Browser shows "Can't reach this page" or similar error.
+
+**Solutions:**
+1. **Verify connection** - make sure you're connected to the Inkplate's WiFi network
+2. **Use http://** - do NOT use `https://` (it won't work)
+3. **Disable mobile data** - on phones, mobile data can interfere
+4. **Try a different browser** - some browsers have issues with local IPs
+5. **Check the address** - make sure you typed `192.168.4.1` exactly (no www, no extra text)
+6. **Wait a moment** - the web server may need a few seconds to start after WiFi connects
+
+### Can't Connect to My WiFi
+
+**Problem**: After entering WiFi credentials, the device can't connect to your network.
+
+**Solutions:**
+1. **Check the password** - WiFi passwords are case-sensitive
+2. **Verify network name** - SSID is also case-sensitive
+3. **Check WiFi band** - ESP32 only supports 2.4GHz WiFi (not 5GHz)
+4. **Check router settings** - ensure 2.4GHz is enabled and not hidden
+5. **Move closer to router** - weak signal can prevent connection
+6. **Check MAC filtering** - if enabled on your router, add the device's MAC address
+7. **Try guest network** - if your main network has special security settings
+
+**Checking Connection:**
+- Enable debug mode in config to see connection status
+- Serial monitor (115200 baud) shows detailed connection attempts
+- Look for error messages like "Wrong password" or "Network not found"
+
+### Image Won't Download
+
+**Problem**: Display shows "Image Error!" or blank screen after trying to download.
+
+**Solutions:**
+1. **Check image URL** - must be complete URL starting with `http://` or `https://`
+2. **Test URL in browser** - open the URL on your computer to verify it works
+3. **Check image format** - must be PNG (JPG/GIF not supported)
+4. **Verify image size** - must match your screen exactly (see Configuration Options)
+5. **Check network access** - image must be accessible from your WiFi network
+6. **Try HTTP instead of HTTPS** - some HTTPS certificates cause issues
+7. **Check server** - ensure the web server hosting the image is online and responsive
+
+**Common URL Mistakes:**
+- ❌ `www.example.com/image.png` - missing `http://`
+- ❌ `example.com/image.jpg` - wrong file format
+- ❌ `http://localhost/image.png` - not accessible from device's network
+- ✅ `http://example.com/images/dashboard.png` - correct format
+
+### Manual Refresh Doesn't Work
+
+**Problem**: Pressing the button doesn't trigger an immediate update.
+
+**For Devices with Wake Button (Inkplate 5 V2, 10, 6 Flick):**
+
+**Solutions:**
+1. **Press quickly** - it should be a short tap, not a long hold
+2. **Make sure device is sleeping** - can't refresh if already awake
+3. **Check button connection** - ensure button is properly connected (GPIO 36)
+4. **Wait for completion** - previous update must finish before new one starts
+5. **Look for feedback** - display should show "Manual Refresh" message
+
+**For Inkplate 2:**
+- This device does NOT have a wake button
+- Manual refresh is not available
+- Use automatic refresh cycle or reduce refresh rate
+
+### Can't Enter Config Mode
+
+**Problem**: Long button press or reset button doesn't enter config mode.
+
+**For Inkplate 5 V2 / 10 / 6 Flick:**
+
+**Solutions:**
+1. **Hold longer** - must hold for full 2.5 seconds (count to 3)
+2. **Make sure device is configured** - config mode requires initial setup to be complete
+3. **Check button** - ensure wake button is working properly
+4. **Look at display** - should show "Config Mode Active" with URL
+5. **Don't use reset button** - these devices only respond to wake button long press
+
+**For Inkplate 2:**
+
+**Solutions:**
+1. **Complete initial setup first** - reset button only works after device has slept once
+2. **Press the correct button** - small reset button, usually near USB port
+3. **Wait for device to sleep** - must complete one full cycle before reset button works for config
+4. **Check display** - should show config mode URL after reset
+
+### Config Mode Times Out
+
+**Problem**: Config mode exits before you finish configuring.
+
+**Solutions:**
+1. **Work faster** - you have 2 minutes from entering config mode
+2. **Prepare settings** - have your image URL and settings ready before entering config mode
+3. **Re-enter config mode** - just use the button/reset method again
+4. **Stay on the page** - navigating away may trigger timeout
+5. **No timeout on initial setup** - Step 2 (auto config mode) doesn't have a timeout
+
+### Battery Life Seems Short
+
+**Problem**: Device battery drains faster than expected.
+
+**Solutions:**
+1. **Increase refresh rate** - longer intervals = longer battery life
+   - 5 minutes: ~1-2 months
+   - 15 minutes: ~2-4 months
+   - 60 minutes: ~6-12 months
+2. **Check WiFi signal** - weak signal uses more power for connection
+3. **Optimize image size** - smaller files download faster = less power
+4. **Disable debug mode** - reduces display refreshes
+5. **Check for errors** - repeated failed downloads use more power
+6. **Use quality battery** - cheap batteries may have lower actual capacity
+
+### Display Shows Old Image
+
+**Problem**: Display isn't showing the latest version of your image.
+
+**Solutions:**
+1. **Check source** - verify the image file on your server is actually updated
+2. **Browser cache** - your server might be caching the image
+3. **Add cache-busting** - add `?v=timestamp` to URL to force fresh download
+4. **Wait for next cycle** - device only updates on schedule
+5. **Trigger manual refresh** - use short button press (if available)
+6. **Check refresh rate** - verify it's set to desired interval
+
+### Device Keeps Entering Config Mode
+
+**Problem**: Device enters config mode when you don't expect it.
+
+**Solutions:**
+1. **Inkplate 2 - Power cycle issue**: 
+   - Wait longer between unplugging and replugging (at least 10 seconds)
+   - Capacitors may maintain power briefly, making device think reset was pressed
+2. **Accidental button press**: Make sure nothing is pressing the button
+3. **Button stuck**: Check if wake button is physically stuck
+4. **Complete configuration**: Ensure image URL is saved properly
+5. **Wait for timeout**: Config mode exits automatically after 2 minutes
+
+### Factory Reset Needed
+
+**Problem**: Device is misconfigured or you need to start over completely.
+
+**How to Factory Reset:**
+
+1. **Enter config mode**:
+   - **Inkplate 5 V2/10/6 Flick**: Long press wake button (2.5+ seconds)
+   - **Inkplate 2**: Press reset button (after device has slept once)
+
+2. **Open the configuration page** in your web browser (URL shown on display)
+
+3. **Scroll to the bottom** to find the "Danger Zone" section
+
+4. **Click "Factory Reset"** button
+
+5. **Confirm** the action (this cannot be undone!)
+
+6. **Device erases all settings**:
+   - WiFi credentials deleted
+   - Image URL deleted
+   - Refresh rate reset to default
+   - MQTT settings deleted
+   - All preferences cleared
+
+7. **Device restarts** in Boot Mode (AP mode) - ready for fresh setup
+
+**What Gets Erased:**
+- ✅ All WiFi settings
+- ✅ Image URL
+- ✅ Refresh rate
+- ✅ MQTT configuration
+- ✅ Debug mode setting
+- ✅ Device state tracking
+
+**What Doesn't Change:**
+- ❌ Firmware version (stays the same)
+- ❌ Board type
+- ❌ MAC address
+
+### Getting More Help
+
+If you're still having issues:
+
+1. **Check serial output**:
+   - Connect USB cable
+   - Use a serial monitor at 115200 baud
+   - Look for error messages during operation
+
+2. **Enable debug mode**:
+   - Shows status messages on display
+   - Helps identify where issues occur
+
+3. **Check the documentation**:
+   - [GitHub Repository](https://github.com/jantielens/inkplate-dashboard)
+   - [MODES.md](MODES.md) - Technical details about device modes
+   - [README.md](README.md) - Developer documentation
+
+4. **Report an issue**:
+   - [GitHub Issues](https://github.com/jantielens/inkplate-dashboard/issues)
+   - Include firmware version, board type, and detailed description
+   - Serial output logs are very helpful!
+
+---
+
+## Tips for Best Results
+
+### Image Preparation
+
+Getting the best results from your e-ink display starts with properly preparing your image. The most important requirement is using the exact resolution that matches your screen size - images must be pixel-perfect or they won't display correctly. Before uploading your image, test the URL in a web browser to verify it's accessible and displays properly.
+
+Your image can be hosted on a local web server on your home network, such as a Home Assistant installation, or on a public web server accessible from the internet. The device doesn't care where the image comes from as long as it can reach it over the network. Make sure to use high-contrast images, as this improves readability on e-ink displays which excel at showing clear, sharp text and graphics. While you can include fine details in your images, keep in mind that e-ink displays have physical resolution limitations, so extremely intricate elements might not render as crisply as on an LCD screen.
+
+### Power Management
+
+Finding the right balance between update frequency and battery life is important for untethered operation. A good starting point is a 15-minute refresh interval, which provides a nice balance between seeing reasonably current information and maximizing battery life. If you notice your battery draining faster than expected, try increasing the interval to 30 or 60 minutes. On the other hand, if battery life isn't a concern because you have a permanent power source, you can decrease the interval for more frequent updates - though going below 5 minutes isn't generally recommended.
+
+If you've enabled MQTT integration with Home Assistant, you can use it to monitor your battery voltage over time and track the health of your battery. Using quality batteries makes a significant difference - cheap batteries often have lower actual capacity than advertised, which can lead to disappointing battery life even with conservative refresh settings.
+
+### WiFi Optimization
+
+Getting the best WiFi performance from your device helps ensure reliable updates and longer battery life. Placing your device within good range of your router means stronger signal strength, which translates to faster connections and less power consumption. Remember that the ESP32 chip in your Inkplate only supports 2.4GHz WiFi networks, not 5GHz, so make sure your router has 2.4GHz enabled.
+
+If your router is in a congested area with many WiFi networks, choosing less crowded channels can improve performance. A stable WiFi connection is essential - intermittent connectivity causes update failures and can drain the battery as the device repeatedly attempts to reconnect. If your device needs to be located far from your router, consider using a WiFi extender to provide better coverage in that area.
+
+### Home Assistant Integration
+
+While the MQTT integration with Home Assistant is completely optional, many users find it useful for monitoring their device's health. The setup process is remarkably simple - you just enter your MQTT broker URL in the configuration page, and the device handles the rest through auto-discovery. This means you don't need to manually configure any YAML files in Home Assistant.
+
+Once configured, your device will automatically appear in Home Assistant as "Inkplate Dashboard XXXXXX" with a battery voltage sensor. You can monitor battery voltage trends over time to track your battery's health and predict when it might need replacement. The integration also opens up automation possibilities, such as sending notifications when battery voltage drops below a certain threshold or tracking how long your updates take to complete.
+
+---
+
+## Quick Reference
+
+### Button Functions (Inkplate 5 V2, 10, 6 Flick)
+
+| Action | Result |
+|--------|--------|
+| **Short Press** (quick tap) | Manual refresh - immediate image update |
+| **Long Press** (hold 2.5s) | Enter config mode - access web interface |
+
+### Button Functions (Inkplate 2)
+
+| Action | Result |
+|--------|--------|
+| **Reset Button** | Enter config mode (only after first sleep cycle) |
+| _(No wake button)_ | Manual refresh not available |
+
+### Default Settings
+
+| Setting | Default Value |
+|---------|---------------|
+| Refresh Rate | 5 minutes |
+| Debug Mode | Disabled |
+| MQTT | Not configured |
+| Config Mode Timeout | 2 minutes |
+
+### Required Image Sizes
+
+| Device | Resolution | Color Mode |
+|--------|-----------|------------|
+| Inkplate 2 | 212×104 | 1-bit (black & white) |
+| Inkplate 5 V2 | 1280×720 | 3-bit (8 grayscale levels) |
+| Inkplate 10 | 1200×825 | 1-bit (black & white) |
+| Inkplate 6 Flick | 1024×758 | 3-bit (8 grayscale levels) |
+
+### Configuration URLs
+
+| Mode | URL | When to Use |
+|------|-----|-------------|
+| Boot Mode (AP) | `http://192.168.4.1` | First setup, WiFi configuration |
+| Config Mode (WiFi) | Shown on display | After WiFi setup, configuration changes |
+
+---
+
+## Frequently Asked Questions
+
+**Q: Can I use JPG or GIF images?**  
+A: No, only PNG format is supported.
+
+**Q: Can I use images from Google Drive or Dropbox?**  
+A: Only if you have a direct download link that ends in .png and doesn't require authentication. Regular shared links typically require a login page and won't work with the device.
+
+**Q: How long does the battery last?**  
+A: With a 3000mAh battery and 15-minute refresh interval, you can typically expect 2-4 months of battery life. Longer refresh intervals will extend battery life proportionally.
+
+**Q: Can I use 5GHz WiFi?**  
+A: No, the ESP32 chip only supports 2.4GHz WiFi networks. Make sure your router has 2.4GHz enabled.
+
+**Q: Does the device need internet access?**  
+A: The device needs network access to wherever your image is hosted. This could be a local web server on your home network (like Home Assistant) or a public server on the internet. As long as the device can reach the URL, it will work.
+
+**Q: Can I customize what information is displayed?**  
+A: The device displays whatever PNG image you provide via the URL. You'll need to generate your dashboard image externally using tools like Home Assistant, Grafana, a custom Python script, or any other method you prefer. The device simply downloads and displays whatever image it finds at the URL.
+
+**Q: How do I change the image?**  
+A: Just update the image file on your web server. The device automatically downloads the latest version during each refresh cycle - you don't need to reconfigure anything on the device itself.
+
+**Q: What if my WiFi password changes?**  
+A: Enter config mode (long button press or reset button) and update the WiFi password in the web interface.
+
+**Q: Can I have multiple devices showing different images?**  
+A: Yes! Each device is configured independently with its own image URL.
+
+**Q: Is my WiFi password stored securely?**  
+A: Yes, credentials are stored in ESP32's encrypted NVS (Non-Volatile Storage).
+
+**Q: What happens during a power outage?**  
+A: Configuration is saved in flash memory and survives power loss. Device will resume normal operation when power returns.
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: October 16, 2025  
+**Supported Firmware**: v0.1.0+
