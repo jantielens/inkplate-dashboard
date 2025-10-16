@@ -24,7 +24,7 @@ DisplayManager displayManager(&display);
 ConfigManager configManager;
 WiFiManager wifiManager(&configManager);
 ConfigPortal configPortal(&configManager, &wifiManager);
-ImageManager imageManager(&display, &displayManager);
+ImageManager imageManager(&display, &displayManager, &configManager);
 PowerManager powerManager;
 MQTTManager mqttManager(&configManager);
 
@@ -504,28 +504,53 @@ void performNormalUpdate() {
         }
         
         if (imageManager.downloadAndDisplay(config.imageURL.c_str())) {
-            Serial.println("Image displayed successfully!");
-            displayManager.refresh(false);
+            // Check if update was skipped (image unchanged)
+            bool wasSkipped = imageManager.wasUpdateSkipped();
+            uint32_t checksum = imageManager.getLastChecksum();
+            
+            if (wasSkipped) {
+                Serial.println("Display refresh skipped - image unchanged!");
+                
+                // Calculate loop time
+                loopDuration = millis() - loopStartTime;
+                loopTimeSeconds = loopDuration / 1000.0;
+                Serial.println("Loop time (skip): " + String(loopTimeSeconds, 2) + " seconds");
+                
+                // Publish skip event to MQTT (if configured)
+                if (mqttManager.isConfigured()) {
+                    if (mqttManager.connect()) {
+                        mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
+                        mqttManager.publishImageChecksum(deviceId, checksum);
+                        mqttManager.publishLastLog(deviceId, "Image unchanged, display refresh skipped", "info");
+                        mqttManager.disconnect();
+                    }
+                }
+            } else {
+                Serial.println("Image displayed successfully!");
+                displayManager.refresh(false);
+                
+                // Calculate loop time
+                loopDuration = millis() - loopStartTime;
+                loopTimeSeconds = loopDuration / 1000.0;
+                Serial.println("Loop time (display): " + String(loopTimeSeconds, 2) + " seconds");
+                
+                // Publish update to MQTT (if configured)
+                if (mqttManager.isConfigured()) {
+                    if (mqttManager.connect()) {
+                        mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
+                        mqttManager.publishImageChecksum(deviceId, checksum);
+                        mqttManager.publishLastLog(deviceId, "Image updated successfully", "info");
+                        mqttManager.disconnect();
+                    }
+                }
+            }
             
             // Reset retry count on success
             imageRetryCount = 0;
             
-            // Calculate loop time and publish to MQTT
-            loopDuration = millis() - loopStartTime;
-            loopTimeSeconds = loopDuration / 1000.0;
-            Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
-            
-            // Publish loop time to MQTT (if configured)
-            if (mqttManager.isConfigured()) {
-                if (mqttManager.connect()) {
-                    mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
-                    mqttManager.disconnect();
-                }
-            }
-            
             // Success - go to deep sleep
-            Serial.println("\nImage display successful - preparing for sleep");
-            delay(1000);  // Give user time to see the image
+            Serial.println("\nPreparing for sleep");
+            delay(wasSkipped ? 500 : 1000);  // Shorter delay if display wasn't refreshed
             
             // Mark device as running (one-time NVS write for reset detection)
             powerManager.markDeviceRunning();

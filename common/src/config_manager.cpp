@@ -134,7 +134,7 @@ void ConfigManager::clearConfig() {
         return;
     }
     
-    _preferences.clear();
+    _preferences.clear();  // This clears all keys including image checksum
     Serial.println("Configuration cleared (factory reset)");
 }
 
@@ -260,4 +260,31 @@ void ConfigManager::markAsConfigured() {
     
     _preferences.putBool(PREF_CONFIGURED, true);
     Serial.println("Device marked as configured");
+}
+
+uint32_t ConfigManager::getImageChecksum() {
+    if (!_initialized && !begin()) {
+        return 0;
+    }
+    return _preferences.getUInt(PREF_IMAGE_CHECKSUM, 0);
+}
+
+void ConfigManager::setImageChecksum(uint32_t checksum) {
+    if (!_initialized && !begin()) {
+        Serial.println("ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putUInt(PREF_IMAGE_CHECKSUM, checksum);
+    Serial.printf("Image checksum saved: 0x%08X\n", checksum);
+}
+
+void ConfigManager::clearImageChecksum() {
+    if (!_initialized && !begin()) {
+        Serial.println("ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.remove(PREF_IMAGE_CHECKSUM);
+    Serial.println("Image checksum cleared");
 }

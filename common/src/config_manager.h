@@ -15,6 +15,7 @@
 #define PREF_MQTT_USER "mqtt_user"
 #define PREF_MQTT_PASS "mqtt_pass"
 #define PREF_DEBUG_MODE "debug_mode"
+#define PREF_IMAGE_CHECKSUM "img_crc32"
 
 // Default values
 #define DEFAULT_REFRESH_RATE 5  // 5 minutes
@@ -86,6 +87,11 @@ public:
     void setRefreshRate(int minutes);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
+    
+    // Image checksum management (for skip-refresh optimization)
+    uint32_t getImageChecksum();
+    void setImageChecksum(uint32_t checksum);
+    void clearImageChecksum();
     
     // Mark device as configured
     void markAsConfigured();

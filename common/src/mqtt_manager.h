@@ -51,6 +51,11 @@ public:
     // severity: "info", "warning", or "error" (prefixed to message)
     bool publishLastLog(const String& deviceId, const String& message, const String& severity);
     
+    // Publish image checksum to Home Assistant
+    // deviceId: unique device identifier (must match discovery)
+    // checksum: CRC32 checksum value (32-bit unsigned integer)
+    bool publishImageChecksum(const String& deviceId, uint32_t checksum);
+    
     // Check if MQTT is configured
     bool isConfigured();
     

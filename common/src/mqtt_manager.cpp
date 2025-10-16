@@ -312,6 +312,34 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         }
     }
     
+    // Publish image checksum sensor discovery
+    {
+        String discoveryTopic = getDiscoveryTopic(deviceId, "image_checksum");
+        String stateTopic = getStateTopic(deviceId, "image_checksum");
+        
+        String payload = "{";
+        payload += "\"name\":\"" + deviceName + " Image Checksum\",";
+        payload += "\"unique_id\":\"" + deviceId + "_image_checksum\",";
+        payload += "\"state_topic\":\"" + stateTopic + "\",";
+        payload += "\"icon\":\"mdi:file-check\",";
+        payload += "\"value_template\":\"{{ value }}\",";
+        payload += "\"device\":{";
+        payload += "\"identifiers\":[\"" + deviceId + "\"]";
+        payload += "}";
+        payload += "}";
+        
+        Serial.println("Image Checksum Discovery:");
+        Serial.println("  Topic: " + discoveryTopic);
+        Serial.println("  Payload: " + String(payload.length()) + " bytes");
+        
+        if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+            Serial.println("  ERROR: Failed to publish image checksum discovery");
+            allSuccess = false;
+        } else {
+            Serial.println("  Success!");
+        }
+    }
+    
     if (allSuccess) {
         Serial.println("All discovery messages published successfully");
     } else {
@@ -435,6 +463,39 @@ bool MQTTManager::publishLastLog(const String& deviceId, const String& message, 
         Serial.println("=================================\n");
     } else {
         _lastError = "Failed to publish last log";
+        Serial.println("ERROR: " + _lastError);
+        Serial.println("=================================\n");
+    }
+    
+    return success;
+}
+
+bool MQTTManager::publishImageChecksum(const String& deviceId, uint32_t checksum) {
+    if (!_isConfigured || _mqttClient == nullptr || !_mqttClient->connected()) {
+        return true;  // Skip if not configured or not connected
+    }
+    
+    Serial.println("\n=================================");
+    Serial.println("Publishing image checksum to MQTT...");
+    Serial.println("=================================");
+    
+    String stateTopic = getStateTopic(deviceId, "image_checksum");
+    
+    // Format as hex string for readability
+    char checksumStr[11];  // "0x" + 8 hex digits + null terminator
+    snprintf(checksumStr, sizeof(checksumStr), "0x%08X", checksum);
+    String payload = String(checksumStr);
+    
+    Serial.println("State Topic: " + stateTopic);
+    Serial.println("Checksum: " + payload);
+    
+    bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+    
+    if (success) {
+        Serial.println("Image checksum published successfully");
+        Serial.println("=================================\n");
+    } else {
+        _lastError = "Failed to publish image checksum";
         Serial.println("ERROR: " + _lastError);
         Serial.println("=================================\n");
     }
