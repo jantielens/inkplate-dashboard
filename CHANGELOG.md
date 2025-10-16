@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-10-16
+
+### Added
+- Visual feedback for manual refresh button press (issue #15)
+  - Display now shows "Manual Refresh" message when button is pressed for immediate update
+  - Message "Button pressed - updating..." displayed for 1.5 seconds before update begins
+  - Provides immediate user confirmation that button press was detected
+  - Works on all devices with wake button (Inkplate 5 V2, Inkplate 10, Inkplate 6 Flick)
+- USING.md user guide for end users
+  - Complete setup and configuration instructions
+  - Troubleshooting guide
+  - FAQ section
+  - Device-specific button operation details
+
 ## [0.3.0] - 2025-10-15
 
 ### Added
@@ -94,7 +108,9 @@
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
 
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
