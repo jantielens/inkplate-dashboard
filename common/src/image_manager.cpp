@@ -214,7 +214,7 @@ uint32_t ImageManager::downloadAndComputeChecksum(const char* url) {
     
     // Stream and compute CRC32 incrementally
     uint32_t crc = 0xFFFFFFFF;  // Initial CRC value
-    uint8_t buffer[512];  // 512-byte chunks for streaming
+    uint8_t buffer[4096];  // 4KB chunks for faster streaming
     size_t totalBytes = 0;
     
     while (stream->connected() && (stream->available() > 0 || httpCode == HTTP_CODE_OK)) {
