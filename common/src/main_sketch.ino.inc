@@ -141,6 +141,16 @@ void setup() {
             // Only trigger immediate update for short press if it was a button wake
             // (not during timer wake or normal boot)
             Serial.println("Short button press detected - performing normal update");
+            
+            // Show immediate visual feedback for manual refresh
+            displayManager.clear();
+            int y = MARGIN;
+            displayManager.showMessage("Manual Refresh", MARGIN, y, FONT_HEADING1);
+            y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            displayManager.showMessage("Button pressed - updating...", MARGIN, y, FONT_NORMAL);
+            displayManager.refresh();
+            delay(1500); // Show message for 1.5 seconds
+            
             performNormalUpdate();
             return;
         }
