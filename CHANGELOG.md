@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-10-17
+
 ### Added
 - CRC32-based image change detection feature (issue #56)
   - Optional feature to skip image downloads when content hasn't changed
@@ -16,10 +18,11 @@
   - Comprehensive documentation in CRC32_GUIDE.md with server setup examples
   - MQTT logging for CRC32 check results (unchanged/changed)
 
+
 ### Changed
 - ImageManager now accepts ConfigManager reference for CRC32 storage
 - Normal update flow now checks CRC32 before image download when enabled
-- Documentation updated with battery life impact analysis (2.5× improvement)
+- Documentation updated with battery life impact analysis
 
 ### Performance Impact
 - Wake duration reduced from 11s to 4.5s when image unchanged

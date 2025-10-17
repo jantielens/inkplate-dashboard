@@ -500,10 +500,13 @@ void performNormalUpdate() {
             }
         }
         
-        // Check CRC32 if enabled
+        // Check CRC32 if enabled (only during normal wake cycles)
         bool shouldDownload = true;
-        if (config.useCRC32Check) {
-            Serial.println("\nCRC32 check is ENABLED");
+        WakeupReason wakeReason = powerManager.getWakeupReason();
+        if (config.useCRC32Check && wakeReason == WAKEUP_TIMER) {
+            // Only skip download for CRC32 match during normal timer wake
+            // Always download after config mode, firmware update, or button press to refresh display
+            Serial.println("\nCRC32 check is ENABLED (normal wake cycle)");
             shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str());
             
             if (!shouldDownload) {
@@ -532,6 +535,9 @@ void performNormalUpdate() {
                 powerManager.enterDeepSleep((uint16_t)config.refreshRate);
                 return;
             }
+        } else if (config.useCRC32Check) {
+            Serial.println("\nCRC32 check is ENABLED but bypassed (not a normal wake cycle)");
+            Serial.println("Will download image to refresh display after config/restart");
         } else {
             Serial.println("\nCRC32 check is DISABLED");
         }
