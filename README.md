@@ -15,6 +15,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 - 🖼️ **Image Display**: Downloads PNG images from any public URL (HTTP/HTTPS)
 - ⚡ **Power Efficient**: Deep sleep between updates to maximize battery life
 - 🔄 **Configurable Refresh**: Set update interval (default: 5 minutes)
+- 🔋 **CRC32 Change Detection**: Optional feature to skip downloads when image hasn't changed, extending battery life by 2.5×
 - 🌐 **Web Interface**: Beautiful, responsive configuration portal
 - 💾 **Persistent Config**: Settings saved to device flash memory
 - 🔧 **Button Config Mode**: Long press button to reconfigure settings anytime (2-minute timeout)
@@ -87,6 +88,55 @@ The device will:
   - Device automatically restarts or returns to sleep after timeout
 
 > **Note for Inkplate 2**: This device does not have a physical button. Configuration must be done during the initial setup or by performing a factory reset through the web interface while in config mode.
+
+## CRC32-Based Change Detection (Battery Saver)
+
+The dashboard supports an optional CRC32-based change detection feature that dramatically extends battery life by skipping image downloads when the image hasn't changed.
+
+### How It Works
+
+When enabled, the device:
+1. Downloads a small `.crc32` file from your server (e.g., `image.png.crc32`)
+2. Compares the checksum with the previously stored value
+3. If unchanged, skips the image download and goes back to sleep immediately
+4. If changed (or first run), downloads the full image and updates the stored checksum
+
+### Battery Life Impact
+
+With CRC32 change detection enabled and images changing once per day:
+- **Battery life**: Increases from ~13 days to ~33 days (2.5× longer)
+- **Power consumption**: Drops by 60.7%
+- **Wake duration**: Reduces from 11 seconds to 4.5 seconds when image is unchanged
+
+### Server Setup
+
+Your web server must provide companion `.crc32` files alongside PNG images:
+
+**Example:**
+- Image: `https://example.com/dashboard.png`
+- CRC32 file: `https://example.com/dashboard.png.crc32`
+
+The `.crc32` file should contain the CRC32 checksum in hexadecimal format:
+```
+0x1a2b3c4d
+```
+or
+```
+1a2b3c4d
+```
+
+**Compatible with [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter):**  
+Recent versions automatically generate `.crc32` files for Home Assistant screenshots.
+
+### Enabling the Feature
+
+1. Enter Config Mode (long press button)
+2. Check the "Enable CRC32-based change detection" checkbox
+3. Save settings
+
+**Fallback Behavior:**
+- If the `.crc32` file is missing or invalid, the device gracefully falls back to downloading the full image
+- Fully backward compatible with servers that don't support CRC32
 
 ## Project Structure
 

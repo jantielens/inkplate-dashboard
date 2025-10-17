@@ -133,6 +133,7 @@ void ConfigPortal::handleSubmit() {
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
+    bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
     
     // Validate input
     if (ssid.length() == 0) {
@@ -168,6 +169,7 @@ void ConfigPortal::handleSubmit() {
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
     config.debugMode = debugMode;
+    config.useCRC32Check = useCRC32Check;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -317,6 +319,18 @@ String ConfigPortal::generateConfigPage() {
         html += "> Enable on-screen debug messages";
         html += "</label>";
         html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
+        html += "</div>";
+        
+        // CRC32 change detection toggle
+        html += "<div class='form-group'>";
+        html += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
+        html += "<input type='checkbox' id='crc32check' name='crc32check'";
+        if (hasConfig && currentConfig.useCRC32Check) {
+            html += " checked";
+        }
+        html += "> Enable CRC32-based change detection";
+        html += "</label>";
+        html += "<div class='help-text'>Skips image download when unchanged (requires .crc32 file on server). Significantly extends battery life.</div>";
         html += "</div>";
         
         // MQTT Configuration - optional section in CONFIG_MODE

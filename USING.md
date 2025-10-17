@@ -218,6 +218,19 @@ Open browser to:
 - **When to enable**: If you want to see WiFi connection status, download progress, etc.
 - **When to disable**: For a cleaner display that only shows your image
 
+#### CRC32-Based Change Detection
+- **What it is**: Checks if the image has changed before downloading it
+- **Default**: Disabled
+- **Battery impact**: Can extend battery life by 2.5× when images change infrequently
+- **Requirements**: Your web server must provide `.crc32` files alongside images (e.g., `image.png.crc32`)
+- **How it works**: Downloads a small checksum file first; if unchanged, skips the full image download
+- **Fallback**: If `.crc32` file is missing or invalid, automatically downloads the full image
+- **When to enable**: 
+  - If you're running on battery power
+  - If your image doesn't change on every refresh (e.g., once per day)
+  - If you're using [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) which automatically generates CRC32 files
+- **When to disable**: If your server doesn't provide `.crc32` files, or if your image changes frequently
+
 #### MQTT Broker (Home Assistant Integration)
 - **What it is**: Address of your MQTT broker for Home Assistant
 - **Format**: `mqtt://hostname:port` or `mqtt://IP:port`
@@ -259,6 +272,8 @@ With debug mode enabled, you'll see brief status messages appear during the upda
 Your device uses different amounts of power depending on what it's doing. During active mode when WiFi is on and the device is downloading, it typically draws between 80 and 120 milliamps. When refreshing the display, power consumption drops to around 40 to 60 milliamps. The real magic happens during deep sleep, where the device uses only 0.02 milliamps (20 microamps) - barely any power at all.
 
 To give you a practical example, if you're using a 3000mAh battery with a 15-minute refresh interval, your device wakes up 96 times per day. Each wake cycle takes about 15 seconds, so the device is only active for about 24 minutes per day. The rest of the time it's in deep sleep mode. With this usage pattern, you can expect your battery to last between 2 and 4 months, though the actual duration depends on factors like WiFi signal strength and image download time.
+
+**With CRC32 Change Detection Enabled:** If your images only change occasionally (e.g., once per day), enabling CRC32-based change detection can dramatically extend battery life. When the image hasn't changed, the device only downloads a tiny checksum file (~10 bytes) instead of the full image, reducing wake time from 11 seconds to 4.5 seconds. This reduces daily power consumption by 60.7%, extending battery life by 2.5×. For example, with a 1200mAh battery and 5-minute refresh intervals, battery life increases from ~13 days to ~33 days.
 
 ---
 

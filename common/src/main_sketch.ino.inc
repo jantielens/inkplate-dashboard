@@ -35,6 +35,13 @@ bool normalUpdateActive = false;  // Normal update triggered by short button pre
 unsigned long configModeStartTime = 0;
 const unsigned long CONFIG_MODE_TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
 
+// Application state
+bool apModeActive = false;
+bool configModeActive = false;  // Config mode triggered by button
+bool normalUpdateActive = false;  // Normal update triggered by short button press
+unsigned long configModeStartTime = 0;
+const unsigned long CONFIG_MODE_TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
+
 // RTC memory for retry mechanism (persists across deep sleep)
 RTC_DATA_ATTR uint8_t imageRetryCount = 0;
 
@@ -61,6 +68,9 @@ void setup() {
         debugModeEnabled = configManager.getDebugMode();
     }
     bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled;
+    
+    // Set config manager for image manager (for CRC32 storage)
+    imageManager.setConfigManager(&configManager);
     
     // Initialize display
     displayManager.init(shouldShowSplash);
@@ -495,6 +505,42 @@ void performNormalUpdate() {
             } else {
                 Serial.println("MQTT not configured - skipping MQTT publishing");
             }
+        }
+        
+        // Check CRC32 if enabled
+        bool shouldDownload = true;
+        if (config.useCRC32Check) {
+            Serial.println("\nCRC32 check is ENABLED");
+            shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str());
+            
+            if (!shouldDownload) {
+                // Image hasn't changed - skip download and go to sleep
+                Serial.println("Image unchanged - skipping download and going to sleep");
+                
+                // Calculate loop time
+                loopDuration = millis() - loopStartTime;
+                loopTimeSeconds = loopDuration / 1000.0;
+                Serial.println("Loop time (CRC32 only): " + String(loopTimeSeconds, 2) + " seconds");
+                
+                // Publish loop time to MQTT (if configured)
+                if (mqttManager.isConfigured()) {
+                    if (mqttManager.connect()) {
+                        mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
+                        mqttManager.publishLastLog(deviceId, "Image unchanged (CRC32 match)", "info");
+                        mqttManager.disconnect();
+                    }
+                }
+                
+                // Mark device as running
+                powerManager.markDeviceRunning();
+                
+                // Go to sleep without updating display
+                powerManager.prepareForSleep();
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
+                return;
+            }
+        } else {
+            Serial.println("\nCRC32 check is DISABLED");
         }
         
         // Download and display image
