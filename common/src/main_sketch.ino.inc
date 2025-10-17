@@ -621,7 +621,8 @@ void performNormalUpdate() {
             
             // Save CRC32 only AFTER successful display
             // This ensures CRC32 is only updated when image is confirmed to be displayed
-            if (config.useCRC32Check && newCRC32 != 0 && wakeReason == WAKEUP_TIMER) {
+            // Always save on successful display (button press or timer wake) to maintain current baseline
+            if (config.useCRC32Check && newCRC32 != 0) {
                 imageManager.saveCRC32(newCRC32);
             }
             
