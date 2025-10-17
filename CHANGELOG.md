@@ -1,6 +1,42 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2025-10-17
+
+### Added
+- Web-based OTA (Over-The-Air) firmware update feature (issue #6)
+  - New `/ota` route accessible from configuration portal (CONFIG_MODE only)
+  - File upload interface for `.bin` firmware files
+  - Real-time upload progress bar (0-100%) in web interface
+  - Visual feedback on e-ink display during firmware installation
+  - Display shows "Firmware Update", "Installing firmware...", "Device will reboot when complete", "Do not power off!"
+  - Automatic device reboot after successful firmware flash
+  - Watchdog timer disabled during upload to prevent interruption
+  - Warning banner with safety instructions
+  - Success/error feedback with user-friendly messages
+  - Mobile-friendly UI matching existing portal design
+  - Full-width green button prominently placed below configuration form
+
+### Changed
+- Config mode timeout increased from 2 minutes to 5 minutes
+  - Provides sufficient time for firmware uploads which can take 1-2 minutes
+  - Display and serial messages now dynamically show correct timeout value
+- Build system now uses "Minimal SPIFFS" partition scheme (1.9MB APP with OTA/190KB SPIFFS)
+  - Previous "Huge APP" partition scheme did not support OTA updates
+  - Both build.ps1 and build.sh updated with `--board-options "PartitionScheme=min_spiffs"`
+  - All board configurations now include OTA partition support
+
+### Fixed
+- Display messages now consistently use MARGIN constant instead of hardcoded y=100
+- Timeout messages now dynamically calculated from CONFIG_MODE_TIMEOUT_MS constant
+
+### Technical Details
+- ESP32 Update library integration for OTA flashing
+- Watchdog timer management: `disableCore0WDT()` on upload start, `enableCore0WDT()` on failure/abort
+- Partition size calculation using `ESP.getFreeSketchSpace()`
+- Upload handler with chunked write operations
+- DisplayManager integration for on-screen firmware update progress
+- Proper error handling and Serial logging for debugging
+- CSS styles for progress bar, warning banner, file input, and secondary button
 
 ## [0.3.1] - 2025-10-16
 
@@ -120,14 +156,6 @@
 - Inkplate Library for e-paper display control
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
-
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
-[0.0.1]: https://github.com/jantielens/inkplate-dashboard/releases/tag/v0.0.1
 
 All notable changes to the Inkplate Dashboard project will be documented in this file.
 

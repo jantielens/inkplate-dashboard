@@ -23,7 +23,7 @@ Inkplate display(DISPLAY_MODE);
 DisplayManager displayManager(&display);
 ConfigManager configManager;
 WiFiManager wifiManager(&configManager);
-ConfigPortal configPortal(&configManager, &wifiManager);
+ConfigPortal configPortal(&configManager, &wifiManager, &displayManager);
 ImageManager imageManager(&display, &displayManager);
 PowerManager powerManager;
 MQTTManager mqttManager(&configManager);
@@ -33,7 +33,7 @@ bool apModeActive = false;
 bool configModeActive = false;  // Config mode triggered by button
 bool normalUpdateActive = false;  // Normal update triggered by short button press
 unsigned long configModeStartTime = 0;
-const unsigned long CONFIG_MODE_TIMEOUT_MS = 2 * 60 * 1000;  // 2 minutes
+const unsigned long CONFIG_MODE_TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
 
 // RTC memory for retry mechanism (persists across deep sleep)
 RTC_DATA_ATTR uint8_t imageRetryCount = 0;
@@ -264,7 +264,8 @@ void enterConfigMode() {
     } else {
         displayManager.showMessage("Config Mode", MARGIN, y, FONT_HEADING1);
         y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-        displayManager.showMessage("Active for 2 minutes", MARGIN, y, FONT_NORMAL);
+        String timeoutMsg = "Active for " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes";
+        displayManager.showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
     }
     y += displayManager.getFontHeight(hasPartialConfig ? FONT_HEADING2 : FONT_NORMAL) + LINE_SPACING * 2;
     
@@ -302,7 +303,8 @@ void enterConfigMode() {
         y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
         
         if (!hasPartialConfig) {
-            displayManager.showMessage("Timeout: 2 minutes", MARGIN, y, FONT_NORMAL);
+            String timeoutMsg = "Timeout: " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes";
+            displayManager.showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
         }
         displayManager.refresh();
         
@@ -316,7 +318,7 @@ void enterConfigMode() {
             Serial.println("=================================");
             Serial.println("Access at: http://" + localIP);
             if (!hasPartialConfig) {
-                Serial.println("Timeout: 2 minutes");
+                Serial.println("Timeout: " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes");
             }
             Serial.println("=================================\n");
         } else {
@@ -385,7 +387,7 @@ void enterConfigMode() {
                 Serial.println("2. Open: http://" + apIP);
                 Serial.println("3. Update your configuration");
                 if (!hasPartialConfig) {
-                    Serial.println("Timeout: 2 minutes");
+                    Serial.println("Timeout: " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes");
                 }
                 Serial.println("=================================\n");
             } else {
@@ -670,7 +672,7 @@ void loop() {
             Serial.println("=================================\n");
             
             displayManager.clear();
-            int y = 100;
+            int y = MARGIN;
             displayManager.showMessage("WiFi Configured!", MARGIN, y, FONT_HEADING1);
             y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
             displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
@@ -700,7 +702,7 @@ void loop() {
             }
             
             displayManager.clear();
-            int y = 100;
+            int y = MARGIN;
             displayManager.showMessage("Settings Updated!", MARGIN, y, FONT_HEADING1);
             y += displayManager.getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
             displayManager.showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
@@ -728,7 +730,7 @@ void loop() {
             }
             
             displayManager.clear();
-            int y = 100;
+            int y = MARGIN;
             displayManager.showMessage("Config Mode Timeout", MARGIN, y, FONT_HEADING2);
             y += displayManager.getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
             displayManager.showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);

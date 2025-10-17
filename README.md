@@ -20,6 +20,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 - 🔧 **Button Config Mode**: Long press button to reconfigure settings anytime (2-minute timeout)
 - ⚡ **Manual Refresh**: Short press button for immediate image update
 - 🗑️ **Factory Reset**: Web-based factory reset to erase all settings and start fresh
+- ⬆️ **OTA Updates**: Upload new firmware directly via web interface
 - 🏠 **Home Assistant Integration**: Optional MQTT battery voltage reporting with auto-discovery
 
 ## Quick Start

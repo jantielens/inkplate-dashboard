@@ -61,9 +61,11 @@ build_board() {
     # Compile the sketch with custom library path and build properties
     echo "Compiling $SKETCH_PATH..."
     echo "Including common libraries from: $COMMON_PATH"
+    echo "Using partition scheme: Minimal SPIFFS (with OTA support)"
     
     arduino-cli compile \
         --fqbn "$BOARD_FQBN" \
+        --board-options "PartitionScheme=min_spiffs" \
         --build-path "$BUILD_DIR" \
         --library "$COMMON_PATH" \
         --build-property "compiler.cpp.extra_flags=-I$COMMON_PATH -I$COMMON_PATH/src" \

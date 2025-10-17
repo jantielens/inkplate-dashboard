@@ -106,6 +106,7 @@ The configuration portal features a modern, responsive design:
    - Configuration form
    - Field validation
    - Factory reset option (only shown on configured devices)
+   - OTA firmware update button (full-width green button, only shown in CONFIG_MODE)
 
 2. **Success Page** (`/submit` - POST success)
    - Confirmation message
@@ -120,6 +121,20 @@ The configuration portal features a modern, responsive design:
    - Confirmation of reset completion
    - Device reboots automatically
 
+5. **OTA Update Page** (`/ota` - GET)
+   - File upload interface for `.bin` firmware files
+   - Real-time progress bar during upload in web browser
+   - Visual feedback on e-ink display during installation
+   - Warning banner with safety instructions
+   - Only accessible in CONFIG_MODE
+
+6. **OTA Upload Handler** (`/ota` - POST)
+   - Receives and flashes firmware binary
+   - Disables watchdog timer to prevent interruption
+   - Shows progress on device display
+   - Success: device reboots with new firmware
+   - Error: re-enables watchdog and displays error message
+
 ## Technical Details
 
 ### Classes Used
@@ -131,6 +146,9 @@ ConfigPortal configPortal(&configManager, &wifiManager);
 ### Key Methods
 
 ```cpp
+// Constructor with DisplayManager for OTA screen feedback
+ConfigPortal configPortal(&configManager, &wifiManager, &displayManager);
+
 // Start the web server
 configPortal.begin();
 
@@ -150,7 +168,9 @@ configPortal.stop();
 
 - `GET /` - Configuration form
 - `POST /submit` - Form submission handler
-- `POST /factory-reset` - Factory reset handler
+- `POST /factory-reset` - Factory reset handler (CONFIG_MODE only)
+- `GET /ota` - OTA firmware update page (CONFIG_MODE only)
+- `POST /ota` - OTA firmware upload handler (CONFIG_MODE only)
 - `404` - Not found (redirects to home)
 
 ### Access Point Configuration

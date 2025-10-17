@@ -82,10 +82,12 @@ function Build-Board {
     # Compile the sketch with custom library path and build properties
     Write-Host "Compiling $SKETCH_PATH..." -ForegroundColor Yellow
     Write-Host "Including common libraries from: $COMMON_PATH" -ForegroundColor Gray
+    Write-Host "Using partition scheme: Minimal SPIFFS (with OTA support)" -ForegroundColor Gray
     
     # Add board config directory to include path so .cpp files can find board_config.h
+    # Use "min_spiffs" partition scheme which supports OTA (1.9MB APP with OTA/190KB SPIFFS)
     $BOARD_CONFIG_PATH = Join-Path $WORKSPACE_PATH $SKETCH_PATH
-    arduino-cli compile --fqbn $BOARD_FQBN --build-path $BUILD_DIR --library $COMMON_PATH --build-property "compiler.cpp.extra_flags=-I`"$COMMON_PATH`" -I`"$COMMON_PATH\src`" -I`"$BOARD_CONFIG_PATH`" -include board_config.h" $SKETCH_PATH
+    arduino-cli compile --fqbn $BOARD_FQBN --board-options "PartitionScheme=min_spiffs" --build-path $BUILD_DIR --library $COMMON_PATH --build-property "compiler.cpp.extra_flags=-I`"$COMMON_PATH`" -I`"$COMMON_PATH\src`" -I`"$BOARD_CONFIG_PATH`" -include board_config.h" $SKETCH_PATH
     
     # Clean up copied files after build
     foreach ($file in $commonSrcFiles) {
