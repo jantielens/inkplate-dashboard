@@ -543,6 +543,7 @@ void performNormalUpdate() {
         
         // Check CRC32 if enabled (only during normal wake cycles)
         bool shouldDownload = true;
+        uint32_t newCRC32 = 0;  // Will hold the new CRC32 value from server (saved only on success)
         WakeupReason wakeReason = powerManager.getWakeupReason();
         if (config.useCRC32Check && wakeReason == WAKEUP_TIMER) {
             // Only skip download for CRC32 match during normal timer wake
@@ -550,7 +551,9 @@ void performNormalUpdate() {
             LogBox::begin("CRC32 Check");
             LogBox::line("CRC32 check is ENABLED (normal wake cycle)");
             LogBox::end();
-            shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str());
+            
+            // Check CRC32 and capture new value (but don't save yet)
+            shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str(), &newCRC32);
             
             if (!shouldDownload) {
                 // Image hasn't changed - skip download and go to sleep
@@ -615,6 +618,12 @@ void performNormalUpdate() {
             LogBox::begin("Image Success");
             LogBox::line("Image displayed successfully");
             displayManager.refresh(false);
+            
+            // Save CRC32 only AFTER successful display
+            // This ensures CRC32 is only updated when image is confirmed to be displayed
+            if (config.useCRC32Check && newCRC32 != 0 && wakeReason == WAKEUP_TIMER) {
+                imageManager.saveCRC32(newCRC32);
+            }
             
             // Reset retry count on success
             imageRetryCount = 0;

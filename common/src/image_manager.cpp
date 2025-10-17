@@ -50,7 +50,7 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
     return result;
 }
 
-bool ImageManager::checkCRC32Changed(const char* url) {
+bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
     if (!_configManager) {
         LogBox::begin("CRC32 Check");
         LogBox::line("ConfigManager not set - cannot check CRC32");
@@ -114,18 +114,35 @@ bool ImageManager::checkCRC32Changed(const char* url) {
     uint32_t storedCRC32 = _configManager->getLastCRC32();
     LogBox::linef("Stored CRC32: 0x%08X", storedCRC32);
     
+    // Return the new CRC32 value if caller requested it
+    if (outNewCRC32) {
+        *outNewCRC32 = newCRC32;
+    }
+    
     // Compare
     if (newCRC32 == storedCRC32 && storedCRC32 != 0) {
         LogBox::end("CRC32 UNCHANGED - Skipping download");
         return false;  // No change, skip download
     } else {
         LogBox::line("CRC32 CHANGED - Will download image");
-        
-        // Update stored CRC32
-        _configManager->setLastCRC32(newCRC32);
         LogBox::end();
+        // NOTE: Deferred - CRC32 is NOT saved here, caller must call saveCRC32()
+        // after confirming successful image display
         return true;  // Changed, proceed with download
     }
+}
+
+void ImageManager::saveCRC32(uint32_t crc32Value) {
+    if (!_configManager) {
+        LogBox::begin("CRC32 Save");
+        LogBox::line("ConfigManager not set - cannot save CRC32");
+        LogBox::end();
+        return;
+    }
+    
+    LogBox::begin("Saving CRC32");
+    _configManager->setLastCRC32(crc32Value);
+    LogBox::end();
 }
 
 bool ImageManager::downloadAndDisplay(const char* url) {
