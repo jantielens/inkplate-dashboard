@@ -330,7 +330,7 @@ String ConfigPortal::generateConfigPage() {
         }
         html += "> Enable CRC32-based change detection";
         html += "</label>";
-        html += "<div class='help-text'>Skips image download when unchanged (requires .crc32 file on server). Significantly extends battery life.</div>";
+        html += "<div class='help-text'>Skips image download & refresh when unchanged. Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
         html += "</div>";
         
         // MQTT Configuration - optional section in CONFIG_MODE
