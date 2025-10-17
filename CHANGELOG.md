@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-10-16
+
+### Added
+- Visual feedback for manual refresh button press (issue #15)
+  - Display now shows "Manual Refresh" message when button is pressed for immediate update
+  - Message "Button pressed - updating..." displayed for 1.5 seconds before update begins
+  - Provides immediate user confirmation that button press was detected
+  - Works on all devices with wake button (Inkplate 5 V2, Inkplate 10, Inkplate 6 Flick)
+- USING.md user guide for end users
+  - Complete setup and configuration instructions
+  - Troubleshooting guide
+  - FAQ section
+  - Device-specific button operation details
+
+### Improved
+- Configuration portal mobile experience (issue #17)
+  - Refactored CSS into separate header file (config_portal_css.h) for better maintainability
+  - Input font size increased to 16px to prevent iOS auto-zoom on focus
+  - Added touch-action: manipulation to all interactive elements for better mobile responsiveness
+  - Checkbox size increased to 20px with custom styling for easier tapping
+  - Modal centering improved with transform-based positioning instead of margin
+  - Added -webkit-overflow-scrolling: touch for smooth iOS scrolling
+  - Responsive padding adjustments for mobile screens (< 600px width)
+  - Fixed body layout by removing flexbox centering in favor of margin-based approach
+  - Added word-break for device info to prevent text overflow
+  - Better touch feedback with proper hover/active state handling
+
 ## [0.3.0] - 2025-10-15
 
 ### Added
@@ -94,7 +121,9 @@
 - Preferences library for persistent configuration storage
 - Shared codebase between different Inkplate devices
 
-[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/jantielens/inkplate-dashboard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jantielens/inkplate-dashboard/compare/v0.0.1...v0.1.0
