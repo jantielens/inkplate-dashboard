@@ -85,6 +85,15 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     
     // Switch to station mode
     WiFi.mode(WIFI_STA);
+    
+    // Set hostname for network identification
+    String hostname = "inkplate-" + generateDeviceID();
+    WiFi.setHostname(hostname.c_str());
+    
+    // Enable persistent credentials and auto-reconnect for faster connections
+    WiFi.persistent(true);
+    WiFi.setAutoReconnect(true);
+    
     WiFi.begin(ssid.c_str(), password.c_str());
     
     // Wait for connection with timeout
