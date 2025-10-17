@@ -203,6 +203,10 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     // InkPlate library has drawImage that can work with WiFiClient streams
     if (_display->drawImage(url, 0, 0, true, false)) {
         LogBox::line("Image downloaded and displayed successfully!");
+        
+        // Actually refresh the e-ink display to show the new image
+        _display->display();
+        
         success = true;
     } else {
         showError("Failed to draw image (invalid format or size mismatch)");

@@ -79,6 +79,28 @@ function Build-Board {
         Write-Host "Copied $($file.Name) to sketch directory" -ForegroundColor Gray
     }
     
+    # Copy UI component files from common/src/ui subdirectory
+    $uiPath = Join-Path (Join-Path $COMMON_PATH "src") "ui"
+    if (Test-Path $uiPath) {
+        $uiSrcFiles = Get-ChildItem -Path $uiPath -Filter "*.cpp"
+        foreach ($file in $uiSrcFiles) {
+            $destPath = Join-Path $SKETCH_PATH $file.Name
+            Copy-Item -Path $file.FullName -Destination $destPath -Force
+            Write-Host "Copied $($file.Name) to sketch directory" -ForegroundColor Gray
+        }
+    }
+    
+    # Copy mode controller files from common/src/modes subdirectory
+    $modesPath = Join-Path (Join-Path $COMMON_PATH "src") "modes"
+    if (Test-Path $modesPath) {
+        $modesSrcFiles = Get-ChildItem -Path $modesPath -Filter "*.cpp"
+        foreach ($file in $modesSrcFiles) {
+            $destPath = Join-Path $SKETCH_PATH $file.Name
+            Copy-Item -Path $file.FullName -Destination $destPath -Force
+            Write-Host "Copied $($file.Name) to sketch directory" -ForegroundColor Gray
+        }
+    }
+    
     # Compile the sketch with custom library path and build properties
     Write-Host "Compiling $SKETCH_PATH..." -ForegroundColor Yellow
     Write-Host "Including common libraries from: $COMMON_PATH" -ForegroundColor Gray
@@ -94,6 +116,22 @@ function Build-Board {
     foreach ($file in $commonSrcFiles) {
         $destPath = Join-Path $SKETCH_PATH $file.Name
         Remove-Item -Path $destPath -Force -ErrorAction SilentlyContinue
+    }
+    
+    # Clean up UI component files
+    if (Test-Path $uiPath) {
+        foreach ($file in $uiSrcFiles) {
+            $destPath = Join-Path $SKETCH_PATH $file.Name
+            Remove-Item -Path $destPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+    
+    # Clean up mode controller files
+    if (Test-Path $modesPath) {
+        foreach ($file in $modesSrcFiles) {
+            $destPath = Join-Path $SKETCH_PATH $file.Name
+            Remove-Item -Path $destPath -Force -ErrorAction SilentlyContinue
+        }
     }
     
     if ($LASTEXITCODE -eq 0) {
