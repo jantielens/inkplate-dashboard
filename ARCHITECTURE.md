@@ -115,12 +115,13 @@ Handles WiFi connectivity.
 - `disconnect()` - Disconnect and power down WiFi
 
 #### PowerManager (`power_manager.h/cpp`)
-Manages power states and wake sources.
+Manages power states, wake sources, and watchdog protection.
 
 **Responsibilities:**
 - Detect wake-up reason (timer, button, reset, first boot)
 - Detect button press type (short vs long press)
 - Configure deep sleep with multiple wake sources
+- Enable/disable hardware watchdog timer for operation protection
 - Track device running state for battery calculations
 
 **Wake Reasons:**
@@ -129,10 +130,20 @@ Manages power states and wake sources.
 - `WAKEUP_BUTTON` - Wake button pressed
 - `WAKEUP_RESET_BUTTON` - Hardware reset button (button-less boards)
 
+**Watchdog Timer:**
+- Protects normal operation against lockups (WiFi, MQTT, image download, display)
+- Uses ESP32 hardware watchdog with automatic panic recovery
+- Board-specific timeout: 30 seconds default, 60 seconds for Inkplate2
+- Enabled only during `NormalModeController::execute()`
+- Disabled before entering sleep to avoid interrupting sleep cycles
+- On timeout: Forces device into deep sleep for automatic recovery
+
 **Key Methods:**
 - `begin()` - Initialize with button pin
 - `getWakeupReason()` - Detect why device woke up
 - `detectButtonPressType()` - Check for short/long press
+- `enableWatchdog()` - Enable hardware watchdog timer (optional timeout parameter, uses board config default if not specified)
+- `disableWatchdog()` - Disable hardware watchdog timer
 - `prepareForSleep()` - Disconnect WiFi and prepare for deep sleep
 - `enterDeepSleep()` - Enter deep sleep with timer and button wake sources
 
@@ -288,25 +299,36 @@ Full configuration mode (triggered by button or auto-entry).
 #### NormalModeController (`normal_mode_controller.h/cpp`)
 Normal operation mode (image refresh cycle).
 
-**Purpose:** Execute the main dashboard update cycle.
+**Purpose:** Execute the main dashboard update cycle with hardware watchdog protection.
+
+**Watchdog Protection:**
+- Enabled at the start of the update cycle to protect against lockups
+- Monitors WiFi connection, MQTT publishing, image download, and display operations
+- If any step hangs longer than the timeout, ESP32 forces device into deep sleep for automatic recovery
+- Timeout is board-specific: 30 seconds default, 60 seconds for Inkplate2 (slower display)
+- Disabled before entering sleep to allow device to complete the sleep cycle safely
+- NOT active during config mode or AP mode (user configuration must never be interrupted)
 
 **Workflow:**
-1. Load configuration
-2. Connect to WiFi
-3. Publish MQTT telemetry (if configured)
-4. Check CRC32 for image changes (if enabled)
-5. Download and display image
-6. Save CRC32 after successful display
-7. Publish loop time to MQTT
-8. Enter deep sleep until next refresh
+1. **Enable watchdog timer** (protects all operations below)
+2. Load configuration
+3. Connect to WiFi
+4. Publish MQTT telemetry (if configured)
+5. Check CRC32 for image changes (if enabled)
+6. Download and display image
+7. Save CRC32 after successful display
+8. Publish loop time to MQTT
+9. **Disable watchdog timer** (before entering sleep)
+10. Enter deep sleep until next refresh
 
 **Special Cases:**
 - **Manual Refresh** - Button press during sleep forces image download even if CRC32 unchanged
 - **Retry Mechanism** - Up to 3 retry attempts with 20-second delays on download failure
 - **CRC32 Skip** - Timer wake with matching CRC32 skips download entirely
+- **Watchdog Timeout** - Device automatically enters deep sleep for recovery (prevents battery drain from lockups)
 
 **Key Methods:**
-- `execute()` - Run complete update cycle
+- `execute()` - Run complete update cycle (enables watchdog at start, disables before sleep)
 
 ### Utilities
 
