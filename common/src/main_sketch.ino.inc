@@ -12,6 +12,8 @@
 #include <src/image_manager.h>
 #include <src/power_manager.h>
 #include <src/mqtt_manager.h>
+#include <src/logger.h>
+
 
 // Create Inkplate instance
 // Inkplate 2 uses a different constructor (no display mode parameter)
@@ -46,9 +48,9 @@ void performNormalUpdate();  // Renamed from performNormalOperation for clarity
 void setup() {
     Serial.begin(115200);
     delay(100);  // Give serial time to initialize
-    Serial.println("\n\n=================================");
-    Serial.println("Starting " + String(BOARD_NAME) + "...");
-    Serial.println("=================================\n");
+    
+    LogBox::begin("Starting " + String(BOARD_NAME));
+    LogBox::end();
     
     // Initialize power manager first to detect wake reason
     powerManager.begin(WAKE_BUTTON_PIN);
@@ -81,7 +83,9 @@ void setup() {
     }
 
     if (!configInitialized) {
-        Serial.println("Failed to initialize ConfigManager!");
+        LogBox::begin("Configuration");
+        LogBox::line("Failed to initialize ConfigManager!");
+        LogBox::end();
         if (!shouldShowSplash) {
             displayManager.clear();
         }
@@ -98,7 +102,9 @@ void setup() {
     // RESET BUTTON PRESSED -> Enter config mode (only for button-less boards)
     #if !defined(HAS_BUTTON) || HAS_BUTTON == false
     if (wakeReason == WAKEUP_RESET_BUTTON) {
-        Serial.println("Hardware reset button detected (button-less board) - entering config mode");
+        LogBox::begin("Mode Selection");
+        LogBox::line("Hardware reset button detected (button-less board) - entering config mode");
+        LogBox::end();
         if (isFullyConfigured) {
             enterConfigMode();
         } else {
@@ -108,7 +114,9 @@ void setup() {
     }
     #else
     if (wakeReason == WAKEUP_RESET_BUTTON) {
-        Serial.println("Hardware reset button detected - ignoring (wake button available)");
+        LogBox::begin("Mode Selection");
+        LogBox::line("Hardware reset button detected - ignoring (wake button available)");
+        LogBox::end();
         // For boards with wake button, ignore reset button and continue to normal operation
         // Users should use long press on wake button for config mode
     }
@@ -116,14 +124,18 @@ void setup() {
     
     // FIRST BOOT (no WiFi configuration) -> AP Mode (Boot Mode)
     if (!hasWiFi && wakeReason == WAKEUP_FIRST_BOOT) {
-        Serial.println("Device NOT configured - entering AP mode (boot mode)");
+        LogBox::begin("Mode Selection");
+        LogBox::line("Device NOT configured - entering AP mode (boot mode)");
+        LogBox::end();
         enterAPMode();
         return;
     }
     
     // PARTIAL CONFIG (has WiFi but no Image URL) -> Auto-enter Config Mode
     if (hasWiFi && !isFullyConfigured) {
-        Serial.println("WiFi configured but missing Image URL - auto-entering config mode");
+        LogBox::begin("Mode Selection");
+        LogBox::line("WiFi configured but missing Image URL - auto-entering config mode");
+        LogBox::end();
         enterConfigMode();
         return;
     }
@@ -133,17 +145,23 @@ void setup() {
     if (isFullyConfigured) {
         ButtonPressType pressType = powerManager.detectButtonPressType();
         
-        Serial.printf("DEBUG: pressType=%d, wakeReason=%d (WAKEUP_BUTTON=%d)\n", 
+        LogBox::begin("Button Detection");
+        LogBox::linef("pressType=%d, wakeReason=%d (WAKEUP_BUTTON=%d)", 
                      pressType, wakeReason, WAKEUP_BUTTON);
+        LogBox::end();
         
         if (pressType == BUTTON_PRESS_LONG) {
-            Serial.println("Long button press detected - entering config mode");
+            LogBox::begin("Mode Selection");
+            LogBox::line("Long button press detected - entering config mode");
+            LogBox::end();
             enterConfigMode();
             return;
         } else if (pressType == BUTTON_PRESS_SHORT && wakeReason == WAKEUP_BUTTON) {
             // Only trigger immediate update for short press if it was a button wake
             // (not during timer wake or normal boot)
-            Serial.println("Short button press detected - performing normal update");
+            LogBox::begin("Mode Selection");
+            LogBox::line("Short button press detected - performing normal update");
+            LogBox::end();
             
             // Show immediate visual feedback for manual refresh
             displayManager.clear();
@@ -162,13 +180,17 @@ void setup() {
     
     // TIMER WAKE or normal boot with full configuration -> Normal Operation
     if (isFullyConfigured) {
-        Serial.println("Device is fully configured - entering normal operation mode");
+        LogBox::begin("Mode Selection");
+        LogBox::line("Device is fully configured - entering normal operation mode");
+        LogBox::end();
         performNormalUpdate();
         return;
     }
     
     // Fallback - shouldn't reach here
-    Serial.println("WARNING: Unexpected state - entering AP mode");
+    LogBox::begin("Mode Selection");
+    LogBox::line("WARNING: Unexpected state - entering AP mode");
+    LogBox::end();
     enterAPMode();
 }
 
@@ -208,21 +230,23 @@ void enterAPMode() {
         // Start configuration portal in BOOT_MODE
         if (configPortal.begin(BOOT_MODE)) {
             apModeActive = true;
-            Serial.println("\n=================================");
-            Serial.println("Configuration Portal Active (Boot Mode)");
-            Serial.println("=================================");
-            Serial.println("1. Connect to WiFi: " + apName);
-            Serial.println("2. Open: http://" + apIP);
-            Serial.println("3. Enter WiFi credentials");
-            Serial.println("=================================\n");
+            LogBox::begin("Configuration Portal Active (Boot Mode)");
+            LogBox::line("1. Connect to WiFi: " + apName);
+            LogBox::line("2. Open: http://" + apIP);
+            LogBox::line("3. Enter WiFi credentials");
+            LogBox::end();
         } else {
-            Serial.println("Failed to start configuration portal!");
+            LogBox::begin("Configuration Portal");
+            LogBox::line("Failed to start configuration portal!");
+            LogBox::end();
             int y = 400;
             displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
         }
     } else {
-        Serial.println("Failed to start Access Point!");
+        LogBox::begin("Access Point");
+        LogBox::line("Failed to start Access Point!");
+        LogBox::end();
         int y = 300;
         displayManager.showMessage("ERROR: AP Start Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
@@ -236,7 +260,9 @@ void enterConfigMode() {
     
     // For partial config, we may not have a full config to load
     if (!hasPartialConfig && !configManager.loadConfig(config)) {
-        Serial.println("Failed to load config in config mode!");
+        LogBox::begin("Config Mode Error");
+        LogBox::line("Failed to load config");
+        LogBox::end();
         int y = 240;
         displayManager.showMessage("ERROR: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
@@ -316,16 +342,16 @@ void enterConfigMode() {
             configModeActive = true;
             configModeStartTime = millis();
             
-            Serial.println("\n=================================");
-            Serial.println("Config Mode Active");
-            Serial.println("=================================");
-            Serial.println("Access at: http://" + localIP);
+            LogBox::begin("Config Mode Active");
+            LogBox::line("Access at: http://" + localIP);
             if (!hasPartialConfig) {
-                Serial.println("Timeout: " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes");
+                LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
             }
-            Serial.println("=================================\n");
+            LogBox::end();
         } else {
-            Serial.println("Failed to start configuration portal!");
+            LogBox::begin("Portal Error");
+            LogBox::line("Failed to start configuration portal");
+            LogBox::end();
             int y = 320;
             displayManager.showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
             displayManager.refresh();
@@ -339,7 +365,10 @@ void enterConfigMode() {
         }
     } else {
         // WiFi connection failed - fall back to AP mode
-        Serial.println("WiFi connection failed in config mode - falling back to AP mode!");
+        LogBox::begin("WiFi Failed");
+        LogBox::line("WiFi connection failed in config mode");
+        LogBox::line("Falling back to AP mode");
+        LogBox::end();
         
         displayManager.clear();
         int y = MARGIN;  // Start at top margin
@@ -383,18 +412,18 @@ void enterConfigMode() {
                 configModeActive = true;
                 configModeStartTime = millis();
                 
-                Serial.println("\n=================================");
-                Serial.println("Config Mode Active (AP Fallback)");
-                Serial.println("=================================");
-                Serial.println("1. Connect to WiFi: " + apName);
-                Serial.println("2. Open: http://" + apIP);
-                Serial.println("3. Update your configuration");
+                LogBox::begin("Config Mode Active (AP Fallback)");
+                LogBox::line("1. Connect to WiFi: " + apName);
+                LogBox::line("2. Open: http://" + apIP);
+                LogBox::line("3. Update your configuration");
                 if (!hasPartialConfig) {
-                    Serial.println("Timeout: " + String(CONFIG_MODE_TIMEOUT_MS / 60000) + " minutes");
+                    LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
                 }
-                Serial.println("=================================\n");
+                LogBox::end();
             } else {
-                Serial.println("Failed to start AP mode fallback!");
+                LogBox::begin("AP Mode Error");
+                LogBox::line("Failed to start AP mode fallback");
+                LogBox::end();
                 int y = 380;
                 displayManager.showMessage("ERROR: AP Failed", MARGIN, y, FONT_NORMAL);
                 displayManager.refresh();
@@ -403,7 +432,9 @@ void enterConfigMode() {
                 powerManager.enterDeepSleep((uint16_t)config.refreshRate);
             }
         } else {
-            Serial.println("Failed to start AP mode fallback!");
+            LogBox::begin("AP Mode Error");
+            LogBox::line("Failed to start AP mode fallback");
+            LogBox::end();
             displayManager.clear();
             int y = MARGIN;  // Start at top margin
             displayManager.showMessage("Config Mode Failed", MARGIN, y, FONT_HEADING1);
@@ -430,7 +461,9 @@ void performNormalUpdate() {
     
     DashboardConfig config;
     if (!configManager.loadConfig(config)) {
-        Serial.println("Failed to load config!");
+        LogBox::begin("Config Error");
+        LogBox::line("Failed to load config");
+        LogBox::end();
         int y = 240;
         displayManager.showMessage("Status: Config Load Failed", MARGIN, y, FONT_NORMAL);
         displayManager.refresh();
@@ -462,17 +495,21 @@ void performNormalUpdate() {
     
     // Connect to WiFi
     if (wifiManager.connectToWiFi()) {
-        Serial.println("WiFi connected successfully!");
+        LogBox::begin("WiFi Connected");
+        LogBox::line("WiFi connected successfully");
         
         // Measure WiFi signal strength
         int wifiRSSI = WiFi.RSSI();
-        Serial.println("WiFi Signal Strength: " + String(wifiRSSI) + " dBm");
+        LogBox::linef("Signal Strength: %d dBm", wifiRSSI);
+        LogBox::end();
         
         // Initialize and connect to MQTT (if configured)
         bool mqttSuccess = false;
         if (mqttManager.begin()) {
             if (mqttManager.isConfigured()) {
-                Serial.println("\nMQTT is configured - attempting connection...");
+                LogBox::begin("MQTT");
+                LogBox::line("MQTT is configured - attempting connection");
+                LogBox::end();
                 
                 if (mqttManager.connect()) {
                     // Publish Home Assistant discovery
@@ -491,12 +528,16 @@ void performNormalUpdate() {
                     // Disconnect from MQTT (will reconnect later to publish loop time)
                     mqttManager.disconnect();
                 } else {
-                    Serial.println("MQTT connection failed - continuing without MQTT");
-                    Serial.println("Error: " + mqttManager.getLastError());
+                    LogBox::begin("MQTT Failed");
+                    LogBox::line("MQTT connection failed - continuing without MQTT");
+                    LogBox::line("Error: " + mqttManager.getLastError());
+                    LogBox::end();
                     // Note: Can't publish MQTT failure event since we can't connect to MQTT
                 }
             } else {
-                Serial.println("MQTT not configured - skipping MQTT publishing");
+                LogBox::begin("MQTT");
+                LogBox::line("MQTT not configured - skipping MQTT publishing");
+                LogBox::end();
             }
         }
         
@@ -506,17 +547,21 @@ void performNormalUpdate() {
         if (config.useCRC32Check && wakeReason == WAKEUP_TIMER) {
             // Only skip download for CRC32 match during normal timer wake
             // Always download after config mode, firmware update, or button press to refresh display
-            Serial.println("\nCRC32 check is ENABLED (normal wake cycle)");
+            LogBox::begin("CRC32 Check");
+            LogBox::line("CRC32 check is ENABLED (normal wake cycle)");
+            LogBox::end();
             shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str());
             
             if (!shouldDownload) {
                 // Image hasn't changed - skip download and go to sleep
-                Serial.println("Image unchanged - skipping download and going to sleep");
+                LogBox::begin("Image Status");
+                LogBox::line("Image unchanged - skipping download and going to sleep");
                 
                 // Calculate loop time
                 loopDuration = millis() - loopStartTime;
                 loopTimeSeconds = loopDuration / 1000.0;
-                Serial.println("Loop time (CRC32 only): " + String(loopTimeSeconds, 2) + " seconds");
+                LogBox::linef("Loop time (CRC32 only): %.2f seconds", loopTimeSeconds);
+                LogBox::end();
                 
                 // Publish loop time to MQTT (if configured)
                 if (mqttManager.isConfigured()) {
@@ -536,14 +581,20 @@ void performNormalUpdate() {
                 return;
             }
         } else if (config.useCRC32Check) {
-            Serial.println("\nCRC32 check is ENABLED but bypassed (not a normal wake cycle)");
-            Serial.println("Will download image to refresh display after config/restart");
+            LogBox::begin("CRC32 Check");
+            LogBox::line("CRC32 check is ENABLED but bypassed (not a normal wake cycle)");
+            LogBox::line("Will download image to refresh display after config/restart");
+            LogBox::end();
         } else {
-            Serial.println("\nCRC32 check is DISABLED");
+            LogBox::begin("CRC32 Check");
+            LogBox::line("CRC32 check is DISABLED");
+            LogBox::end();
         }
         
         // Download and display image
-        Serial.println("\nDownloading image from: " + config.imageURL);
+        LogBox::begin("Image Download");
+        LogBox::line("Downloading image from: " + config.imageURL);
+        LogBox::end();
         
         if (showDebug) {
             displayManager.clear();
@@ -561,7 +612,8 @@ void performNormalUpdate() {
         }
         
         if (imageManager.downloadAndDisplay(config.imageURL.c_str())) {
-            Serial.println("Image displayed successfully!");
+            LogBox::begin("Image Success");
+            LogBox::line("Image displayed successfully");
             displayManager.refresh(false);
             
             // Reset retry count on success
@@ -570,7 +622,8 @@ void performNormalUpdate() {
             // Calculate loop time and publish to MQTT
             loopDuration = millis() - loopStartTime;
             loopTimeSeconds = loopDuration / 1000.0;
-            Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
+            LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
+            LogBox::end();
             
             // Publish loop time to MQTT (if configured)
             if (mqttManager.isConfigured()) {
@@ -581,7 +634,9 @@ void performNormalUpdate() {
             }
             
             // Success - go to deep sleep
-            Serial.println("\nImage display successful - preparing for sleep");
+            LogBox::begin("Sleep Preparation");
+            LogBox::line("Image display successful - preparing for sleep");
+            LogBox::end();
             delay(1000);  // Give user time to see the image
             
             // Mark device as running (one-time NVS write for reset detection)
@@ -590,14 +645,16 @@ void performNormalUpdate() {
             powerManager.prepareForSleep();
             powerManager.enterDeepSleep((uint16_t)config.refreshRate);
         } else {
-            Serial.println("Failed to download/display image!");
-            Serial.println("Retry count: " + String(imageRetryCount));
+            LogBox::begin("Image Error");
+            LogBox::line("Failed to download/display image");
+            LogBox::linef("Retry count: %d", imageRetryCount);
             
             // Check if we should retry silently
             if (imageRetryCount < 2) {
                 // Increment retry count and sleep for 20 seconds
                 imageRetryCount++;
-                Serial.println("Will retry in 20 seconds (attempt " + String(imageRetryCount + 1) + " of 3)");
+                LogBox::linef("Will retry in 20 seconds (attempt %d of 3)", imageRetryCount + 1);
+                LogBox::end();
                 
                 // Mark device as running (one-time NVS write for reset detection)
                 powerManager.markDeviceRunning();
@@ -606,7 +663,8 @@ void performNormalUpdate() {
                 powerManager.enterDeepSleep((float)(20.0 / 60.0));  // 20 seconds as fraction of minutes
             } else {
                 // Max retries reached - show error and reset count
-                Serial.println("Max retries reached - showing error message");
+                LogBox::line("Max retries reached - showing error message");
+                LogBox::end();
                 imageRetryCount = 0;
                 
                 displayManager.clear();
@@ -637,7 +695,9 @@ void performNormalUpdate() {
                 // Calculate loop time and publish to MQTT
                 loopDuration = millis() - loopStartTime;
                 loopTimeSeconds = loopDuration / 1000.0;
-                Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
+                LogBox::begin("Loop Time");
+                LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
+                LogBox::end();
                 
                 // Publish loop time to MQTT (if configured)
                 if (mqttManager.isConfigured()) {
@@ -659,12 +719,14 @@ void performNormalUpdate() {
             }
         }
     } else {
-        Serial.println("WiFi connection failed!");
+        LogBox::begin("WiFi Error");
+        LogBox::line("WiFi connection failed");
         
         // Calculate loop time (even though we failed, measure what we did)
         unsigned long loopDuration = millis() - loopStartTime;
         float loopTimeSeconds = loopDuration / 1000.0;
-        Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
+        LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
+        LogBox::end();
         
         // Note: Can't publish WiFi failure event to MQTT since WiFi failed
         
@@ -688,7 +750,9 @@ void performNormalUpdate() {
         // Calculate loop time (even though we failed, measure what we did)
         loopDuration = millis() - loopStartTime;
         loopTimeSeconds = loopDuration / 1000.0;
-        Serial.println("Loop time: " + String(loopTimeSeconds, 2) + " seconds");
+        LogBox::begin("Loop Time");
+        LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
+        LogBox::end();
         
         // Note: Can't publish to MQTT since WiFi failed
         
@@ -711,10 +775,10 @@ void loop() {
         
         // Check if configuration was received
         if (configPortal.isConfigReceived()) {
-            Serial.println("\n=================================");
-            Serial.println("WiFi credentials received (boot mode)");
-            Serial.println("Restarting to configure dashboard...");
-            Serial.println("=================================\n");
+            LogBox::begin("WiFi Configured");
+            LogBox::line("WiFi credentials received (boot mode)");
+            LogBox::line("Restarting to configure dashboard");
+            LogBox::end();
             
             displayManager.clear();
             int y = MARGIN;
@@ -732,10 +796,10 @@ void loop() {
         
         // Check if configuration was received
         if (configPortal.isConfigReceived()) {
-            Serial.println("\n=================================");
-            Serial.println("Configuration updated!");
-            Serial.println("Restarting in 3 seconds...");
-            Serial.println("=================================\n");
+            LogBox::begin("Configuration Updated");
+            LogBox::line("Configuration updated");
+            LogBox::line("Restarting in 3 seconds");
+            LogBox::end();
             
             // Publish log message for settings updated (if MQTT is configured)
             if (mqttManager.begin() && mqttManager.isConfigured()) {
@@ -760,10 +824,10 @@ void loop() {
         // Check for timeout (only if not in partial config auto-enter mode)
         bool hasPartialConfig = configManager.hasWiFiConfig() && !configManager.isFullyConfigured();
         if (!hasPartialConfig && millis() - configModeStartTime > CONFIG_MODE_TIMEOUT_MS) {
-            Serial.println("\n=================================");
-            Serial.println("Config mode timeout!");
-            Serial.println("Returning to sleep...");
-            Serial.println("=================================\n");
+            LogBox::begin("Config Timeout");
+            LogBox::line("Config mode timeout");
+            LogBox::line("Returning to sleep");
+            LogBox::end();
             
             // Publish log message for config mode timeout (if MQTT is configured)
             if (mqttManager.begin() && mqttManager.isConfigured()) {

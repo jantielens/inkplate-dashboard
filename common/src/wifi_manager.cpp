@@ -1,4 +1,5 @@
 #include "wifi_manager.h"
+#include "logger.h"
 
 WiFiManager::WiFiManager(ConfigManager* configManager) 
     : _configManager(configManager), _apActive(false) {
@@ -22,8 +23,8 @@ String WiFiManager::generateDeviceID() {
 }
 
 bool WiFiManager::startAccessPoint() {
-    Serial.println("Starting Access Point...");
-    Serial.println("AP Name: " + _apName);
+    LogBox::begin("Starting Access Point");
+    LogBox::line("AP Name: " + _apName);
     
     // Disconnect from any WiFi network first
     WiFi.mode(WIFI_AP);
@@ -34,13 +35,15 @@ bool WiFiManager::startAccessPoint() {
     if (success) {
         _apActive = true;
         IPAddress ip = WiFi.softAPIP();
-        Serial.println("Access Point started successfully");
-        Serial.println("IP Address: " + ip.toString());
-        Serial.println("Connect to WiFi network: " + _apName);
-        Serial.println("Then navigate to: http://" + ip.toString());
+        LogBox::line("Access Point started successfully");
+        LogBox::line("IP Address: " + ip.toString());
+        LogBox::line("Connect to WiFi network: " + _apName);
+        LogBox::line("Then navigate to: http://" + ip.toString());
+        LogBox::end();
         return true;
     } else {
-        Serial.println("Failed to start Access Point");
+        LogBox::line("Failed to start Access Point");
+        LogBox::end();
         _apActive = false;
         return false;
     }
@@ -48,7 +51,9 @@ bool WiFiManager::startAccessPoint() {
 
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
-        Serial.println("Stopping Access Point...");
+        LogBox::begin("Access Point");
+        LogBox::line("Stopping Access Point...");
+        LogBox::end();
         WiFi.softAPdisconnect(true);
         _apActive = false;
     }
@@ -70,7 +75,8 @@ bool WiFiManager::isAPActive() {
 }
 
 bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
-    Serial.println("Connecting to WiFi: " + ssid);
+    LogBox::begin("Connecting to WiFi");
+    LogBox::line("SSID: " + ssid);
     
     // Stop AP mode if active
     if (_apActive) {
@@ -87,7 +93,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     
     while (WiFi.status() != WL_CONNECTED && retries < WIFI_MAX_RETRIES) {
         if (millis() - startTime > WIFI_CONNECT_TIMEOUT_MS) {
-            Serial.println("Connection timeout, retrying...");
+            LogBox::line("Connection timeout, retrying...");
             WiFi.disconnect();
             delay(1000);
             WiFi.begin(ssid.c_str(), password.c_str());
@@ -98,19 +104,23 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Connected to WiFi!");
-        Serial.println("IP Address: " + WiFi.localIP().toString());
-        Serial.println("Signal Strength: " + String(WiFi.RSSI()) + " dBm");
+        LogBox::line("Connected to WiFi!");
+        LogBox::line("IP Address: " + WiFi.localIP().toString());
+        LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
+        LogBox::end();
         return true;
     } else {
-        Serial.println("Failed to connect to WiFi after " + String(WIFI_MAX_RETRIES) + " retries");
+        LogBox::linef("Failed to connect to WiFi after %d retries", WIFI_MAX_RETRIES);
+        LogBox::end();
         return false;
     }
 }
 
 bool WiFiManager::connectToWiFi() {
     if (!_configManager) {
-        Serial.println("ConfigManager not set");
+        LogBox::begin("WiFi Connection");
+        LogBox::line("ConfigManager not set");
+        LogBox::end();
         return false;
     }
     
@@ -118,7 +128,9 @@ bool WiFiManager::connectToWiFi() {
     String password = _configManager->getWiFiPassword();
     
     if (ssid.length() == 0) {
-        Serial.println("No WiFi credentials stored");
+        LogBox::begin("WiFi Connection");
+        LogBox::line("No WiFi credentials stored");
+        LogBox::end();
         return false;
     }
     
@@ -127,7 +139,9 @@ bool WiFiManager::connectToWiFi() {
 
 void WiFiManager::disconnect() {
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Disconnecting from WiFi...");
+        LogBox::begin("WiFi");
+        LogBox::line("Disconnecting from WiFi...");
+        LogBox::end();
         WiFi.disconnect();
     }
 }

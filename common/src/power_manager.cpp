@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include <Preferences.h>
 #include "Inkplate.h"
+#include "logger.h"
 
 // RTC memory to track if device was previously running
 RTC_DATA_ATTR uint32_t rtc_boot_count = 0;
@@ -41,10 +42,13 @@ void PowerManager::begin(uint8_t buttonPin) {
     // Wake when button is pressed (LOW level, assuming active low button)
     esp_sleep_enable_ext0_wakeup((gpio_num_t)_buttonPin, 0);  // 0 = LOW, 1 = HIGH
     
-    Serial.println("PowerManager initialized");
-    Serial.printf("Button pin configured: GPIO %d\n", _buttonPin);
+    LogBox::begin("PowerManager initialized");
+    LogBox::linef("Button pin configured: GPIO %d", _buttonPin);
+    LogBox::end();
     #else
-    Serial.println("PowerManager initialized (no button)");
+    LogBox::begin("PowerManager initialized");
+    LogBox::line("No button on this board");
+    LogBox::end();
     #endif
     
     printWakeupReason();
@@ -59,20 +63,25 @@ WakeupReason PowerManager::detectWakeupReason() {
     
     switch (wakeup_reason) {
         case ESP_SLEEP_WAKEUP_EXT0:
-            Serial.println("Wakeup caused by button press (EXT0)");
+            LogBox::begin("Wakeup Detection");
+            LogBox::line("Wakeup caused by button press (EXT0)");
+            LogBox::end();
             return WAKEUP_BUTTON;
             
         case ESP_SLEEP_WAKEUP_TIMER:
-            Serial.println("Wakeup caused by timer");
+            LogBox::begin("Wakeup Detection");
+            LogBox::line("Wakeup caused by timer");
+            LogBox::end();
             return WAKEUP_TIMER;
             
         case ESP_SLEEP_WAKEUP_UNDEFINED: {
             // Check if this was a hardware reset button press
             esp_reset_reason_t reset_reason = esp_reset_reason();
             
-            Serial.printf("Reset reason code: %d\n", reset_reason);
-            Serial.printf("RTC boot count: %d\n", rtc_boot_count);
-            Serial.printf("RTC was running: %s\n", rtc_was_running ? "true" : "false");
+            LogBox::begin("Wakeup Detection");
+            LogBox::linef("Reset reason code: %d", reset_reason);
+            LogBox::linef("RTC boot count: %d", rtc_boot_count);
+            LogBox::linef("RTC was running: %s", rtc_was_running ? "true" : "false");
             
             // Increment boot counter
             rtc_boot_count++;
@@ -84,11 +93,12 @@ WakeupReason PowerManager::detectWakeupReason() {
                 bool was_running = prefs.getBool("was_running", false);
                 prefs.end();
                 
-                Serial.printf("Device was running flag: %s\n", was_running ? "true" : "false");
+                LogBox::linef("Device was running flag: %s", was_running ? "true" : "false");
                 
                 if (was_running) {
                     // Device was previously running - this is a reset button press
-                    Serial.println("Device was running - reset button press detected");
+                    LogBox::line("Device was running - reset button press detected");
+                    LogBox::end();
                     
                     // Clear the flag for next time
                     prefs.begin("power_mgr", false);  // Read-write
@@ -98,48 +108,55 @@ WakeupReason PowerManager::detectWakeupReason() {
                     return WAKEUP_RESET_BUTTON;
                 } else {
                     // Device was not running - genuine first power-on or long power cycle
-                    Serial.println("Device was not running - initial power-on or long power cycle");
+                    LogBox::line("Device was not running - initial power-on or long power cycle");
+                    LogBox::end();
                     return WAKEUP_FIRST_BOOT;
                 }
             } else if (reset_reason == ESP_RST_SW || reset_reason == ESP_RST_DEEPSLEEP) {
                 // Software reset or wake from deep sleep
-                Serial.println("Software reset or deep sleep wake");
+                LogBox::line("Software reset or deep sleep wake");
+                LogBox::end();
                 return WAKEUP_FIRST_BOOT;
             } else if (reset_reason == ESP_RST_EXT) {
                 // External reset (reset button on some boards)
-                Serial.println("External reset button pressed");
+                LogBox::line("External reset button pressed");
+                LogBox::end();
                 return WAKEUP_RESET_BUTTON;
             } else {
-                Serial.printf("Other reset reason: %d\n", reset_reason);
+                LogBox::linef("Other reset reason: %d", reset_reason);
+                LogBox::end();
                 return WAKEUP_FIRST_BOOT;
             }
         }
             
         default:
-            Serial.printf("Wakeup caused by unknown reason: %d\n", wakeup_reason);
+            LogBox::begin("Wakeup Detection");
+            LogBox::linef("Wakeup caused by unknown reason: %d", wakeup_reason);
+            LogBox::end();
             return WAKEUP_UNKNOWN;
     }
 }
 
 void PowerManager::printWakeupReason() {
-    Serial.print("Current wakeup reason: ");
+    LogBox::begin("Current Wakeup Reason");
     switch (_wakeupReason) {
         case WAKEUP_TIMER:
-            Serial.println("TIMER (normal refresh cycle)");
+            LogBox::line("TIMER (normal refresh cycle)");
             break;
         case WAKEUP_BUTTON:
-            Serial.println("BUTTON (config mode requested)");
+            LogBox::line("BUTTON (config mode requested)");
             break;
         case WAKEUP_FIRST_BOOT:
-            Serial.println("FIRST_BOOT (initial setup)");
+            LogBox::line("FIRST_BOOT (initial setup)");
             break;
         case WAKEUP_RESET_BUTTON:
-            Serial.println("RESET_BUTTON (hardware reset pressed)");
+            LogBox::line("RESET_BUTTON (hardware reset pressed)");
             break;
         default:
-            Serial.println("UNKNOWN");
+            LogBox::line("UNKNOWN");
             break;
     }
+    LogBox::end();
 }
 
 bool PowerManager::isButtonPressed() {
@@ -155,37 +172,35 @@ bool PowerManager::isButtonPressed() {
 ButtonPressType PowerManager::detectButtonPressType() {
     #if defined(HAS_BUTTON) && HAS_BUTTON == false
     // Board has no button - always return no press
-    Serial.println("\n=================================");
-    Serial.println("Board has no physical button");
-    Serial.println("Skipping button detection");
-    Serial.println("=================================\n");
+    LogBox::begin("Button Detection");
+    LogBox::line("Board has no physical button");
+    LogBox::line("Skipping button detection");
+    LogBox::end();
     return BUTTON_PRESS_NONE;
     #endif
     
-    Serial.println("\n=================================");
-    Serial.println("Detecting button press type...");
-    Serial.printf("Wake reason: %d (WAKEUP_BUTTON=%d)\n", _wakeupReason, WAKEUP_BUTTON);
-    Serial.println("=================================");
+    LogBox::begin("Detecting button press type");
+    LogBox::linef("Wake reason: %d (WAKEUP_BUTTON=%d)", _wakeupReason, WAKEUP_BUTTON);
     
     // Check if button is currently pressed (works for any wake reason)
     bool buttonCurrentlyPressed = isButtonPressed();
-    Serial.printf("Button currently pressed: %s\n", buttonCurrentlyPressed ? "YES" : "NO");
+    LogBox::linef("Button currently pressed: %s", buttonCurrentlyPressed ? "YES" : "NO");
     
     if (!buttonCurrentlyPressed) {
         // For button wake, this means it was released quickly (short press)
         // For other wake reasons, no button is pressed
         if (_wakeupReason == WAKEUP_BUTTON) {
-            Serial.println("Button already released - SHORT PRESS detected");
-            Serial.println("=================================\n");
+            LogBox::line("Button already released - SHORT PRESS detected");
+            LogBox::end();
             return BUTTON_PRESS_SHORT;
         } else {
-            Serial.println("No button press detected");
-            Serial.println("=================================\n");
+            LogBox::line("No button press detected");
+            LogBox::end();
             return BUTTON_PRESS_NONE;
         }
     }
     
-    Serial.println("Button is currently pressed, waiting to determine hold duration...");
+    LogBox::line("Button is currently pressed, waiting to determine hold duration...");
     
     // Button is held down, wait for hold duration (2.5 seconds)
     const unsigned long HOLD_THRESHOLD_MS = 2500;
@@ -196,16 +211,16 @@ ButtonPressType PowerManager::detectButtonPressType() {
         if (!isButtonPressed()) {
             // Button was released before timeout
             unsigned long pressDuration = millis() - startTime;
-            Serial.printf("Button released after %lu ms - SHORT PRESS detected\n", pressDuration);
-            Serial.println("=================================\n");
+            LogBox::linef("Button released after %lu ms - SHORT PRESS detected", pressDuration);
+            LogBox::end();
             return BUTTON_PRESS_SHORT;
         }
         delay(50);  // Small delay to prevent excessive polling
     }
     
     // Button is still held after threshold - it's a long press
-    Serial.printf("Button held for >= %lu ms - LONG PRESS detected\n", HOLD_THRESHOLD_MS);
-    Serial.println("=================================\n");
+    LogBox::linef("Button held for >= %lu ms - LONG PRESS detected", HOLD_THRESHOLD_MS);
+    LogBox::end();
     return BUTTON_PRESS_LONG;
 }
 
@@ -214,8 +229,9 @@ uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)refreshRateMinutes * 60ULL * 1000000ULL;
     
-    Serial.printf("Sleep duration: %u minutes = %llu microseconds\n", 
-                  refreshRateMinutes, microseconds);
+    LogBox::begin("Sleep Duration Calculation");
+    LogBox::linef("Sleep duration: %u minutes = %llu microseconds", refreshRateMinutes, microseconds);
+    LogBox::end();
     
     return microseconds;
 }
@@ -225,26 +241,24 @@ uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
     
-    Serial.printf("Sleep duration: %.2f minutes = %llu microseconds\n", 
-                  refreshRateMinutes, microseconds);
+    LogBox::begin("Sleep Duration Calculation");
+    LogBox::linef("Sleep duration: %.2f minutes = %llu microseconds", refreshRateMinutes, microseconds);
+    LogBox::end();
     
     return microseconds;
 }
 
 void PowerManager::prepareForSleep() {
-    Serial.println("\n=================================");
-    Serial.println("Preparing for deep sleep...");
-    Serial.println("=================================");
-    
-    // Disconnect WiFi
-    Serial.println("Disconnecting WiFi...");
+    LogBox::begin("Preparing for deep sleep");
+    LogBox::line("Disconnecting WiFi...");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     
     // Small delay to ensure WiFi is fully shut down
     delay(100);
     
-    Serial.println("Ready for deep sleep");
+    LogBox::line("Ready for deep sleep");
+    LogBox::end();
 }
 
 void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
@@ -263,13 +277,14 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
     // Mark that we were running (for reset button detection)
     rtc_was_running = true;
     
-    Serial.printf("\nEntering deep sleep for %u minutes...\n", refreshRateMinutes);
+    LogBox::begin("Entering Deep Sleep");
+    LogBox::linef("Duration: %u minutes", refreshRateMinutes);
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
-    Serial.println("Wake sources: TIMER + BUTTON");
+    LogBox::line("Wake sources: TIMER + BUTTON");
     #else
-    Serial.println("Wake sources: TIMER only");
+    LogBox::line("Wake sources: TIMER only");
     #endif
-    Serial.println("=================================\n");
+    LogBox::end();
     
     // Flush serial before sleeping
     Serial.flush();
@@ -297,13 +312,14 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes) {
     // Mark that we were running (for reset button detection)
     rtc_was_running = true;
     
-    Serial.printf("\nEntering deep sleep for %.2f minutes...\n", refreshRateMinutes);
+    LogBox::begin("Entering Deep Sleep");
+    LogBox::linef("Duration: %.2f minutes", refreshRateMinutes);
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
-    Serial.println("Wake sources: TIMER + BUTTON");
+    LogBox::line("Wake sources: TIMER + BUTTON");
     #else
-    Serial.println("Wake sources: TIMER only");
+    LogBox::line("Wake sources: TIMER only");
     #endif
-    Serial.println("=================================\n");
+    LogBox::end();
     
     // Flush serial before sleeping
     Serial.flush();
@@ -316,9 +332,7 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes) {
 }
 
 float PowerManager::readBatteryVoltage(void* inkplate) {
-    Serial.println("\n=================================");
-    Serial.println("Reading battery voltage...");
-    Serial.println("=================================");
+    LogBox::begin("Reading battery voltage");
     
     // If Inkplate object provided, use its built-in readBattery() method
     if (inkplate != nullptr) {
@@ -328,8 +342,8 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
         #ifndef DISPLAY_MODE_INKPLATE2
         float voltage = ((Inkplate*)inkplate)->readBattery();
         
-        Serial.printf("Battery Voltage: %.3f V (from Inkplate library)\n", voltage);
-        Serial.println("=================================\n");
+        LogBox::linef("Battery Voltage: %.3f V (from Inkplate library)", voltage);
+        LogBox::end();
         
         return voltage;
         #endif
@@ -337,7 +351,7 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
     
     #ifdef BATTERY_ADC_PIN
     // Fallback: manual ADC reading if no Inkplate object provided or Inkplate 2
-    Serial.println("Using manual ADC reading");
+    LogBox::line("Using manual ADC reading");
     
     // Configure ADC pin as input
     pinMode(BATTERY_ADC_PIN, INPUT);
@@ -367,15 +381,15 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
     float adcVoltage = (adcValue / 4095.0) * 3.3;
     float batteryVoltage = adcVoltage * 2.0;  // Account for voltage divider
     
-    Serial.printf("ADC Value: %d (raw)\n", adcValue);
-    Serial.printf("ADC Voltage: %.3f V\n", adcVoltage);
-    Serial.printf("Battery Voltage: %.3f V (with divider)\n", batteryVoltage);
-    Serial.println("=================================\n");
+    LogBox::linef("ADC Value: %d (raw)", adcValue);
+    LogBox::linef("ADC Voltage: %.3f V", adcVoltage);
+    LogBox::linef("Battery Voltage: %.3f V (with divider)", batteryVoltage);
+    LogBox::end();
     
     return batteryVoltage;
     #else
-    Serial.println("Battery ADC pin not defined for this board");
-    Serial.println("=================================\n");
+    LogBox::line("Battery ADC pin not defined for this board");
+    LogBox::end();
     return 0.0;
     #endif
 }
@@ -388,7 +402,9 @@ void PowerManager::markDeviceRunning() {
     
     if (!was_already_set) {
         prefs.putBool("was_running", true);
-        Serial.println("Device marked as running in NVS (one-time write)");
+        LogBox::begin("Power Manager");
+        LogBox::line("Device marked as running in NVS (one-time write)");
+        LogBox::end();
     }
     
     prefs.end();
