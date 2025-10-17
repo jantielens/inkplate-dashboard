@@ -50,8 +50,8 @@ private:
     bool publishMQTTTelemetry(const String& deviceId, const String& deviceName, int wifiRSSI, float batteryVoltage);
     bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime);
     bool downloadAndDisplayImage(const DashboardConfig& config, bool showDebug, bool mqttSuccess);
-    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, const String& deviceId);
-    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, const String& deviceId);
+    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, const String& deviceId, bool mqttConnected);
+    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, const String& deviceId, bool mqttConnected);
     void handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime);
     void enterSleep(uint16_t minutes);
 };

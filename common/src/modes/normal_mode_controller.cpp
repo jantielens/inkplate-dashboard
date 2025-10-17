@@ -71,9 +71,9 @@ void NormalModeController::execute() {
     }
     
     if (downloadAndDisplayImage(config, showDebug, mqttSuccess)) {
-        handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, deviceId);
+        handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, deviceId, mqttSuccess);
     } else {
-        handleImageFailure(config, loopStartTime, deviceId);
+        handleImageFailure(config, loopStartTime, deviceId, mqttSuccess);
     }
 }
 
@@ -124,18 +124,29 @@ bool NormalModeController::publishMQTTTelemetry(const String& deviceId, const St
     LogBox::linef("Publishing discovery: %s", shouldPublishDiscovery ? "YES" : "NO");
     LogBox::end();
     
-    // Placeholder for loop time (we don't have it yet, will publish 0 here)
-    // The actual loop time will be published later after image handling
-    float loopTimeSeconds = 0.0f;
-    
-    // Publish all telemetry in a single MQTT session
-    if (mqttManager->publishTelemetryBatch(deviceId, deviceName, BOARD_NAME,
-                                           batteryVoltage, wifiRSSI, loopTimeSeconds,
-                                           shouldPublishDiscovery)) {
+    // Connect to MQTT for initial telemetry (discovery, battery, WiFi)
+    // Loop time will be published later in the same connection after image handling
+    if (mqttManager->connect()) {
+        LogBox::begin("MQTT Publishing");
+        
+        // Publish discovery if needed
+        if (shouldPublishDiscovery) {
+            mqttManager->publishDiscovery(deviceId, deviceName, BOARD_NAME, true);
+        }
+        
+        // Publish battery voltage and WiFi signal
+        mqttManager->publishBatteryVoltage(deviceId, batteryVoltage);
+        mqttManager->publishWiFiSignal(deviceId, wifiRSSI);
+        
+        LogBox::line("Initial telemetry published (discovery + battery + WiFi)");
+        LogBox::end();
+        
         mqttSuccess = true;
+        // Keep connection open - loop time will be published later
+        // Store connection state to know we should publish loop time
     } else {
         LogBox::begin("MQTT Failed");
-        LogBox::line("MQTT telemetry batch publishing failed");
+        LogBox::line("MQTT connection failed - skipping telemetry");
         LogBox::line("Error: " + mqttManager->getLastError());
         LogBox::end();
     }
@@ -212,7 +223,7 @@ bool NormalModeController::downloadAndDisplayImage(const DashboardConfig& config
 
 void NormalModeController::handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32,
                                               bool crc32WasChecked, bool crc32Matched,
-                                              unsigned long loopStartTime, const String& deviceId) {
+                                              unsigned long loopStartTime, const String& deviceId, bool mqttConnected) {
     LogBox::begin("Image Success");
     LogBox::line("Image displayed successfully");
     
@@ -250,12 +261,10 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
     LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
     LogBox::end();
     
-    // Publish loop time to MQTT (if configured)
-    if (mqttManager->isConfigured()) {
-        if (mqttManager->connect()) {
-            mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
-            mqttManager->disconnect();
-        }
+    // Publish loop time to MQTT (if configured and already connected)
+    if (mqttManager->isConfigured() && mqttConnected) {
+        // Connection already open - just publish loop time without reconnecting
+        mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
     }
     
     // Success - go to deep sleep
@@ -268,7 +277,7 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
 }
 
 void NormalModeController::handleImageFailure(const DashboardConfig& config,
-                                              unsigned long loopStartTime, const String& deviceId) {
+                                              unsigned long loopStartTime, const String& deviceId, bool mqttConnected) {
     LogBox::begin("Image Error");
     LogBox::line("Failed to download/display image");
     LogBox::linef("Retry count: %d", *imageRetryCount);
@@ -298,13 +307,11 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         LogBox::linef("Loop time: %.2f seconds", loopTimeSeconds);
         LogBox::end();
         
-        // Publish loop time to MQTT (if configured)
-        if (mqttManager->isConfigured()) {
-            if (mqttManager->connect()) {
-                mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
-                mqttManager->publishLastLog(deviceId, "Image download failed: " + String(imageManager->getLastError()), "error");
-                mqttManager->disconnect();
-            }
+        // Publish loop time to MQTT (if configured and already connected)
+        if (mqttManager->isConfigured() && mqttConnected) {
+            // Connection already open - just publish loop time without reconnecting
+            mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
+            mqttManager->publishLastLog(deviceId, "Image download failed: " + String(imageManager->getLastError()), "error");
         }
         
         // Error - still go to sleep and retry later
