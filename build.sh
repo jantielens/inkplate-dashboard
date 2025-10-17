@@ -58,6 +58,28 @@ build_board() {
         fi
     done
     
+    # Copy UI component files from common/src/ui subdirectory
+    if [ -d "$COMMON_PATH/src/ui" ]; then
+        for file in "$COMMON_PATH/src/ui"/*.cpp; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                cp "$file" "$SKETCH_PATH/$filename"
+                echo "Copied $filename to sketch directory"
+            fi
+        done
+    fi
+    
+    # Copy mode controller files from common/src/modes subdirectory
+    if [ -d "$COMMON_PATH/src/modes" ]; then
+        for file in "$COMMON_PATH/src/modes"/*.cpp; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                cp "$file" "$SKETCH_PATH/$filename"
+                echo "Copied $filename to sketch directory"
+            fi
+        done
+    fi
+    
     # Compile the sketch with custom library path and build properties
     echo "Compiling $SKETCH_PATH..."
     echo "Including common libraries from: $COMMON_PATH"
@@ -85,6 +107,26 @@ build_board() {
             rm -f "$SKETCH_PATH/$filename"
         fi
     done
+    
+    # Clean up UI component files
+    if [ -d "$COMMON_PATH/src/ui" ]; then
+        for file in "$COMMON_PATH/src/ui"/*.cpp; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                rm -f "$SKETCH_PATH/$filename"
+            fi
+        done
+    fi
+    
+    # Clean up mode controller files
+    if [ -d "$COMMON_PATH/src/modes" ]; then
+        for file in "$COMMON_PATH/src/modes"/*.cpp; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                rm -f "$SKETCH_PATH/$filename"
+            fi
+        done
+    fi
     
     if [ $BUILD_RESULT -eq 0 ]; then
         # Rename binary to include version

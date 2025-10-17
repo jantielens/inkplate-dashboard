@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-10-17
+
+### Added
+- Watchdog timer implementation (issue #18)
+  - Protects normal operation against lockups during WiFi, MQTT, image download, or display steps
+  - Forces device into deep sleep on timeout to enable battery-powered automatic recovery
+  - Board-specific timeout configuration: 30 seconds default, 60 seconds for Inkplate2 (slower display)
+  - Disabled during config and AP modes to allow uninterrupted user configuration
+  - Uses ESP32 hardware watchdog (`esp_task_wdt`) with automatic panic recovery
+
+### Changed
+- Major code refactoring to improve maintainability and readability
+  - Extracted UI components into dedicated classes (UIMessages, UIError, UIStatus)
+  - Extracted mode logic into controller classes (APModeController, ConfigModeController, NormalModeController)
+  - Reduced main_sketch.ino.inc from 779 lines to ~250 lines (68% reduction)
+  - Improved code organization with clear separation of concerns
+  - Added comprehensive architecture documentation (ARCHITECTURE.md)
+
+### Fixed
+- Image display not refreshing on manual refresh (pre-existing bug from v0.3.1)
+  - Added missing display() call after drawImage() in ImageManager
+  - Manual refresh now properly shows updated image on e-ink screen
+
 ## [0.6.0] - 2025-10-17
 
 ### Added

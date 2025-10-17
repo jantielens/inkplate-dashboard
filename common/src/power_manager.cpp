@@ -409,3 +409,49 @@ void PowerManager::markDeviceRunning() {
     
     prefs.end();
 }
+
+// Watchdog timer implementation
+#include <esp_task_wdt.h>
+
+// Default watchdog timeout (can be overridden per board in board_config.h)
+#ifndef WATCHDOG_TIMEOUT_SECONDS
+#define WATCHDOG_TIMEOUT_SECONDS 30
+#endif
+
+void PowerManager::enableWatchdog(uint32_t timeoutSeconds) {
+    // Use board-specific timeout if not provided
+    if (timeoutSeconds == 0) {
+        timeoutSeconds = WATCHDOG_TIMEOUT_SECONDS;
+    }
+    
+    LogBox::begin("Watchdog Timer");
+    LogBox::linef("Enabling watchdog with %u second timeout", timeoutSeconds);
+    
+    try {
+        // Initialize watchdog task with specified timeout
+        // IDLE tasks (on both cores for ESP32) will be monitored
+        esp_task_wdt_init(timeoutSeconds, true);  // true = panic on timeout
+        esp_task_wdt_add(NULL);  // Monitor current task (main loop)
+        
+        LogBox::line("Watchdog enabled successfully");
+        LogBox::end();
+    } catch (...) {
+        LogBox::line("Failed to enable watchdog (may already be enabled)");
+        LogBox::end();
+    }
+}
+
+void PowerManager::disableWatchdog() {
+    LogBox::begin("Watchdog Timer");
+    LogBox::line("Disabling watchdog");
+    
+    try {
+        esp_task_wdt_delete(NULL);  // Remove current task from monitoring
+        LogBox::line("Watchdog disabled successfully");
+        LogBox::end();
+    } catch (...) {
+        LogBox::line("Failed to disable watchdog (may already be disabled)");
+        LogBox::end();
+    }
+}
+

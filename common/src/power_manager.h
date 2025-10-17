@@ -65,6 +65,15 @@ public:
     // Should be called once when device enters normal operation
     void markDeviceRunning();
     
+    // Enable watchdog timer (protects against lockups during normal operation)
+    // Should be called at the start of normal update cycle
+    // timeoutSeconds: how long to wait before forcing deep sleep
+    //                 Uses WATCHDOG_TIMEOUT_SECONDS from board_config.h if not specified
+    void enableWatchdog(uint32_t timeoutSeconds = 0);
+    
+    // Disable watchdog timer (should be called before entering deep sleep)
+    void disableWatchdog();
+    
 private:
     uint8_t _buttonPin;
     WakeupReason _wakeupReason;
