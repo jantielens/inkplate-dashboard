@@ -149,7 +149,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
             LogBox::line("Image unchanged - skipping download and going to sleep");
             
             // Calculate loop time
-            unsigned long loopDuration = millis() - micros();  // This will be corrected with actual start time
+            unsigned long loopDuration = millis() - loopStartTime;
             float loopTimeSeconds = loopDuration / 1000.0;
             LogBox::linef("Loop time (CRC32 only): %.2f seconds", loopTimeSeconds);
             LogBox::end();
