@@ -35,13 +35,6 @@ bool normalUpdateActive = false;  // Normal update triggered by short button pre
 unsigned long configModeStartTime = 0;
 const unsigned long CONFIG_MODE_TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
 
-// Application state
-bool apModeActive = false;
-bool configModeActive = false;  // Config mode triggered by button
-bool normalUpdateActive = false;  // Normal update triggered by short button press
-unsigned long configModeStartTime = 0;
-const unsigned long CONFIG_MODE_TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
-
 // RTC memory for retry mechanism (persists across deep sleep)
 RTC_DATA_ATTR uint8_t imageRetryCount = 0;
 

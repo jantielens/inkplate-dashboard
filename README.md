@@ -138,6 +138,8 @@ Recent versions automatically generate `.crc32` files for Home Assistant screens
 - If the `.crc32` file is missing or invalid, the device gracefully falls back to downloading the full image
 - Fully backward compatible with servers that don't support CRC32
 
+**For detailed setup instructions and server-side examples, see [CRC32_GUIDE.md](CRC32_GUIDE.md)**
+
 ## Project Structure
 
 ```
