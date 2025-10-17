@@ -111,6 +111,13 @@ const char* CONFIG_PORTAL_CSS = R"(
         transform: translateY(0);
     }
     
+    .btn-secondary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        padding: 12px 24px;
+        font-size: 15px;
+        width: 100%;
+    }
+    
     /* Desktop hover effect */
     @media (hover: hover) {
         button:hover {
@@ -251,6 +258,80 @@ const char* CONFIG_PORTAL_CSS = R"(
         font-weight: 600;
         cursor: pointer;
         touch-action: manipulation;
+    }
+    
+    /* OTA Update Styles */
+    .warning-banner {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        color: #92400e;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .warning-banner strong {
+        color: #78350f;
+    }
+    
+    .progress-container {
+        width: 100%;
+        background-color: #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 40px;
+        margin-top: 15px;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: opacity 0.2s;
+    }
+    
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    input[type="file"] {
+        padding: 10px;
+        border: 2px dashed #cbd5e1;
+        border-radius: 6px;
+        width: 100%;
+        cursor: pointer;
+        background: #f9fafb;
+    }
+    
+    input[type="file"]:hover {
+        border-color: #667eea;
+        background: #f3f4f6;
     }
     
     /* Mobile responsive adjustments */

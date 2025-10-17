@@ -1,9 +1,10 @@
 #include "config_portal.h"
 #include "config_portal_css.h"
 #include "version.h"
+#include "config.h"
 
-ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager)
-    : _configManager(configManager), _wifiManager(wifiManager), 
+ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager)
+    : _configManager(configManager), _wifiManager(wifiManager), _displayManager(displayManager),
       _server(nullptr), _configReceived(false), _port(80), _mode(CONFIG_MODE) {
 }
 
@@ -24,6 +25,65 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->on("/", [this]() { this->handleRoot(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
+    
+    // OTA routes - only available in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        _server->on("/ota", HTTP_GET, [this]() { this->handleOTA(); });
+        _server->on("/ota", HTTP_POST, 
+            [this]() { this->handleOTAUpload(); },
+            [this]() { 
+                // Handle upload data
+                HTTPUpload& upload = _server->upload();
+                if (upload.status == UPLOAD_FILE_START) {
+                    Serial.printf("OTA Update: %s\n", upload.filename.c_str());
+                    
+                    // Show visual feedback on screen
+                    if (_displayManager != nullptr) {
+                        _displayManager->clear();
+                        int y = MARGIN;
+                        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
+                        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+                        _displayManager->showMessage("Installing firmware...", MARGIN, y, FONT_NORMAL);
+                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+                        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
+                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+                        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
+                        _displayManager->refresh();
+                    }
+                    
+                    // Disable watchdog timer to prevent reboot during update
+                    disableCore0WDT();
+                    
+                    // Get the size of the next available OTA partition
+                    size_t updateSize = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+                    
+                    // Begin update with calculated size
+                    if (!Update.begin(updateSize, U_FLASH)) {
+                        Update.printError(Serial);
+                        enableCore0WDT();  // Re-enable on failure
+                    }
+                } else if (upload.status == UPLOAD_FILE_WRITE) {
+                    // Write data to flash
+                    size_t written = Update.write(upload.buf, upload.currentSize);
+                    if (written != upload.currentSize) {
+                        Update.printError(Serial);
+                    }
+                } else if (upload.status == UPLOAD_FILE_END) {
+                    if (Update.end(true)) {
+                        Serial.printf("OTA Update Success: %u bytes\n", upload.totalSize);
+                        // Watchdog will be reset on reboot, no need to re-enable
+                    } else {
+                        Update.printError(Serial);
+                        enableCore0WDT();  // Re-enable on failure
+                    }
+                } else if (upload.status == UPLOAD_FILE_ABORTED) {
+                    Update.end();
+                    enableCore0WDT();  // Re-enable on abort
+                }
+            }
+        );
+    }
+    
     _server->onNotFound([this]() { this->handleNotFound(); });
     
     _server->begin();
@@ -308,6 +368,15 @@ String ConfigPortal::generateConfigPage() {
     }
     html += "</form>";
     
+    // OTA Update button - only shown in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        html += "<div style='margin-top: 20px;'>";
+        html += "<a href='/ota' style='display: block; text-decoration: none;'>";
+        html += "<button type='button' class='btn-secondary'>⬆️ Firmware Update</button>";
+        html += "</a>";
+        html += "</div>";
+    }
+    
     // Factory Reset Section - only show in CONFIG_MODE if device is configured
     if (_mode == CONFIG_MODE && hasConfig) {
         html += "<div class='factory-reset-section'>";
@@ -423,3 +492,140 @@ String ConfigPortal::generateFactoryResetPage() {
     
     return html;
 }
+
+String ConfigPortal::generateOTAPage() {
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='UTF-8'>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    html += "<title>Firmware Update</title>";
+    html += getCSS();
+    html += "</head><body>";
+    html += "<div class='container'>";
+    html += "<h1>⬆️ Firmware Update</h1>";
+    html += "<p class='subtitle'>Upload new firmware to your device</p>";
+    
+    html += "<div class='device-info'>";
+    html += "<strong>Current Version:</strong> " + String(FIRMWARE_VERSION) + "<br>";
+    html += "<strong>Device:</strong> " + _wifiManager->getAPName();
+    html += "</div>";
+    
+    // Warning banner
+    html += "<div class='warning-banner'>";
+    html += "<strong>⚠️ Important:</strong> Only upload firmware files (.bin) built for your specific Inkplate model. ";
+    html += "The device will restart after a successful update. Do not power off during the update process.";
+    html += "</div>";
+    
+    // Upload form
+    html += "<form id='otaForm' method='POST' action='/ota' enctype='multipart/form-data'>";
+    html += "<div class='form-group'>";
+    html += "<label for='update'>Select Firmware File (.bin)</label>";
+    html += "<input type='file' id='update' name='update' accept='.bin' required>";
+    html += "<div class='help-text'>Choose a .bin firmware file for your device</div>";
+    html += "</div>";
+    
+    // Progress bar
+    html += "<div id='progressSection' style='display: none;'>";
+    html += "<div class='progress-container'>";
+    html += "<div class='progress-bar' id='progressBar'>0%</div>";
+    html += "</div>";
+    html += "<div id='statusText' class='help-text' style='text-align: center; margin-top: 10px;'></div>";
+    html += "</div>";
+    
+    // Buttons
+    html += "<div style='display: flex; gap: 10px; margin-top: 25px;'>";
+    html += "<button type='button' class='btn-cancel' onclick='window.location.href=\"/\"'>Cancel</button>";
+    html += "<button type='submit' id='uploadBtn' class='btn-primary' style='flex: 1;'>Upload Firmware</button>";
+    html += "</div>";
+    html += "</form>";
+    
+    // Success/Error messages
+    html += "<div id='successMessage' class='success' style='display: none; margin-top: 20px;'>";
+    html += "<h2>✅ Upload Successful!</h2>";
+    html += "<p>Firmware updated successfully. Device is restarting...</p>";
+    html += "</div>";
+    
+    html += "<div id='errorMessage' class='error' style='display: none; margin-top: 20px;'>";
+    html += "<h2>❌ Upload Failed</h2>";
+    html += "<p id='errorText'></p>";
+    html += "</div>";
+    
+    // Footer
+    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
+    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
+    html += "</div>";
+    
+    html += "</div>"; // Close container
+    
+    // JavaScript for upload handling
+    html += "<script>";
+    html += "document.getElementById('otaForm').addEventListener('submit', function(e) {";
+    html += "  e.preventDefault();";
+    html += "  var fileInput = document.getElementById('update');";
+    html += "  var file = fileInput.files[0];";
+    html += "  if (!file) {";
+    html += "    alert('Please select a firmware file.');";
+    html += "    return;";
+    html += "  }";
+    html += "  if (!file.name.endsWith('.bin')) {";
+    html += "    alert('Please select a valid .bin firmware file.');";
+    html += "    return;";
+    html += "  }";
+    html += "  var formData = new FormData();";
+    html += "  formData.append('update', file);";
+    html += "  var xhr = new XMLHttpRequest();";
+    html += "  document.getElementById('uploadBtn').disabled = true;";
+    html += "  document.getElementById('progressSection').style.display = 'block';";
+    html += "  document.getElementById('statusText').innerText = 'Uploading...';";
+    html += "  xhr.upload.addEventListener('progress', function(e) {";
+    html += "    if (e.lengthComputable) {";
+    html += "      var percentComplete = Math.round((e.loaded / e.total) * 100);";
+    html += "      document.getElementById('progressBar').style.width = percentComplete + '%';";
+    html += "      document.getElementById('progressBar').innerText = percentComplete + '%';";
+    html += "    }";
+    html += "  });";
+    html += "  xhr.addEventListener('load', function() {";
+    html += "    if (xhr.status === 200) {";
+    html += "      document.getElementById('statusText').innerText = 'Upload complete! Flashing...';";
+    html += "      document.getElementById('otaForm').style.display = 'none';";
+    html += "      document.getElementById('successMessage').style.display = 'block';";
+    html += "      setTimeout(function() { window.location.href = '/'; }, 10000);";
+    html += "    } else {";
+    html += "      document.getElementById('errorText').innerText = 'Server returned error: ' + xhr.status;";
+    html += "      document.getElementById('errorMessage').style.display = 'block';";
+    html += "      document.getElementById('uploadBtn').disabled = false;";
+    html += "      document.getElementById('progressSection').style.display = 'none';";
+    html += "    }";
+    html += "  });";
+    html += "  xhr.addEventListener('error', function() {";
+    html += "    document.getElementById('errorText').innerText = 'Upload failed. Please try again.';";
+    html += "    document.getElementById('errorMessage').style.display = 'block';";
+    html += "    document.getElementById('uploadBtn').disabled = false;";
+    html += "    document.getElementById('progressSection').style.display = 'none';";
+    html += "  });";
+    html += "  xhr.open('POST', '/ota');";
+    html += "  xhr.send(formData);";
+    html += "});";
+    html += "</script>";
+    
+    html += "</body></html>";
+    
+    return html;
+}
+
+void ConfigPortal::handleOTA() {
+    _server->send(200, "text/html", generateOTAPage());
+}
+
+void ConfigPortal::handleOTAUpload() {
+    // This is called after the upload handler finishes
+    if (Update.hasError()) {
+        String errorMsg = "Update failed. Error #" + String(Update.getError());
+        Update.printError(Serial);
+        _server->send(500, "text/plain", errorMsg);
+    } else {
+        _server->send(200, "text/plain", "Update successful! Rebooting...");
+        delay(1000);
+        ESP.restart();
+    }
+}
+

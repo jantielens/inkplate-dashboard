@@ -3,8 +3,10 @@
 
 #include <Arduino.h>
 #include <WebServer.h>
+#include <Update.h>
 #include "config_manager.h"
 #include "wifi_manager.h"
+#include "display_manager.h"
 
 // Portal mode enum
 enum PortalMode {
@@ -14,7 +16,7 @@ enum PortalMode {
 
 class ConfigPortal {
 public:
-    ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager);
+    ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager = nullptr);
     ~ConfigPortal();
     
     // Start the configuration web server with specified mode
@@ -35,6 +37,7 @@ public:
 private:
     ConfigManager* _configManager;
     WiFiManager* _wifiManager;
+    DisplayManager* _displayManager;
     WebServer* _server;
     bool _configReceived;
     int _port;
@@ -44,6 +47,8 @@ private:
     void handleRoot();
     void handleSubmit();
     void handleFactoryReset();
+    void handleOTA();
+    void handleOTAUpload();
     void handleNotFound();
     
     // HTML page generators
@@ -51,6 +56,7 @@ private:
     String generateSuccessPage();
     String generateErrorPage(const String& error);
     String generateFactoryResetPage();
+    String generateOTAPage();
     
     // CSS styles
     String getCSS();

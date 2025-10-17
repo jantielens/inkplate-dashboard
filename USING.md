@@ -11,8 +11,9 @@ A complete guide for using your Inkplate Dashboard to display images on your e-i
 3. [Configuration Options](#configuration-options)
 4. [Normal Operation](#normal-operation)
 5. [Manual Updates](#manual-updates)
-6. [Entering Different Modes](#entering-different-modes)
-7. [Troubleshooting](#troubleshooting)
+6. [Firmware Updates (OTA)](#firmware-updates-ota)
+7. [Entering Different Modes](#entering-different-modes)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -279,6 +280,59 @@ The Inkplate 2 doesn't have a physical wake button, which means the manual refre
 
 ---
 
+## Firmware Updates (OTA)
+
+You can update your device's firmware wirelessly using the built-in OTA (Over-The-Air) update feature, without needing to connect a USB cable or use programming tools.
+
+### Accessing the OTA Update Page
+
+1. **Enter Config Mode** (long press the button for 2.5+ seconds)
+   - For Inkplate 2: use the reset button to trigger config mode
+   
+2. **Connect to your WiFi network** (the same network your Inkplate is connected to)
+
+3. **Open the configuration page** in your browser using the IP address shown on the display
+
+4. **Click "⬆️ Firmware Update"** at the bottom of the configuration page
+
+### Uploading New Firmware
+
+1. **Download the latest firmware** from the [releases page](https://github.com/jantielens/inkplate-dashboard/releases)
+   - Make sure to download the correct `.bin` file for your device model
+   - Example: `inkplate5v2-v0.4.0.bin` for Inkplate 5 V2
+
+2. **On the OTA Update page**, click "Choose File" and select the `.bin` firmware file
+
+3. **Click "Upload Firmware"**
+   - A progress bar will show the upload status
+   - **On the device screen**, you'll see "Firmware Update" with installation progress
+   - Do NOT power off or disconnect the device during upload
+
+4. **Wait for completion**
+   - The upload typically takes 1-2 minutes
+   - The device will automatically restart with the new firmware
+   - You'll see a success message before the reboot
+
+### Important Notes
+
+⚠️ **Safety Warnings:**
+- Only upload firmware files built specifically for your Inkplate model
+- Do not power off the device during the update process
+- Make sure your device has sufficient power (USB or battery above 50%)
+- The update process takes about 1-2 minutes
+
+✅ **After Update:**
+- Your configuration settings are preserved (WiFi, image URL, etc.)
+- The device will restart automatically and resume normal operation
+- Check the version number in the config portal footer to confirm the update
+
+💡 **Troubleshooting:**
+- If the upload fails, simply try again
+- If the device doesn't restart, press the reset button manually
+- If the new firmware doesn't work, you can always re-flash via USB cable
+
+---
+
 ## Entering Different Modes
 
 Your device can operate in three different modes. Here's how to access each one:
@@ -326,7 +380,7 @@ Connect WiFi
 **Display Shows:**
 ```
 Config Mode
-Active for 2 minutes
+Active for 5 minutes
 
 Open browser to:
   http://192.168.1.XXX
@@ -358,7 +412,7 @@ Open browser to:
 - This is the **only** way to enter config mode on Inkplate 2
 
 **Config Mode Timeout:**
-- Config mode automatically exits after **2 minutes** of inactivity
+- Config mode automatically exits after **5 minutes** of inactivity
 - Device will return to sleep or continue normal operation
 - To re-enter, use the button/reset method again
 
@@ -650,7 +704,7 @@ Once configured, your device will automatically appear in Home Assistant as "Ink
 | Refresh Rate | 5 minutes |
 | Debug Mode | Disabled |
 | MQTT | Not configured |
-| Config Mode Timeout | 2 minutes |
+| Config Mode Timeout | 5 minutes |
 
 ### Required Image Sizes
 

@@ -63,8 +63,8 @@ Connect WiFi
 **Behavior**:
 - Connects to configured WiFi network
 - Serves configuration web portal at device's IP address
-- Allows updating Image URL, refresh rate, MQTT settings
-- Times out after 2 minutes of inactivity
+- Allows updating Image URL, refresh rate, MQTT settings, and firmware (OTA)
+- Times out after 5 minutes of inactivity
 - Displays portal URL and timeout info on screen
 
 **When entered**:
@@ -76,7 +76,7 @@ Connect WiFi
 **Display shows**:
 ```
 Config Mode
-Active for 2 minutes
+Active for 5 minutes
 
 Open browser to:
 http://192.168.1.XXX
