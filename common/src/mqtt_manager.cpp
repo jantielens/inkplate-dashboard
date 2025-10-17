@@ -53,8 +53,8 @@ bool MQTTManager::begin() {
     _mqttClient->setBufferSize(MQTT_MAX_PACKET_SIZE);
     
     _mqttClient->setServer(host.c_str(), _port);
-    _mqttClient->setKeepAlive(15);
-    _mqttClient->setSocketTimeout(10);
+    _mqttClient->setKeepAlive(5);     // Optimized from 15s to 5s
+    _mqttClient->setSocketTimeout(2); // Optimized from 10s to 2s
     
     _isConfigured = true;
     LogBox::end("MQTT Manager initialized successfully");
@@ -99,8 +99,8 @@ bool MQTTManager::connect() {
     
     // Set server again (ensure it's set correctly)
     _mqttClient->setServer(host.c_str(), port);
-    _mqttClient->setKeepAlive(15);
-    _mqttClient->setSocketTimeout(10);
+    _mqttClient->setKeepAlive(5);     // Optimized from 15s to 5s
+    _mqttClient->setSocketTimeout(2); // Optimized from 10s to 2s
     
     // Attempt connection with retries
     const int maxRetries = 3;
@@ -184,7 +184,13 @@ void MQTTManager::disconnect() {
     }
 }
 
-bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceName, const String& modelName) {
+bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceName, const String& modelName,
+                                     bool shouldPublish) {
+    // Skip publishing if not needed
+    if (!shouldPublish) {
+        return true;  // Silent success
+    }
+    
     if (!_isConfigured || _mqttClient == nullptr || !_mqttClient->connected()) {
         return true;  // Skip if not configured or not connected
     }
@@ -205,13 +211,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "\"device_class\":\"voltage\",";
         payload += "\"unit_of_measurement\":\"V\",";
         payload += "\"value_template\":\"{{ value }}\",";
-        payload += "\"device\":{";
-        payload += "\"identifiers\":[\"" + deviceId + "\"],";
-        payload += "\"name\":\"" + deviceName + "\",";
-        payload += "\"manufacturer\":\"Soldered Electronics\",";
-        payload += "\"model\":\"" + modelName + "\",";
-        payload += "\"sw_version\":\"" + String(FIRMWARE_VERSION) + "\"";
-        payload += "}";
+        payload += "\"device\":" + buildDeviceInfoJSON(deviceId, deviceName, modelName);
         payload += "}";
         
         LogBox::line("Battery Voltage Discovery:");
@@ -238,9 +238,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "\"device_class\":\"duration\",";
         payload += "\"unit_of_measurement\":\"s\",";
         payload += "\"value_template\":\"{{ value }}\",";
-        payload += "\"device\":{";
-        payload += "\"identifiers\":[\"" + deviceId + "\"]";
-        payload += "}";
+        payload += "\"device\":" + buildDeviceInfoJSON(deviceId, deviceName, modelName);
         payload += "}";
         
         LogBox::line("Loop Time Discovery:");
@@ -267,9 +265,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "\"device_class\":\"signal_strength\",";
         payload += "\"unit_of_measurement\":\"dBm\",";
         payload += "\"value_template\":\"{{ value }}\",";
-        payload += "\"device\":{";
-        payload += "\"identifiers\":[\"" + deviceId + "\"]";
-        payload += "}";
+        payload += "\"device\":" + buildDeviceInfoJSON(deviceId, deviceName, modelName);
         payload += "}";
         
         LogBox::line("WiFi Signal Discovery:");
@@ -295,9 +291,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "\"state_topic\":\"" + stateTopic + "\",";
         payload += "\"icon\":\"mdi:message-text\",";
         payload += "\"value_template\":\"{{ value }}\",";
-        payload += "\"device\":{";
-        payload += "\"identifiers\":[\"" + deviceId + "\"]";
-        payload += "}";
+        payload += "\"device\":" + buildDeviceInfoJSON(deviceId, deviceName, modelName);
         payload += "}";
         
         LogBox::line("Last Log Discovery:");
@@ -436,6 +430,67 @@ bool MQTTManager::isConfigured() {
 
 String MQTTManager::getLastError() {
     return _lastError;
+}
+
+bool MQTTManager::publishTelemetryBatch(const String& deviceId, const String& deviceName, const String& modelName,
+                                        float batteryVoltage, int wifiRSSI, float loopTimeSeconds,
+                                        bool shouldPublishDiscovery) {
+    if (!_isConfigured) {
+        return true;  // Skip if not configured
+    }
+    
+    // Single connection for all publishing
+    if (!connect()) {
+        LogBox::begin("Telemetry Batch");
+        LogBox::line("ERROR: Failed to connect to MQTT broker");
+        LogBox::end();
+        return false;
+    }
+    
+    LogBox::begin("Publishing Telemetry Batch");
+    LogBox::linef("Discovery: %s", shouldPublishDiscovery ? "YES" : "NO");
+    
+    bool allSuccess = true;
+    
+    // Publish discovery if needed
+    if (shouldPublishDiscovery) {
+        if (!publishDiscovery(deviceId, deviceName, modelName, true)) {
+            allSuccess = false;
+        }
+    }
+    
+    // Publish battery voltage state
+    if (!publishBatteryVoltage(deviceId, batteryVoltage)) {
+        allSuccess = false;
+    }
+    
+    // Publish WiFi signal state
+    if (!publishWiFiSignal(deviceId, wifiRSSI)) {
+        allSuccess = false;
+    }
+    
+    // Publish loop time state
+    if (!publishLoopTime(deviceId, loopTimeSeconds)) {
+        allSuccess = false;
+    }
+    
+    LogBox::end(allSuccess ? "Telemetry batch published successfully" : "Telemetry batch had some failures");
+    
+    // Single disconnect after all publishing
+    disconnect();
+    
+    return allSuccess;
+}
+
+String MQTTManager::buildDeviceInfoJSON(const String& deviceId, const String& deviceName, const String& modelName) {
+    String deviceInfo = "{";
+    deviceInfo += "\"identifiers\":[\"" + deviceId + "\"],";
+    deviceInfo += "\"name\":\"" + deviceName + "\",";
+    deviceInfo += "\"manufacturer\":\"Soldered Electronics\",";
+    deviceInfo += "\"model\":\"" + modelName + "\",";
+    deviceInfo += "\"sw_version\":\"" + String(FIRMWARE_VERSION) + "\"";
+    deviceInfo += "}";
+    return deviceInfo;
 }
 
 bool MQTTManager::parseBrokerURL(const String& url, String& host, int& port) {

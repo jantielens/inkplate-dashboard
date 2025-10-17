@@ -24,11 +24,26 @@ public:
     // Disconnect from MQTT broker
     void disconnect();
     
+    // Publish all telemetry in a single MQTT session (optimized for battery life)
+    // Publishes discovery (if shouldPublishDiscovery=true) and all sensor state in one connection
+    // deviceId: unique device identifier (e.g., chip ID)
+    // deviceName: human-readable device name
+    // modelName: board model name (e.g., "Inkplate 5 V2")
+    // batteryVoltage: battery voltage in volts
+    // wifiRSSI: WiFi signal strength in dBm
+    // loopTimeSeconds: loop duration in seconds
+    // shouldPublishDiscovery: if true, publish discovery messages; if false, skip to state-only
+    bool publishTelemetryBatch(const String& deviceId, const String& deviceName, const String& modelName,
+                               float batteryVoltage, int wifiRSSI, float loopTimeSeconds,
+                               bool shouldPublishDiscovery = true);
+    
     // Publish Home Assistant auto-discovery configuration
     // deviceId: unique device identifier (e.g., chip ID)
     // deviceName: human-readable device name
     // modelName: board model name (e.g., "Inkplate 5 V2")
-    bool publishDiscovery(const String& deviceId, const String& deviceName, const String& modelName);
+    // shouldPublish: if false, skip publishing and return true (silent success)
+    bool publishDiscovery(const String& deviceId, const String& deviceName, const String& modelName,
+                         bool shouldPublish = true);
     
     // Publish battery voltage to Home Assistant
     // deviceId: unique device identifier (must match discovery)
@@ -67,6 +82,10 @@ private:
     int _port;
     String _lastError;
     bool _isConfigured;
+    
+    // Build device info JSON for discovery payloads
+    // Returns: {"identifiers":["..."],"name":"...","manufacturer":"...","model":"...","sw_version":"..."}
+    String buildDeviceInfoJSON(const String& deviceId, const String& deviceName, const String& modelName);
     
     // Parse broker URL to extract host and port
     bool parseBrokerURL(const String& url, String& host, int& port);

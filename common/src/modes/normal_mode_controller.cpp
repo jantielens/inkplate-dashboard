@@ -45,8 +45,11 @@ void NormalModeController::execute() {
     LogBox::linef("Signal Strength: %d dBm", wifiRSSI);
     LogBox::end();
     
-    // Initialize and connect to MQTT (if configured)
-    bool mqttSuccess = publishMQTTTelemetry(deviceId, deviceName, wifiRSSI);
+    // Read battery voltage (needed for MQTT telemetry)
+    float batteryVoltage = powerManager->readBatteryVoltage(display);
+    
+    // Publish MQTT telemetry with single connection (optimized)
+    bool mqttSuccess = publishMQTTTelemetry(deviceId, deviceName, wifiRSSI, batteryVoltage);
     
     // Check CRC32 if enabled (always fetch, but only skip download on timer wake)
     uint32_t newCRC32 = 0;
@@ -93,42 +96,48 @@ bool NormalModeController::connectWiFi(const DashboardConfig& config) {
     return wifiManager->connectToWiFi();
 }
 
-bool NormalModeController::publishMQTTTelemetry(const String& deviceId, const String& deviceName, int wifiRSSI) {
+bool NormalModeController::publishMQTTTelemetry(const String& deviceId, const String& deviceName, 
+                                                 int wifiRSSI, float batteryVoltage) {
     bool mqttSuccess = false;
     
-    if (mqttManager->begin()) {
-        if (mqttManager->isConfigured()) {
-            LogBox::begin("MQTT");
-            LogBox::line("MQTT is configured - attempting connection");
-            LogBox::end();
-            
-            if (mqttManager->connect()) {
-                // Publish Home Assistant discovery
-                mqttManager->publishDiscovery(deviceId, deviceName, BOARD_NAME);
-                
-                // Read and publish battery voltage using Inkplate's readBattery method
-                float batteryVoltage = powerManager->readBatteryVoltage(display);
-                if (batteryVoltage > 0.0) {
-                    mqttManager->publishBatteryVoltage(deviceId, batteryVoltage);
-                    mqttSuccess = true;
-                }
-                
-                // Publish WiFi signal strength
-                mqttManager->publishWiFiSignal(deviceId, wifiRSSI);
-                
-                // Disconnect from MQTT (will reconnect later to publish loop time)
-                mqttManager->disconnect();
-            } else {
-                LogBox::begin("MQTT Failed");
-                LogBox::line("MQTT connection failed - continuing without MQTT");
-                LogBox::line("Error: " + mqttManager->getLastError());
-                LogBox::end();
-            }
-        } else {
-            LogBox::begin("MQTT");
-            LogBox::line("MQTT not configured - skipping MQTT publishing");
-            LogBox::end();
-        }
+    if (!mqttManager->begin()) {
+        LogBox::begin("MQTT");
+        LogBox::line("Failed to initialize MQTT manager");
+        LogBox::end();
+        return false;
+    }
+    
+    if (!mqttManager->isConfigured()) {
+        LogBox::begin("MQTT");
+        LogBox::line("MQTT not configured - skipping MQTT publishing");
+        LogBox::end();
+        return false;
+    }
+    
+    // Determine if we should publish discovery based on wake reason
+    WakeupReason wakeReason = powerManager->getWakeupReason();
+    bool shouldPublishDiscovery = (wakeReason == WAKEUP_FIRST_BOOT || wakeReason == WAKEUP_RESET_BUTTON);
+    
+    LogBox::begin("MQTT Telemetry");
+    LogBox::line("MQTT is configured - publishing telemetry");
+    LogBox::linef("Wake reason: %d", wakeReason);
+    LogBox::linef("Publishing discovery: %s", shouldPublishDiscovery ? "YES" : "NO");
+    LogBox::end();
+    
+    // Placeholder for loop time (we don't have it yet, will publish 0 here)
+    // The actual loop time will be published later after image handling
+    float loopTimeSeconds = 0.0f;
+    
+    // Publish all telemetry in a single MQTT session
+    if (mqttManager->publishTelemetryBatch(deviceId, deviceName, BOARD_NAME,
+                                           batteryVoltage, wifiRSSI, loopTimeSeconds,
+                                           shouldPublishDiscovery)) {
+        mqttSuccess = true;
+    } else {
+        LogBox::begin("MQTT Failed");
+        LogBox::line("MQTT telemetry batch publishing failed");
+        LogBox::line("Error: " + mqttManager->getLastError());
+        LogBox::end();
     }
     
     return mqttSuccess;
