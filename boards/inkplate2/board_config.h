@@ -33,6 +33,9 @@
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 8000  // Smaller display, shorter timeout
 
+// Watchdog timer timeout (Inkplate 2's display update takes ~20 seconds)
+#define WATCHDOG_TIMEOUT_SECONDS 60
+
 // Font sizes for text hierarchy (smaller for tiny screen)
 #define FONT_HEADING1 1   // Large headings (e.g., "Dashboard", screen titles)
 #define FONT_HEADING2 1   // Medium headings (e.g., section titles)

@@ -13,6 +13,11 @@ void NormalModeController::execute() {
     // START LOOP TIME MEASUREMENT
     unsigned long loopStartTime = millis();
     
+    // ENABLE WATCHDOG TIMER
+    // This protects the entire normal operation cycle (WiFi, MQTT, image download, display)
+    // If any step hangs, the device will be forced to deep sleep for recovery
+    powerManager->enableWatchdog();
+    
     DashboardConfig config;
     if (!loadConfiguration(config)) {
         return;
@@ -76,6 +81,7 @@ bool NormalModeController::loadConfiguration(DashboardConfig& config) {
         LogBox::end();
         uiError->showConfigLoadError();
         delay(3000);
+        powerManager->disableWatchdog();
         powerManager->prepareForSleep();
         powerManager->enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return false;
@@ -169,6 +175,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
             powerManager->markDeviceRunning();
             
             // Go to sleep without updating display
+            powerManager->disableWatchdog();
             powerManager->prepareForSleep();
             powerManager->enterDeepSleep((uint16_t)config.refreshRate);
             return false;  // Signal to stop execution
@@ -315,11 +322,13 @@ void NormalModeController::handleWiFiFailure(const DashboardConfig& config, unsi
     // WiFi error - go to sleep and retry later
     delay(3000);
     
+    powerManager->disableWatchdog();
     enterSleep(config.refreshRate);
 }
 
 void NormalModeController::enterSleep(uint16_t minutes) {
     powerManager->markDeviceRunning();
+    powerManager->disableWatchdog();
     powerManager->prepareForSleep();
     powerManager->enterDeepSleep(minutes);
 }
