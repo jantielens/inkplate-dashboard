@@ -16,6 +16,19 @@
   - FAQ section
   - Device-specific button operation details
 
+### Improved
+- Configuration portal mobile experience (issue #17)
+  - Refactored CSS into separate header file (config_portal_css.h) for better maintainability
+  - Input font size increased to 16px to prevent iOS auto-zoom on focus
+  - Added touch-action: manipulation to all interactive elements for better mobile responsiveness
+  - Checkbox size increased to 20px with custom styling for easier tapping
+  - Modal centering improved with transform-based positioning instead of margin
+  - Added -webkit-overflow-scrolling: touch for smooth iOS scrolling
+  - Responsive padding adjustments for mobile screens (< 600px width)
+  - Fixed body layout by removing flexbox centering in favor of margin-based approach
+  - Added word-break for device info to prevent text overflow
+  - Better touch feedback with proper hover/active state handling
+
 ## [0.3.0] - 2025-10-15
 
 ### Added
