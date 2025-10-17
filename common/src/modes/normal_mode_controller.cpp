@@ -48,7 +48,7 @@ void NormalModeController::execute() {
     bool crc32WasChecked = false;
     bool crc32Matched = false;
     
-    if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched)) {
+    if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime)) {
         // CRC32 matched and timer wake - already went to sleep in the method
         return;
     }
@@ -129,7 +129,8 @@ bool NormalModeController::publishMQTTTelemetry(const String& deviceId, const St
 }
 
 bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, 
-                                               bool& crc32WasChecked, bool& crc32Matched) {
+                                               bool& crc32WasChecked, bool& crc32Matched,
+                                               unsigned long loopStartTime) {
     bool shouldDownload = true;
     WakeupReason wakeReason = powerManager->getWakeupReason();
     

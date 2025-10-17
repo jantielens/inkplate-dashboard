@@ -48,7 +48,7 @@ private:
     bool loadConfiguration(DashboardConfig& config);
     bool connectWiFi(const DashboardConfig& config);
     bool publishMQTTTelemetry(const String& deviceId, const String& deviceName, int wifiRSSI);
-    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched);
+    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime);
     bool downloadAndDisplayImage(const DashboardConfig& config, bool showDebug, bool mqttSuccess);
     void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, const String& deviceId);
     void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, const String& deviceId);
