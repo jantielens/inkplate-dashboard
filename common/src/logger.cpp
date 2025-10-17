@@ -2,7 +2,7 @@
 #include <stdarg.h>
 
 void LogBox::begin(const char* title) {
-    Serial.print("+-- ");
+    Serial.print("╭── ");
     Serial.println(title);
 }
 
@@ -11,7 +11,7 @@ void LogBox::begin(const String& title) {
 }
 
 void LogBox::line(const char* message) {
-    Serial.print("|   ");
+    Serial.print("│   ");
     Serial.println(message);
 }
 
@@ -26,15 +26,23 @@ void LogBox::linef(const char* format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     
-    Serial.print("|   ");
+    Serial.print("│   ");
     Serial.println(buffer);
 }
 
 void LogBox::end(const char* message) {
-    Serial.print("+-- ");
-    Serial.println(message);
+    if (message == nullptr || strlen(message) == 0) {
+        Serial.println("╰─────────────────────────────────────────────");
+    } else {
+        Serial.print("╰── ");
+        Serial.println(message);
+    }
 }
 
 void LogBox::end(const String& message) {
-    end(message.c_str());
+    if (message.length() > 0) {
+        end(message.c_str());
+    } else {
+        end("");
+    }
 }

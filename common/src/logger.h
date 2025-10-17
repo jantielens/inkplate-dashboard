@@ -4,18 +4,18 @@
 #include <Arduino.h>
 
 /**
- * LogBox - ASCII box-drawing logger for visually grouped serial output
+ * LogBox - Unicode box-drawing logger for visually grouped serial output
  * 
- * Uses ASCII characters for maximum terminal compatibility:
- * +-- Title
- * |   Line content
- * +-- Done
+ * Uses Unicode rounded box characters for elegant terminal display:
+ * ╭── Title
+ * │   Line content
+ * ╰─────────────────────────────────────────────
  * 
  * Example usage:
  *   LogBox::begin("Connecting to WiFi");
  *   LogBox::line("SSID: MyNetwork");
  *   LogBox::linef("Attempt: %d/%d", 1, 3);
- *   LogBox::end("Connected!");
+ *   LogBox::end();  // Ends with horizontal line
  */
 class LogBox {
 public:
@@ -30,8 +30,9 @@ public:
     // Add a formatted content line (printf-style)
     static void linef(const char* format, ...) __attribute__((format(printf, 1, 2)));
     
-    // End the current log box with an optional message
-    static void end(const char* message = "Done");
+    // End the current log box
+    // Call with no argument for horizontal line, or provide a custom message
+    static void end(const char* message = "");
     static void end(const String& message);
 };
 
