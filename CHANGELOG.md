@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-10-17
+
+### Added
+- Structured serial logging with ASCII box-drawing characters (issue #20)
+  - New `LogBox` utility class for consistent, visually organized log output
+  - ASCII box-drawing format with `+--` borders and `|   ` content lines
+  - Three logging methods: `begin(title)`, `line(message)`, `linef(format, ...)`, `end()`
+  - Terminal-compatible characters for universal display support
+  - Centralized logging pattern eliminates code duplication
+
+### Changed
+- Refactored all serial logging across entire codebase to use LogBox
+- Replaced mixed `Serial.println()`/`Serial.printf()` calls with consistent LogBox pattern
+- Improved log readability with structured formatting
+- All numeric values now use printf-style formatting via `linef()` for consistency
+
+### Technical Details
+- logger.h: Header with LogBox class definition
+- logger.cpp: Implementation with static methods for structured output
+- No behavior changes - only formatting improvements to serial output
+
 ## [0.5.0] - 2025-10-17
 
 ### Added
