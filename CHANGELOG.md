@@ -11,17 +11,22 @@
   - Three logging methods: `begin(title)`, `line(message)`, `linef(format, ...)`, `end()`
   - Terminal-compatible characters for universal display support
   - Centralized logging pattern eliminates code duplication
+- Deferred CRC32 save implementation (issue #56 improvement)
+  - CRC32 checksums now saved only after successful image display, preventing checksum/image desynchronization
+  - Guarantees no missed image updates while maintaining battery optimization
 
 ### Changed
 - Refactored all serial logging across entire codebase to use LogBox
 - Replaced mixed `Serial.println()`/`Serial.printf()` calls with consistent LogBox pattern
 - Improved log readability with structured formatting
 - All numeric values now use printf-style formatting via `linef()` for consistency
+- ImageManager API enhanced: `checkCRC32Changed()` with optional output parameter and new `saveCRC32()` method
 
 ### Technical Details
 - logger.h: Header with LogBox class definition
 - logger.cpp: Implementation with static methods for structured output
 - No behavior changes - only formatting improvements to serial output
+- CRC32 deferred save: see IMPLEMENTATION_NOTES.md for details
 
 ## [0.5.0] - 2025-10-17
 

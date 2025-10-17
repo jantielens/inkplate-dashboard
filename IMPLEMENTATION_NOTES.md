@@ -1,10 +1,22 @@
-# Implementation Notes: Image Download Retry Mechanism
+# Implementation Notes: Image Download Retry Mechanism & Deferred CRC32
 
 ## Overview
 
-This document provides technical details about the implementation of the retry mechanism for image download failures, as specified in the issue requirements.
+This document provides technical details about:
+1. The **retry mechanism** for image download failures
+2. The **deferred CRC32 save** implementation for reliable image updates
 
-## Requirements Met ✅
+### Retry Mechanism
+Implements automatic retries for transient image download failures with exponential backoff (20-second retry delays).
+
+### Deferred CRC32 Save
+Ensures CRC32 checksums are saved to persistent storage **only after** successful image display, preventing the scenario where a checksum is saved but the image never displays.
+
+---
+
+## Part 1: Retry Mechanism
+
+### Requirements Met ✅
 
 All requirements from the issue have been implemented:
 
@@ -214,11 +226,84 @@ These were intentionally NOT implemented to keep it simple:
 - ❌ Retry count display/logging
 - ❌ MQTT notification during retries
 
+---
+
+## Part 2: Deferred CRC32 Save
+
+### Problem Solved
+
+Previously, CRC32 values were saved **immediately** when a new image checksum was detected, before downloading or displaying the image. This created a race condition:
+
+1. Device detects new CRC32
+2. Saves CRC32 to persistent storage ✓
+3. Attempts to download image
+4. Download/display fails ✗
+5. Device retries on next wake
+6. CRC32 check finds stored CRC32 matches new CRC32 (falsely)
+7. **New image never downloads** ✗
+
+### Solution: Deferred Save
+
+CRC32 is now saved **only after** successful image display.
+
+### API Changes
+
+**File**: `common/src/image_manager.h`
+
+```cpp
+// NEW: Returns new CRC32 via output parameter (does NOT save)
+bool checkCRC32Changed(const char* url, uint32_t* outNewCRC32 = nullptr);
+
+// NEW: Saves CRC32 (called after successful display)
+void saveCRC32(uint32_t crc32Value);
+```
+
+### Implementation
+
+CRC32 is captured during check phase, but only saved after successful display:
+
+1. Check CRC32 (capture new value but DON'T save)
+2. Download image
+3. Display image on e-ink
+4. If successful: **THEN save CRC32**
+5. If failure: DON'T save CRC32, retry later
+
+### URL Change Handling
+
+When user changes the image URL in config mode:
+
+1. Config portal saves new URL to NVS
+2. `ESP.restart()` is called
+3. Device wakes from restart (not a normal `WAKEUP_TIMER`)
+4. `performNormalUpdate()` runs, CRC32 check is **bypassed**
+5. Image downloads unconditionally from new URL ✓
+6. New CRC32 is saved for the new URL ✓
+
+### Edge Cases Handled
+
+1. **Download Success, Save Fails** → Next wake re-downloads (safe, wastes battery)
+2. **URL Change** → Bypassed check forces unconditional download ✓
+3. **Retry During Download** → Re-fetches fresh CRC32 from server on retry ✓
+
+### Files Modified
+
+1. **common/src/image_manager.h** - Added API for deferred save
+2. **common/src/image_manager.cpp** - Implemented deferred save logic
+3. **common/src/main_sketch.ino.inc** - Defer CRC32 save to after display
+
+### Documentation
+
+**New Analysis Documents**:
+- **CRC32_DISPLAY_SYNC_ANALYSIS.md** - Original problem analysis
+- **DEFERRED_CRC32_ANALYSIS.md** - Deferred implementation analysis
+- **URL_CHANGE_VERIFICATION.md** - URL change handling verification
+
 ## Conclusion
 
 The implementation is:
 - **Simple**: Minimal code changes, clear logic
-- **Robust**: Handles all error types, survives deep sleep
+- **Robust**: Handles all error types, survives deep sleep, defers save for safety
 - **Efficient**: Quick recovery without excessive battery drain
 - **User-friendly**: Silent retries, clear error messages after max attempts
 - **Maintainable**: Well-documented, tested, follows existing code patterns
+- **Reliable**: CRC32 always synchronized with displayed image
