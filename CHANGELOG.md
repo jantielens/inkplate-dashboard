@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-10-17
+
+### Added
+- Structured serial logging with ASCII box-drawing characters (issue #20)
+  - New `LogBox` utility class for consistent, visually organized log output
+  - ASCII box-drawing format with `+--` borders and `|   ` content lines
+  - Three logging methods: `begin(title)`, `line(message)`, `linef(format, ...)`, `end()`
+  - Terminal-compatible characters for universal display support
+  - Centralized logging pattern eliminates code duplication
+- Deferred CRC32 save implementation (issue #56 improvement)
+  - CRC32 checksums now saved only after successful image display, preventing checksum/image desynchronization
+  - Guarantees no missed image updates while maintaining battery optimization
+
+### Changed
+- Refactored all serial logging across entire codebase to use LogBox
+- Replaced mixed `Serial.println()`/`Serial.printf()` calls with consistent LogBox pattern
+- Improved log readability with structured formatting
+- All numeric values now use printf-style formatting via `linef()` for consistency
+- ImageManager API enhanced: `checkCRC32Changed()` with optional output parameter and new `saveCRC32()` method
+- WiFi connection optimizations for faster and more reliable connections (issue #22)
+  - Disabled WiFi sleep mode during wake cycles to reduce network latency by 200-400ms
+  - Enabled persistent WiFi credentials for faster reconnection (2-5 seconds faster on subsequent wakes)
+  - Enabled automatic WiFi reconnection for better resilience to transient network issues
+  - Set device hostname for better network identification (e.g., "inkplate-A1B2C3")
+
+### Technical Details
+- logger.h: Header with LogBox class definition
+- logger.cpp: Implementation with static methods for structured output
+- No behavior changes - only formatting improvements to serial output
+- CRC32 deferred save: see IMPLEMENTATION_NOTES.md for details
+
 ## [0.5.0] - 2025-10-17
 
 ### Added

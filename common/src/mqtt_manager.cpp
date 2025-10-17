@@ -1,5 +1,6 @@
 #include "mqtt_manager.h"
 #include "version.h"
+#include "logger.h"
 #include <WiFi.h>
 
 MQTTManager::MQTTManager(ConfigManager* configManager)
@@ -15,9 +16,7 @@ MQTTManager::~MQTTManager() {
 }
 
 bool MQTTManager::begin() {
-    Serial.println("\n=================================");
-    Serial.println("Initializing MQTT Manager...");
-    Serial.println("=================================");
+    LogBox::begin("Initializing MQTT Manager");
     
     // Load MQTT configuration
     _broker = _configManager->getMQTTBroker();
@@ -26,7 +25,8 @@ bool MQTTManager::begin() {
     
     // Check if MQTT is configured
     if (_broker.length() == 0) {
-        Serial.println("MQTT not configured - skipping");
+        LogBox::line("MQTT not configured - skipping");
+        LogBox::end();
         _isConfigured = false;
         return true;  // Not an error, just not configured
     }
@@ -35,14 +35,14 @@ bool MQTTManager::begin() {
     String host;
     if (!parseBrokerURL(_broker, host, _port)) {
         _lastError = "Invalid broker URL format";
-        Serial.println("ERROR: " + _lastError);
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
         _isConfigured = false;
         return false;
     }
     
-    Serial.println("MQTT Configuration:");
-    Serial.println("  Broker: " + host + ":" + String(_port));
-    Serial.println("  Username: " + (_username.length() > 0 ? _username : "(none)"));
+    LogBox::line("Broker: " + host + ":" + String(_port));
+    LogBox::line("Username: " + (_username.length() > 0 ? _username : "(none)"));
     
     // Create MQTT client
     if (_mqttClient == nullptr) {
@@ -57,44 +57,45 @@ bool MQTTManager::begin() {
     _mqttClient->setSocketTimeout(10);
     
     _isConfigured = true;
-    Serial.println("MQTT Manager initialized successfully");
-    Serial.println("=================================\n");
+    LogBox::end("MQTT Manager initialized successfully");
     
     return true;
 }
 
 bool MQTTManager::connect() {
     if (!_isConfigured) {
-        Serial.println("MQTT not configured - skipping connection");
+        LogBox::begin("MQTT Connection");
+        LogBox::line("MQTT not configured - skipping connection");
+        LogBox::end();
         return true;  // Not an error
     }
     
     if (_mqttClient == nullptr) {
         _lastError = "MQTT client not initialized";
-        Serial.println("ERROR: " + _lastError);
+        LogBox::begin("MQTT Connection");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
         return false;
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Connecting to MQTT broker...");
-    Serial.println("=================================");
+    LogBox::begin("Connecting to MQTT broker");
     
     // Parse broker URL again to get host and port
     String host;
     int port;
     if (!parseBrokerURL(_broker, host, port)) {
         _lastError = "Failed to parse broker URL";
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
         return false;
     }
     
-    Serial.printf("Broker Host: %s\n", host.c_str());
-    Serial.printf("Broker Port: %d\n", port);
+    LogBox::line("Broker Host: " + host);
+    LogBox::linef("Broker Port: %d", port);
     
     // Generate unique client ID based on chip ID
     String clientId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-    Serial.println("Client ID: " + clientId);
+    LogBox::line("Client ID: " + clientId);
     
     // Set server again (ensure it's set correctly)
     _mqttClient->setServer(host.c_str(), port);
@@ -106,54 +107,54 @@ bool MQTTManager::connect() {
     bool connected = false;
     
     for (int attempt = 1; attempt <= maxRetries && !connected; attempt++) {
-        Serial.printf("Connection attempt %d/%d...\n", attempt, maxRetries);
+        LogBox::linef("Connection attempt %d/%d...", attempt, maxRetries);
         
         if (_username.length() > 0) {
-            Serial.printf("Connecting with username: %s\n", _username.c_str());
+            LogBox::line("Connecting with username: " + _username);
             connected = _mqttClient->connect(clientId.c_str(), _username.c_str(), _password.c_str());
         } else {
-            Serial.println("Connecting without authentication");
+            LogBox::line("Connecting without authentication");
             connected = _mqttClient->connect(clientId.c_str());
         }
         
         if (!connected) {
             int state = _mqttClient->state();
-            Serial.printf("Attempt %d failed. State: %d\n", attempt, state);
+            LogBox::linef("Attempt %d failed. State: %d", attempt, state);
             
             // Decode MQTT error states
             switch (state) {
                 case -4:
-                    Serial.println("  → MQTT_CONNECTION_TIMEOUT - Server didn't respond");
+                    LogBox::line("  → MQTT_CONNECTION_TIMEOUT - Server didn't respond");
                     break;
                 case -3:
-                    Serial.println("  → MQTT_CONNECTION_LOST - Network connection was broken");
+                    LogBox::line("  → MQTT_CONNECTION_LOST - Network connection was broken");
                     break;
                 case -2:
-                    Serial.println("  → MQTT_CONNECT_FAILED - Network connection failed");
-                    Serial.println("  → Check: Is the broker IP/hostname correct?");
-                    Serial.println("  → Check: Is the broker port correct? (usually 1883)");
-                    Serial.println("  → Check: Can you ping the broker from your network?");
+                    LogBox::line("  → MQTT_CONNECT_FAILED - Network connection failed");
+                    LogBox::line("  → Check: Is the broker IP/hostname correct?");
+                    LogBox::line("  → Check: Is the broker port correct? (usually 1883)");
+                    LogBox::line("  → Check: Can you ping the broker from your network?");
                     break;
                 case -1:
-                    Serial.println("  → MQTT_DISCONNECTED");
+                    LogBox::line("  → MQTT_DISCONNECTED");
                     break;
                 case 1:
-                    Serial.println("  → MQTT_CONNECT_BAD_PROTOCOL - Wrong protocol version");
+                    LogBox::line("  → MQTT_CONNECT_BAD_PROTOCOL - Wrong protocol version");
                     break;
                 case 2:
-                    Serial.println("  → MQTT_CONNECT_BAD_CLIENT_ID - Client ID rejected");
+                    LogBox::line("  → MQTT_CONNECT_BAD_CLIENT_ID - Client ID rejected");
                     break;
                 case 3:
-                    Serial.println("  → MQTT_CONNECT_UNAVAILABLE - Broker unavailable");
+                    LogBox::line("  → MQTT_CONNECT_UNAVAILABLE - Broker unavailable");
                     break;
                 case 4:
-                    Serial.println("  → MQTT_CONNECT_BAD_CREDENTIALS - Username/password incorrect");
+                    LogBox::line("  → MQTT_CONNECT_BAD_CREDENTIALS - Username/password incorrect");
                     break;
                 case 5:
-                    Serial.println("  → MQTT_CONNECT_UNAUTHORIZED - Not authorized");
+                    LogBox::line("  → MQTT_CONNECT_UNAUTHORIZED - Not authorized");
                     break;
                 default:
-                    Serial.printf("  → Unknown state: %d\n", state);
+                    LogBox::linef("  → Unknown state: %d", state);
                     break;
             }
             
@@ -164,13 +165,12 @@ bool MQTTManager::connect() {
     }
     
     if (connected) {
-        Serial.println("MQTT connected successfully!");
-        Serial.println("=================================\n");
+        LogBox::end("MQTT connected successfully!");
         return true;
     } else {
         _lastError = "Connection failed after " + String(maxRetries) + " attempts, state: " + String(_mqttClient->state());
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
         return false;
     }
 }
@@ -178,7 +178,9 @@ bool MQTTManager::connect() {
 void MQTTManager::disconnect() {
     if (_mqttClient != nullptr && _mqttClient->connected()) {
         _mqttClient->disconnect();
-        Serial.println("MQTT disconnected");
+        LogBox::begin("MQTT");
+        LogBox::line("Disconnected");
+        LogBox::end();
     }
 }
 
@@ -187,9 +189,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         return true;  // Skip if not configured or not connected
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Publishing Home Assistant discovery...");
-    Serial.println("=================================");
+    LogBox::begin("Publishing Home Assistant discovery");
     
     bool allSuccess = true;
     
@@ -214,15 +214,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "}";
         payload += "}";
         
-        Serial.println("Battery Voltage Discovery:");
-        Serial.println("  Topic: " + discoveryTopic);
-        Serial.println("  Payload: " + String(payload.length()) + " bytes");
+        LogBox::line("Battery Voltage Discovery:");
+        LogBox::line("  Topic: " + discoveryTopic);
+        LogBox::linef("  Payload: %d bytes", payload.length());
         
         if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
-            Serial.println("  ERROR: Failed to publish battery voltage discovery");
+            LogBox::line("  ERROR: Failed to publish battery voltage discovery");
             allSuccess = false;
         } else {
-            Serial.println("  Success!");
+            LogBox::line("  Success!");
         }
     }
     
@@ -243,15 +243,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "}";
         payload += "}";
         
-        Serial.println("Loop Time Discovery:");
-        Serial.println("  Topic: " + discoveryTopic);
-        Serial.println("  Payload: " + String(payload.length()) + " bytes");
+        LogBox::line("Loop Time Discovery:");
+        LogBox::line("  Topic: " + discoveryTopic);
+        LogBox::linef("  Payload: %d bytes", payload.length());
         
         if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
-            Serial.println("  ERROR: Failed to publish loop time discovery");
+            LogBox::line("  ERROR: Failed to publish loop time discovery");
             allSuccess = false;
         } else {
-            Serial.println("  Success!");
+            LogBox::line("  Success!");
         }
     }
     
@@ -272,15 +272,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "}";
         payload += "}";
         
-        Serial.println("WiFi Signal Discovery:");
-        Serial.println("  Topic: " + discoveryTopic);
-        Serial.println("  Payload: " + String(payload.length()) + " bytes");
+        LogBox::line("WiFi Signal Discovery:");
+        LogBox::line("  Topic: " + discoveryTopic);
+        LogBox::linef("  Payload: %d bytes", payload.length());
         
         if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
-            Serial.println("  ERROR: Failed to publish WiFi signal discovery");
+            LogBox::line("  ERROR: Failed to publish WiFi signal discovery");
             allSuccess = false;
         } else {
-            Serial.println("  Success!");
+            LogBox::line("  Success!");
         }
     }
     
@@ -300,24 +300,24 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         payload += "}";
         payload += "}";
         
-        Serial.println("Last Log Discovery:");
-        Serial.println("  Topic: " + discoveryTopic);
-        Serial.println("  Payload: " + String(payload.length()) + " bytes");
+        LogBox::line("Last Log Discovery:");
+        LogBox::line("  Topic: " + discoveryTopic);
+        LogBox::linef("  Payload: %d bytes", payload.length());
         
         if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
-            Serial.println("  ERROR: Failed to publish last log discovery");
+            LogBox::line("  ERROR: Failed to publish last log discovery");
             allSuccess = false;
         } else {
-            Serial.println("  Success!");
+            LogBox::line("  Success!");
         }
     }
     
     if (allSuccess) {
-        Serial.println("All discovery messages published successfully");
+        LogBox::end("All discovery messages published successfully");
     } else {
         _lastError = "Some discovery messages failed to publish";
+        LogBox::end("Some discovery messages failed");
     }
-    Serial.println("=================================\n");
     
     return allSuccess;
 }
@@ -327,25 +327,22 @@ bool MQTTManager::publishBatteryVoltage(const String& deviceId, float voltage) {
         return true;  // Skip if not configured or not connected
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Publishing battery voltage to MQTT...");
-    Serial.println("=================================");
+    LogBox::begin("Publishing battery voltage to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "battery_voltage");
     String payload = String(voltage, 3);  // 3 decimal places
     
-    Serial.println("State Topic: " + stateTopic);
-    Serial.println("Voltage: " + payload + " V");
+    LogBox::line("State Topic: " + stateTopic);
+    LogBox::line("Voltage: " + payload + " V");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        Serial.println("Battery voltage published successfully");
-        Serial.println("=================================\n");
+        LogBox::end("Battery voltage published successfully");
     } else {
         _lastError = "Failed to publish battery voltage";
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
     }
     
     return success;
@@ -356,25 +353,22 @@ bool MQTTManager::publishLoopTime(const String& deviceId, float loopTimeSeconds)
         return true;  // Skip if not configured or not connected
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Publishing loop time to MQTT...");
-    Serial.println("=================================");
+    LogBox::begin("Publishing loop time to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "loop_time");
     String payload = String(loopTimeSeconds, 2);  // 2 decimal places
     
-    Serial.println("State Topic: " + stateTopic);
-    Serial.println("Loop Time: " + payload + " s");
+    LogBox::line("State Topic: " + stateTopic);
+    LogBox::line("Loop Time: " + payload + " s");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        Serial.println("Loop time published successfully");
-        Serial.println("=================================\n");
+        LogBox::end("Loop time published successfully");
     } else {
         _lastError = "Failed to publish loop time";
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
     }
     
     return success;
@@ -385,25 +379,22 @@ bool MQTTManager::publishWiFiSignal(const String& deviceId, int rssi) {
         return true;  // Skip if not configured or not connected
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Publishing WiFi signal to MQTT...");
-    Serial.println("=================================");
+    LogBox::begin("Publishing WiFi signal to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "wifi_signal");
     String payload = String(rssi);  // Integer value
     
-    Serial.println("State Topic: " + stateTopic);
-    Serial.println("WiFi Signal: " + payload + " dBm");
+    LogBox::line("State Topic: " + stateTopic);
+    LogBox::line("WiFi Signal: " + payload + " dBm");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        Serial.println("WiFi signal published successfully");
-        Serial.println("=================================\n");
+        LogBox::end("WiFi signal published successfully");
     } else {
         _lastError = "Failed to publish WiFi signal";
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
     }
     
     return success;
@@ -414,9 +405,7 @@ bool MQTTManager::publishLastLog(const String& deviceId, const String& message, 
         return true;  // Skip if not configured or not connected
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Publishing last log to MQTT...");
-    Serial.println("=================================");
+    LogBox::begin("Publishing last log to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "last_log");
     
@@ -425,18 +414,17 @@ bool MQTTManager::publishLastLog(const String& deviceId, const String& message, 
     severityUpper.toUpperCase();
     String payload = "[" + severityUpper + "] " + message;
     
-    Serial.println("State Topic: " + stateTopic);
-    Serial.println("Message: " + payload);
+    LogBox::line("State Topic: " + stateTopic);
+    LogBox::line("Message: " + payload);
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        Serial.println("Last log published successfully");
-        Serial.println("=================================\n");
+        LogBox::end("Last log published successfully");
     } else {
         _lastError = "Failed to publish last log";
-        Serial.println("ERROR: " + _lastError);
-        Serial.println("=================================\n");
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
     }
     
     return success;

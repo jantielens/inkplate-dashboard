@@ -2,6 +2,7 @@
 #include "config_portal_css.h"
 #include "version.h"
 #include "config.h"
+#include "logger.h"
 
 ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager)
     : _configManager(configManager), _wifiManager(wifiManager), _displayManager(displayManager),
@@ -14,7 +15,9 @@ ConfigPortal::~ConfigPortal() {
 
 bool ConfigPortal::begin(PortalMode mode) {
     if (_server != nullptr) {
-        Serial.println("Config portal already running");
+        LogBox::begin("Config Portal");
+        LogBox::line("Config portal already running");
+        LogBox::end();
         return true;
     }
     
@@ -35,7 +38,9 @@ bool ConfigPortal::begin(PortalMode mode) {
                 // Handle upload data
                 HTTPUpload& upload = _server->upload();
                 if (upload.status == UPLOAD_FILE_START) {
-                    Serial.printf("OTA Update: %s\n", upload.filename.c_str());
+                    LogBox::begin("OTA Update");
+                    LogBox::line("Starting OTA update: " + upload.filename);
+                    LogBox::end();
                     
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
@@ -70,7 +75,9 @@ bool ConfigPortal::begin(PortalMode mode) {
                     }
                 } else if (upload.status == UPLOAD_FILE_END) {
                     if (Update.end(true)) {
-                        Serial.printf("OTA Update Success: %u bytes\n", upload.totalSize);
+                        LogBox::begin("OTA Success");
+                        LogBox::linef("Update successful: %u bytes", upload.totalSize);
+                        LogBox::end();
                         // Watchdog will be reset on reboot, no need to re-enable
                     } else {
                         Update.printError(Serial);
@@ -87,8 +94,10 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->onNotFound([this]() { this->handleNotFound(); });
     
     _server->begin();
-    Serial.println("Configuration portal started on port " + String(_port));
-    Serial.println("Open http://" + _wifiManager->getAPIPAddress() + " in your browser");
+    LogBox::begin("Config Portal Started");
+    LogBox::linef("Port: %d", _port);
+    LogBox::line("Open http://" + _wifiManager->getAPIPAddress());
+    LogBox::end();
     
     return true;
 }
@@ -98,7 +107,9 @@ void ConfigPortal::stop() {
         _server->stop();
         delete _server;
         _server = nullptr;
-        Serial.println("Configuration portal stopped");
+        LogBox::begin("Config Portal");
+        LogBox::line("Configuration portal stopped");
+        LogBox::end();
     }
 }
 
@@ -117,12 +128,16 @@ int ConfigPortal::getPort() {
 }
 
 void ConfigPortal::handleRoot() {
-    Serial.println("Serving configuration page");
+    LogBox::begin("Web Request");
+    LogBox::line("Serving configuration page");
+    LogBox::end();
     _server->send(200, "text/html", generateConfigPage());
 }
 
 void ConfigPortal::handleSubmit() {
-    Serial.println("Configuration form submitted");
+    LogBox::begin("Web Request");
+    LogBox::line("Configuration form submitted");
+    LogBox::end();
     
     // Get form data
     String ssid = _server->arg("ssid");
@@ -155,7 +170,9 @@ void ConfigPortal::handleSubmit() {
     // In BOOT_MODE, only save WiFi credentials
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
-        Serial.println("WiFi credentials saved (boot mode)");
+        LogBox::begin("Config Saved");
+        LogBox::line("WiFi credentials saved (boot mode)");
+        LogBox::end();
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
         return;
@@ -174,7 +191,9 @@ void ConfigPortal::handleSubmit() {
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
         config.wifiPassword = _configManager->getWiFiPassword();
-        Serial.println("Keeping existing WiFi password");
+        LogBox::begin("Config Update");
+        LogBox::line("Keeping existing WiFi password");
+        LogBox::end();
     } else {
         config.wifiPassword = password;
     }
@@ -182,24 +201,32 @@ void ConfigPortal::handleSubmit() {
     // Handle MQTT password - if empty and device is configured with MQTT, keep existing password
     if (mqttPass.length() == 0 && _configManager->isConfigured() && _configManager->getMQTTPassword().length() > 0) {
         config.mqttPassword = _configManager->getMQTTPassword();
-        Serial.println("Keeping existing MQTT password");
+        LogBox::begin("Config Update");
+        LogBox::line("Keeping existing MQTT password");
+        LogBox::end();
     } else {
         config.mqttPassword = mqttPass;
     }
     
     // Save configuration
     if (_configManager->saveConfig(config)) {
-        Serial.println("Configuration saved successfully");
+        LogBox::begin("Config Saved");
+        LogBox::line("Configuration saved successfully");
+        LogBox::end();
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
     } else {
-        Serial.println("Failed to save configuration");
+        LogBox::begin("Config Error");
+        LogBox::line("Failed to save configuration");
+        LogBox::end();
         _server->send(500, "text/html", generateErrorPage("Failed to save configuration"));
     }
 }
 
 void ConfigPortal::handleFactoryReset() {
-    Serial.println("Factory reset requested");
+    LogBox::begin("Factory Reset");
+    LogBox::line("Factory reset requested");
+    LogBox::end();
     
     // Clear all configuration
     _configManager->clearConfig();
@@ -208,7 +235,10 @@ void ConfigPortal::handleFactoryReset() {
     _server->send(200, "text/html", generateFactoryResetPage());
     
     // Device will reboot after the response is sent
-    Serial.println("Factory reset completed. Device will reboot in 2 seconds...");
+    LogBox::begin("Factory Reset");
+    LogBox::line("Factory reset completed");
+    LogBox::line("Device will reboot in 2 seconds");
+    LogBox::end();
     delay(2000);
     ESP.restart();
 }

@@ -1,4 +1,5 @@
 #include "config_manager.h"
+#include "logger.h"
 
 ConfigManager::ConfigManager() : _initialized(false) {
 }
@@ -16,7 +17,9 @@ bool ConfigManager::begin() {
     
     _initialized = _preferences.begin(PREF_NAMESPACE, false);
     if (!_initialized) {
-        Serial.println("Failed to initialize Preferences");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("Failed to initialize Preferences");
+        LogBox::end();
     }
     return _initialized;
 }
@@ -51,7 +54,9 @@ bool ConfigManager::isFullyConfigured() {
 
 bool ConfigManager::loadConfig(DashboardConfig& config) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return false;
     }
     
@@ -59,7 +64,9 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.isConfigured = _preferences.getBool(PREF_CONFIGURED, false);
     
     if (!config.isConfigured) {
-        Serial.println("Device not configured yet");
+        LogBox::begin("Config Status");
+        LogBox::line("Device not configured yet");
+        LogBox::end();
         return false;
     }
     
@@ -75,41 +82,52 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
-        Serial.println("Invalid configuration: missing SSID or URL");
+        LogBox::begin("Config Error");
+        LogBox::line("Invalid configuration: missing SSID or URL");
+        LogBox::end();
         return false;
     }
     
-    Serial.println("Configuration loaded successfully:");
-    Serial.println("  WiFi SSID: " + config.wifiSSID);
-    Serial.println("  Image URL: " + config.imageURL);
-    Serial.println("  Refresh Rate: " + String(config.refreshRate) + " minutes");
+    LogBox::begin("Configuration Loaded");
+    LogBox::line("WiFi SSID: " + config.wifiSSID);
+    LogBox::line("Image URL: " + config.imageURL);
+    LogBox::linef("Refresh Rate: %d minutes", config.refreshRate);
     if (config.mqttBroker.length() > 0) {
-        Serial.println("  MQTT Broker: " + config.mqttBroker);
-        Serial.println("  MQTT Username: " + (config.mqttUsername.length() > 0 ? config.mqttUsername : "(none)"));
+        LogBox::line("MQTT Broker: " + config.mqttBroker);
+        LogBox::line("MQTT Username: " + (config.mqttUsername.length() > 0 ? config.mqttUsername : "(none)"));
     }
+    LogBox::end();
     
     return true;
 }
 
 bool ConfigManager::saveConfig(const DashboardConfig& config) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return false;
     }
     
     // Validate input
     if (config.wifiSSID.length() == 0) {
-        Serial.println("Error: WiFi SSID cannot be empty");
+        LogBox::begin("Config Error");
+        LogBox::line("WiFi SSID cannot be empty");
+        LogBox::end();
         return false;
     }
     
     if (config.imageURL.length() == 0) {
-        Serial.println("Error: Image URL cannot be empty");
+        LogBox::begin("Config Error");
+        LogBox::line("Image URL cannot be empty");
+        LogBox::end();
         return false;
     }
     
     if (config.refreshRate < 1) {
-        Serial.println("Error: Refresh rate must be at least 1 minute");
+        LogBox::begin("Config Error");
+        LogBox::line("Refresh rate must be at least 1 minute");
+        LogBox::end();
         return false;
     }
     
@@ -125,19 +143,25 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putBool(PREF_DEBUG_MODE, config.debugMode);
     _preferences.putBool(PREF_USE_CRC32, config.useCRC32Check);
     
-    Serial.println("Configuration saved successfully");
+    LogBox::begin("Config Saved");
+    LogBox::line("Configuration saved successfully");
+    LogBox::end();
     
     return true;
 }
 
 void ConfigManager::clearConfig() {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     _preferences.clear();
-    Serial.println("Configuration cleared (factory reset)");
+    LogBox::begin("Factory Reset");
+    LogBox::line("Configuration cleared (factory reset)");
+    LogBox::end();
 }
 
 String ConfigManager::getWiFiSSID() {
@@ -198,70 +222,96 @@ bool ConfigManager::getDebugMode() {
 
 void ConfigManager::setWiFiCredentials(const String& ssid, const String& password) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     _preferences.putString(PREF_WIFI_SSID, ssid);
     _preferences.putString(PREF_WIFI_PASS, password);
-    Serial.println("WiFi credentials updated");
+    LogBox::begin("Config Update");
+    LogBox::line("WiFi credentials updated");
+    LogBox::end();
 }
 
 void ConfigManager::setImageURL(const String& url) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     _preferences.putString(PREF_IMAGE_URL, url);
-    Serial.println("Image URL updated: " + url);
+    LogBox::begin("Config Update");
+    LogBox::line("Image URL updated: " + url);
+    LogBox::end();
 }
 
 void ConfigManager::setRefreshRate(int minutes) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     if (minutes < 1) {
-        Serial.println("Error: Refresh rate must be at least 1 minute");
+        LogBox::begin("Config Error");
+        LogBox::line("Refresh rate must be at least 1 minute");
+        LogBox::end();
         return;
     }
     
     _preferences.putInt(PREF_REFRESH_RATE, minutes);
-    Serial.println("Refresh rate updated: " + String(minutes) + " minutes");
+    LogBox::begin("Config Update");
+    LogBox::linef("Refresh rate updated: %d minutes", minutes);
+    LogBox::end();
 }
 
 void ConfigManager::setMQTTConfig(const String& broker, const String& username, const String& password) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     _preferences.putString(PREF_MQTT_BROKER, broker);
     _preferences.putString(PREF_MQTT_USER, username);
     _preferences.putString(PREF_MQTT_PASS, password);
-    Serial.println("MQTT configuration updated");
+    LogBox::begin("Config Update");
+    LogBox::line("MQTT configuration updated");
+    LogBox::end();
 }
 
 void ConfigManager::setDebugMode(bool enabled) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
 
     _preferences.putBool(PREF_DEBUG_MODE, enabled);
-    Serial.println("Debug mode updated: " + String(enabled ? "ON" : "OFF"));
+    LogBox::begin("Config Update");
+    LogBox::line("Debug mode updated: " + String(enabled ? "ON" : "OFF"));
+    LogBox::end();
 }
 
 void ConfigManager::setUseCRC32Check(bool enabled) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
 
     _preferences.putBool(PREF_USE_CRC32, enabled);
-    Serial.println("CRC32 check updated: " + String(enabled ? "ON" : "OFF"));
+    LogBox::begin("Config Update");
+    LogBox::line("CRC32 check updated: " + String(enabled ? "ON" : "OFF"));
+    LogBox::end();
 }
 
 bool ConfigManager::getUseCRC32Check() {
@@ -280,20 +330,24 @@ uint32_t ConfigManager::getLastCRC32() {
 
 void ConfigManager::setLastCRC32(uint32_t crc32) {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::line("ConfigManager not initialized - cannot save CRC32");
         return;
     }
     
     _preferences.putUInt(PREF_LAST_CRC32, crc32);
-    Serial.println("Last CRC32 updated: 0x" + String(crc32, HEX));
+    LogBox::linef("Saved to preferences: 0x%08X", crc32);
 }
 
 void ConfigManager::markAsConfigured() {
     if (!_initialized && !begin()) {
-        Serial.println("ConfigManager not initialized");
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
         return;
     }
     
     _preferences.putBool(PREF_CONFIGURED, true);
-    Serial.println("Device marked as configured");
+    LogBox::begin("Config Update");
+    LogBox::line("Device marked as configured");
+    LogBox::end();
 }

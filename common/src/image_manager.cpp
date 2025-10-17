@@ -1,4 +1,5 @@
 #include "image_manager.h"
+#include "logger.h"
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
@@ -18,12 +19,12 @@ bool ImageManager::isHttps(const char* url) {
 }
 
 void ImageManager::showDownloadProgress(const char* message) {
-    Serial.println(message);
+    LogBox::line(message);
 }
 
 void ImageManager::showError(const char* error) {
     _lastError = error;
-    Serial.println("Image Error: " + _lastError);
+    LogBox::line("Image Error: " + _lastError);
 }
 
 uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
@@ -43,25 +44,25 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
     
     // Check if parsing was successful
     if (*endptr != '\0' && *endptr != '\n' && *endptr != '\r') {
-        Serial.println("Warning: CRC32 parsing may be incomplete");
+        LogBox::line("Warning: CRC32 parsing may be incomplete");
     }
     
     return result;
 }
 
-bool ImageManager::checkCRC32Changed(const char* url) {
+bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
     if (!_configManager) {
-        Serial.println("ConfigManager not set - cannot check CRC32");
+        LogBox::begin("CRC32 Check");
+        LogBox::line("ConfigManager not set - cannot check CRC32");
+        LogBox::end();
         return true;  // Fallback to download
     }
     
-    Serial.println("\n=================================");
-    Serial.println("Checking CRC32 for changes...");
-    Serial.println("=================================\n");
+    LogBox::begin("Checking CRC32 for changes");
     
     // Construct CRC32 URL
     String crc32Url = String(url) + ".crc32";
-    Serial.println("CRC32 URL: " + crc32Url);
+    LogBox::line("CRC32 URL: " + crc32Url);
     
     // Determine if HTTPS or HTTP
     bool useHttps = isHttps(crc32Url.c_str());
@@ -85,8 +86,9 @@ bool ImageManager::checkCRC32Changed(const char* url) {
     int httpCode = http.GET();
     
     if (httpCode != HTTP_CODE_OK) {
-        Serial.println("CRC32 file not found or error (code: " + String(httpCode) + ")");
-        Serial.println("Falling back to full image download");
+        LogBox::linef("CRC32 file not found or error (code: %d)", httpCode);
+        LogBox::line("Falling back to full image download");
+        LogBox::end();
         http.end();
         return true;  // Fallback to download
     }
@@ -96,45 +98,55 @@ bool ImageManager::checkCRC32Changed(const char* url) {
     http.end();
     
     if (crc32Content.length() == 0) {
-        Serial.println("CRC32 file is empty");
-        Serial.println("Falling back to full image download");
+        LogBox::line("CRC32 file is empty");
+        LogBox::line("Falling back to full image download");
+        LogBox::end();
         return true;  // Fallback to download
     }
     
-    Serial.println("CRC32 file content: " + crc32Content);
+    LogBox::line("CRC32 file content: " + crc32Content);
     
     // Parse hex CRC32
     uint32_t newCRC32 = parseHexCRC32(crc32Content);
-    Serial.println("Parsed CRC32: 0x" + String(newCRC32, HEX));
+    LogBox::linef("Parsed CRC32: 0x%08X", newCRC32);
     
     // Get stored CRC32
     uint32_t storedCRC32 = _configManager->getLastCRC32();
-    Serial.println("Stored CRC32: 0x" + String(storedCRC32, HEX));
+    LogBox::linef("Stored CRC32: 0x%08X", storedCRC32);
+    
+    // Return the new CRC32 value if caller requested it
+    if (outNewCRC32) {
+        *outNewCRC32 = newCRC32;
+    }
     
     // Compare
     if (newCRC32 == storedCRC32 && storedCRC32 != 0) {
-        Serial.println("\n=================================");
-        Serial.println("CRC32 UNCHANGED - Skipping download");
-        Serial.println("=================================\n");
+        LogBox::end("CRC32 UNCHANGED - Skipping download");
         return false;  // No change, skip download
     } else {
-        Serial.println("\n=================================");
-        Serial.println("CRC32 CHANGED - Will download image");
-        Serial.println("=================================\n");
-        
-        // Update stored CRC32
-        _configManager->setLastCRC32(newCRC32);
+        LogBox::line("CRC32 CHANGED - Will download image");
+        LogBox::end();
+        // NOTE: Deferred - CRC32 is NOT saved here, caller must call saveCRC32()
+        // after confirming successful image display
         return true;  // Changed, proceed with download
     }
+}
+
+void ImageManager::saveCRC32(uint32_t crc32Value) {
+    if (!_configManager) {
+        LogBox::line("ConfigManager not set - cannot save CRC32");
+        return;
+    }
+    
+    LogBox::linef("CRC32 updated: 0x%08X", crc32Value);
+    _configManager->setLastCRC32(crc32Value);
 }
 
 bool ImageManager::downloadAndDisplay(const char* url) {
     _lastError = "";
     
-    Serial.println("\n=================================");
-    Serial.println("Starting image download...");
-    Serial.println("URL: " + String(url));
-    Serial.println("=================================\n");
+    LogBox::begin("Starting image download");
+    LogBox::line("URL: " + String(url));
     
     // Determine if HTTPS or HTTP
     bool useHttps = isHttps(url);
@@ -144,12 +156,12 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     WiFiClientSecure secureClient;
     
     if (useHttps) {
-        Serial.println("Using HTTPS connection");
+        LogBox::line("Using HTTPS connection");
         // Don't verify certificate for simplicity (public images)
         secureClient.setInsecure();
         http.begin(secureClient, url);
     } else {
-        Serial.println("Using HTTP connection");
+        LogBox::line("Using HTTP connection");
         http.begin(client, url);
     }
     
@@ -165,16 +177,18 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     
     if (httpCode != HTTP_CODE_OK) {
         showError(("HTTP error: " + String(httpCode)).c_str());
+        LogBox::end();
         http.end();
         return false;
     }
     
     // Get content length
     int contentLength = http.getSize();
-    Serial.println("Content-Length: " + String(contentLength) + " bytes");
+    LogBox::linef("Content-Length: %d bytes", contentLength);
     
     if (contentLength <= 0) {
         showError("Invalid content length");
+        LogBox::end();
         http.end();
         return false;
     }
@@ -188,7 +202,7 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     // Try to draw the image from the web stream
     // InkPlate library has drawImage that can work with WiFiClient streams
     if (_display->drawImage(url, 0, 0, true, false)) {
-        Serial.println("Image downloaded and displayed successfully!");
+        LogBox::line("Image downloaded and displayed successfully!");
         success = true;
     } else {
         showError("Failed to draw image (invalid format or size mismatch)");
@@ -198,9 +212,9 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     http.end();
     
     if (success) {
-        Serial.println("\n=================================");
-        Serial.println("Image display complete!");
-        Serial.println("=================================\n");
+        LogBox::end("Image display complete!");
+    } else {
+        LogBox::end();
     }
     
     return success;

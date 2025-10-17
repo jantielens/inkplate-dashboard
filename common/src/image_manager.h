@@ -15,7 +15,12 @@ public:
     // Check if image has changed based on CRC32
     // Returns true if changed or check failed (should download)
     // Returns false if unchanged (skip download)
-    bool checkCRC32Changed(const char* url);
+    // If outNewCRC32 is provided, outputs the new CRC32 value fetched from server
+    // Note: Does NOT save the CRC32 - caller must call saveCRC32() after successful display
+    bool checkCRC32Changed(const char* url, uint32_t* outNewCRC32 = nullptr);
+    
+    // Save CRC32 value (deferred until after successful image display)
+    void saveCRC32(uint32_t crc32Value);
     
     // Download and display image from URL
     bool downloadAndDisplay(const char* url);

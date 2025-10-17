@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "logger.h"
 
 namespace Utils {
 
@@ -26,11 +27,15 @@ String formatMemory(size_t bytes) {
 }
 
 void printDebug(const char* message) {
-    Serial.println(message);
+    LogBox::begin("Debug");
+    LogBox::line(message);
+    LogBox::end();
 }
 
 void printDebug(const String& message) {
-    Serial.println(message);
+    LogBox::begin("Debug");
+    LogBox::line(message);
+    LogBox::end();
 }
 
 String getBoardName() {
