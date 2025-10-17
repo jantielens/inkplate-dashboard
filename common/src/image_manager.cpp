@@ -72,14 +72,6 @@ bool ImageManager::downloadAndDisplay(const char* url) {
         return false;
     }
     
-    // Get the stream
-    WiFiClient* stream;
-    if (useHttps) {
-        stream = &secureClient;
-    } else {
-        stream = &client;
-    }
-    
     showDownloadProgress("Downloading image data...");
     
     // Use the InkPlate library's drawImage function

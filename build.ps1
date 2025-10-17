@@ -86,6 +86,7 @@ function Build-Board {
     
     # Add board config directory to include path so .cpp files can find board_config.h
     # Use "min_spiffs" partition scheme which supports OTA (1.9MB APP with OTA/190KB SPIFFS)
+    # Add strict compiler warnings to match CI behavior
     $BOARD_CONFIG_PATH = Join-Path $WORKSPACE_PATH $SKETCH_PATH
     arduino-cli compile --fqbn $BOARD_FQBN --board-options "PartitionScheme=min_spiffs" --build-path $BUILD_DIR --library $COMMON_PATH --build-property "compiler.cpp.extra_flags=-I`"$COMMON_PATH`" -I`"$COMMON_PATH\src`" -I`"$BOARD_CONFIG_PATH`" -include board_config.h" $SKETCH_PATH
     
