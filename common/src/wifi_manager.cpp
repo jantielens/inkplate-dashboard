@@ -104,6 +104,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
+        WiFi.setSleep(false);  // Disable WiFi sleep to reduce latency during wake cycle
         LogBox::line("Connected to WiFi!");
         LogBox::line("IP Address: " + WiFi.localIP().toString());
         LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
