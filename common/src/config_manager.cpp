@@ -71,6 +71,7 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.mqttUsername = _preferences.getString(PREF_MQTT_USER, "");
     config.mqttPassword = _preferences.getString(PREF_MQTT_PASS, "");
     config.debugMode = _preferences.getBool(PREF_DEBUG_MODE, false);
+    config.useCRC32Check = _preferences.getBool(PREF_USE_CRC32, false);
     
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
@@ -122,6 +123,7 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putString(PREF_MQTT_PASS, config.mqttPassword);
     _preferences.putBool(PREF_CONFIGURED, true);
     _preferences.putBool(PREF_DEBUG_MODE, config.debugMode);
+    _preferences.putBool(PREF_USE_CRC32, config.useCRC32Check);
     
     Serial.println("Configuration saved successfully");
     
@@ -250,6 +252,40 @@ void ConfigManager::setDebugMode(bool enabled) {
 
     _preferences.putBool(PREF_DEBUG_MODE, enabled);
     Serial.println("Debug mode updated: " + String(enabled ? "ON" : "OFF"));
+}
+
+void ConfigManager::setUseCRC32Check(bool enabled) {
+    if (!_initialized && !begin()) {
+        Serial.println("ConfigManager not initialized");
+        return;
+    }
+
+    _preferences.putBool(PREF_USE_CRC32, enabled);
+    Serial.println("CRC32 check updated: " + String(enabled ? "ON" : "OFF"));
+}
+
+bool ConfigManager::getUseCRC32Check() {
+    if (!_initialized && !begin()) {
+        return false;
+    }
+    return _preferences.getBool(PREF_USE_CRC32, false);
+}
+
+uint32_t ConfigManager::getLastCRC32() {
+    if (!_initialized && !begin()) {
+        return 0;
+    }
+    return _preferences.getUInt(PREF_LAST_CRC32, 0);
+}
+
+void ConfigManager::setLastCRC32(uint32_t crc32) {
+    if (!_initialized && !begin()) {
+        Serial.println("ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putUInt(PREF_LAST_CRC32, crc32);
+    Serial.println("Last CRC32 updated: 0x" + String(crc32, HEX));
 }
 
 void ConfigManager::markAsConfigured() {

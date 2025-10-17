@@ -15,6 +15,8 @@
 #define PREF_MQTT_USER "mqtt_user"
 #define PREF_MQTT_PASS "mqtt_pass"
 #define PREF_DEBUG_MODE "debug_mode"
+#define PREF_USE_CRC32 "use_crc32"
+#define PREF_LAST_CRC32 "last_crc32"
 
 // Default values
 #define DEFAULT_REFRESH_RATE 5  // 5 minutes
@@ -30,6 +32,7 @@ struct DashboardConfig {
     String mqttPassword;
     bool isConfigured;
     bool debugMode;
+    bool useCRC32Check;  // Enable CRC32-based change detection
     
     // Constructor with defaults
     DashboardConfig() : 
@@ -41,7 +44,8 @@ struct DashboardConfig {
         mqttUsername(""),
         mqttPassword(""),
         isConfigured(false),
-        debugMode(false) {}
+        debugMode(false),
+        useCRC32Check(false) {}
 };
 
 class ConfigManager {
@@ -79,6 +83,7 @@ public:
     String getMQTTUsername();
     String getMQTTPassword();
     bool getDebugMode();
+    bool getUseCRC32Check();
     
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
@@ -86,6 +91,11 @@ public:
     void setRefreshRate(int minutes);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
+    void setUseCRC32Check(bool enabled);
+    
+    // CRC32 storage management
+    uint32_t getLastCRC32();
+    void setLastCRC32(uint32_t crc32);
     
     // Mark device as configured
     void markAsConfigured();

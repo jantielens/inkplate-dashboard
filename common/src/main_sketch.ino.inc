@@ -62,6 +62,9 @@ void setup() {
     }
     bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled;
     
+    // Set config manager for image manager (for CRC32 storage)
+    imageManager.setConfigManager(&configManager);
+    
     // Initialize display
     displayManager.init(shouldShowSplash);
     
@@ -495,6 +498,48 @@ void performNormalUpdate() {
             } else {
                 Serial.println("MQTT not configured - skipping MQTT publishing");
             }
+        }
+        
+        // Check CRC32 if enabled (only during normal wake cycles)
+        bool shouldDownload = true;
+        WakeupReason wakeReason = powerManager.getWakeupReason();
+        if (config.useCRC32Check && wakeReason == WAKEUP_TIMER) {
+            // Only skip download for CRC32 match during normal timer wake
+            // Always download after config mode, firmware update, or button press to refresh display
+            Serial.println("\nCRC32 check is ENABLED (normal wake cycle)");
+            shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str());
+            
+            if (!shouldDownload) {
+                // Image hasn't changed - skip download and go to sleep
+                Serial.println("Image unchanged - skipping download and going to sleep");
+                
+                // Calculate loop time
+                loopDuration = millis() - loopStartTime;
+                loopTimeSeconds = loopDuration / 1000.0;
+                Serial.println("Loop time (CRC32 only): " + String(loopTimeSeconds, 2) + " seconds");
+                
+                // Publish loop time to MQTT (if configured)
+                if (mqttManager.isConfigured()) {
+                    if (mqttManager.connect()) {
+                        mqttManager.publishLoopTime(deviceId, loopTimeSeconds);
+                        mqttManager.publishLastLog(deviceId, "Image unchanged (CRC32 match)", "info");
+                        mqttManager.disconnect();
+                    }
+                }
+                
+                // Mark device as running
+                powerManager.markDeviceRunning();
+                
+                // Go to sleep without updating display
+                powerManager.prepareForSleep();
+                powerManager.enterDeepSleep((uint16_t)config.refreshRate);
+                return;
+            }
+        } else if (config.useCRC32Check) {
+            Serial.println("\nCRC32 check is ENABLED but bypassed (not a normal wake cycle)");
+            Serial.println("Will download image to refresh display after config/restart");
+        } else {
+            Serial.println("\nCRC32 check is DISABLED");
         }
         
         // Download and display image

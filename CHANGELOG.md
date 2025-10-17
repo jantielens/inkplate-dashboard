@@ -1,5 +1,35 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.5.0] - 2025-10-17
+
+### Added
+- CRC32-based image change detection feature (issue #56)
+  - Optional feature to skip image downloads when content hasn't changed
+  - Downloads small `.crc32` checksum file (10 bytes) before full image
+  - Compares checksum with stored value from last successful download
+  - Skips image download if checksum matches, saving battery and time
+  - Automatically updates stored CRC32 when image changes
+  - Graceful fallback to full image download if `.crc32` file is missing or invalid
+  - Configuration checkbox in web portal to enable/disable
+  - Persistent storage of last CRC32 value in preferences
+  - Compatible with [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) add-on
+  - Comprehensive documentation in CRC32_GUIDE.md with server setup examples
+  - MQTT logging for CRC32 check results (unchanged/changed)
+
+
+### Changed
+- ImageManager now accepts ConfigManager reference for CRC32 storage
+- Normal update flow now checks CRC32 before image download when enabled
+- Documentation updated with battery life impact analysis
+
+### Performance Impact
+- Wake duration reduced from 11s to 4.5s when image unchanged
+- Daily power consumption reduced by 60.7% with once-daily image changes
+- Battery life increased from ~13 days to ~33 days (1200mAh battery, 5-minute refresh)
+- 287 out of 288 daily wakes skip full image download (assuming once-daily changes)
+
 ## [0.4.0] - 2025-10-17
 
 ### Added
