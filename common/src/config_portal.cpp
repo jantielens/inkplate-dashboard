@@ -1,6 +1,7 @@
 #include "config_portal.h"
 #include "config_portal_css.h"
 #include "version.h"
+#include "config.h"
 
 ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager)
     : _configManager(configManager), _wifiManager(wifiManager), _displayManager(displayManager),
