@@ -330,16 +330,12 @@ uint32_t ConfigManager::getLastCRC32() {
 
 void ConfigManager::setLastCRC32(uint32_t crc32) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::line("ConfigManager not initialized - cannot save CRC32");
         return;
     }
     
     _preferences.putUInt(PREF_LAST_CRC32, crc32);
-    LogBox::begin("Config Update");
-    LogBox::linef("Last CRC32 updated: 0x%08X", crc32);
-    LogBox::end();
+    LogBox::linef("Saved to preferences: 0x%08X", crc32);
 }
 
 void ConfigManager::markAsConfigured() {

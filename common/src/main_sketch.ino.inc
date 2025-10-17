@@ -541,22 +541,24 @@ void performNormalUpdate() {
             }
         }
         
-        // Check CRC32 if enabled (only during normal wake cycles)
+        // Check CRC32 if enabled (always fetch, but only skip download on timer wake)
         bool shouldDownload = true;
         uint32_t newCRC32 = 0;  // Will hold the new CRC32 value from server (saved only on success)
+        bool crc32WasChecked = false;  // Track if CRC32 check was performed
+        bool crc32Matched = false;  // Track if CRC32 values matched
         WakeupReason wakeReason = powerManager.getWakeupReason();
-        if (config.useCRC32Check && wakeReason == WAKEUP_TIMER) {
-            // Only skip download for CRC32 match during normal timer wake
-            // Always download after config mode, firmware update, or button press to refresh display
+        if (config.useCRC32Check) {
             LogBox::begin("CRC32 Check");
-            LogBox::line("CRC32 check is ENABLED (normal wake cycle)");
+            LogBox::line("CRC32 check is ENABLED");
             LogBox::end();
             
-            // Check CRC32 and capture new value (but don't save yet)
+            crc32WasChecked = true;
+            // Always check CRC32 and capture new value (but only skip download on timer wake)
             shouldDownload = imageManager.checkCRC32Changed(config.imageURL.c_str(), &newCRC32);
+            crc32Matched = !shouldDownload;  // If shouldDownload is false, CRC32 matched
             
-            if (!shouldDownload) {
-                // Image hasn't changed - skip download and go to sleep
+            if (wakeReason == WAKEUP_TIMER && !shouldDownload) {
+                // Image hasn't changed during normal timer wake - skip download and go to sleep
                 LogBox::begin("Image Status");
                 LogBox::line("Image unchanged - skipping download and going to sleep");
                 
@@ -582,12 +584,15 @@ void performNormalUpdate() {
                 powerManager.prepareForSleep();
                 powerManager.enterDeepSleep((uint16_t)config.refreshRate);
                 return;
+            } else if (wakeReason != WAKEUP_TIMER && !shouldDownload) {
+                // CRC32 matched but not a timer wake (button press, config mode, etc.)
+                // Still download to refresh display
+                LogBox::begin("Image Download Reason");
+                LogBox::line("CRC32 matched but not a normal timer wake");
+                LogBox::line("Downloading anyway to refresh display");
+                LogBox::end();
+                shouldDownload = true;
             }
-        } else if (config.useCRC32Check) {
-            LogBox::begin("CRC32 Check");
-            LogBox::line("CRC32 check is ENABLED but bypassed (not a normal wake cycle)");
-            LogBox::line("Will download image to refresh display after config/restart");
-            LogBox::end();
         } else {
             LogBox::begin("CRC32 Check");
             LogBox::line("CRC32 check is DISABLED");
@@ -622,8 +627,24 @@ void performNormalUpdate() {
             // Save CRC32 only AFTER successful display
             // This ensures CRC32 is only updated when image is confirmed to be displayed
             // Always save on successful display (button press or timer wake) to maintain current baseline
-            if (config.useCRC32Check && newCRC32 != 0) {
-                imageManager.saveCRC32(newCRC32);
+            if (config.useCRC32Check) {
+                LogBox::begin("CRC32 Save");
+                LogBox::linef("Debug: crc32WasChecked=%d, crc32Matched=%d, newCRC32=0x%08X", 
+                             crc32WasChecked, crc32Matched, newCRC32);
+                if (crc32WasChecked && crc32Matched) {
+                    // CRC32 matched - no need to save the same value again
+                    LogBox::line("Skipped - CRC32 unchanged (same as stored value)");
+                } else if (newCRC32 != 0) {
+                    // CRC32 changed or first time - save new value
+                    imageManager.saveCRC32(newCRC32);
+                } else if (crc32WasChecked) {
+                    // CRC32 check was performed but returned 0 (no .crc32 file on server)
+                    LogBox::line("Skipped - no CRC32 value from server (file may not be available)");
+                } else {
+                    // CRC32 checking is disabled
+                    LogBox::line("Skipped - CRC32 checking disabled");
+                }
+                LogBox::end();
             }
             
             // Reset retry count on success

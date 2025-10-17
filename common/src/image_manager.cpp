@@ -134,15 +134,12 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
 
 void ImageManager::saveCRC32(uint32_t crc32Value) {
     if (!_configManager) {
-        LogBox::begin("CRC32 Save");
         LogBox::line("ConfigManager not set - cannot save CRC32");
-        LogBox::end();
         return;
     }
     
-    LogBox::begin("Saving CRC32");
+    LogBox::linef("CRC32 updated: 0x%08X", crc32Value);
     _configManager->setLastCRC32(crc32Value);
-    LogBox::end();
 }
 
 bool ImageManager::downloadAndDisplay(const char* url) {
