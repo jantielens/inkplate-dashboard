@@ -261,6 +261,8 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
     if (mqttManager->isConfigured() && mqttConnected) {
         // Connection already open - just publish loop time without reconnecting
         mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
+        // Close the connection to save battery
+        mqttManager->disconnect();
     }
     
     // Success - go to deep sleep
@@ -308,6 +310,8 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
             // Connection already open - just publish loop time without reconnecting
             mqttManager->publishLoopTime(deviceId, loopTimeSeconds);
             mqttManager->publishLastLog(deviceId, "Image download failed: " + String(imageManager->getLastError()), "error");
+            // Close the connection to save battery
+            mqttManager->disconnect();
         }
         
         // Error - still go to sleep and retry later
