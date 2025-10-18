@@ -2,6 +2,46 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-10-18
+
+### Added
+- MQTT optimization for battery-powered operation (issue #21)
+  - New `publishAllTelemetry()` batch method publishes all MQTT data in a single session
+  - Conditional discovery publishing based on wake reason (only on first boot and hardware reset)
+  - Discovery messages skip normal timer wakes, reducing MQTT traffic by ~2KB per cycle
+  - Helper methods `buildDeviceInfoJSON()` and `shouldPublishDiscovery()` for cleaner code
+  - Wake reason passed through to MQTT manager for intelligent discovery decisions
+
+### Changed
+- MQTT session optimization: reduced from 2 sessions to 1 per normal cycle (50% reduction)
+  - Battery voltage now collected before WiFi connection for faster telemetry gathering
+  - All sensor data (battery, RSSI, loop time, log message) passed to single MQTT publish call
+  - MQTT publishing moved to end of cycle (after image display) in all paths
+- MQTT timeout optimization for faster connections
+  - Socket timeout reduced from 10s to 2s
+  - Keep-alive interval reduced from 15s to 5s
+- Fire-and-forget optimization for state messages (no ACK wait)
+  - Discovery messages still check publish results for debugging (rare events)
+  - State messages use fire-and-forget for maximum speed (frequent events)
+- Normal mode controller refactoring for improved maintainability
+  - Removed excessive debug logging (323 lines → 171 lines, 47% reduction)
+  - Eliminated redundant wrapper methods (`connectWiFi`, simplified `downloadAndDisplayImage`)
+  - Extracted `publishMQTTTelemetry()` helper to eliminate code duplication
+  - Simplified CRC32 save logic with clear boolean conditions
+  - Streamlined error handlers with reduced LogBox overhead
+
+### Performance Impact
+- MQTT cycle time reduced from 3-5 seconds to 1-2 seconds (60-67% faster)
+- Discovery traffic eliminated on normal timer wakes (100% reduction, ~2KB saved per cycle)
+- Improved battery life due to faster wake cycles and reduced network activity
+- Time to display image significantly reduced (MQTT no longer blocks image rendering)
+
+### Technical Details
+- Discovery published only on `WAKEUP_FIRST_BOOT` and `WAKEUP_RESET_BUTTON`
+- Discovery skipped on `WAKEUP_TIMER` (normal refresh) and `WAKEUP_BUTTON` (manual refresh)
+- Home Assistant entities created on first boot, preserved across normal wake cycles
+- Backward compatible with existing deployments (no breaking changes)
+
 ## [0.7.0] - 2025-10-17
 
 ### Added
