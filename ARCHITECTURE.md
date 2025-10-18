@@ -310,7 +310,7 @@ Full configuration mode (triggered by button or auto-entry).
 #### NormalModeController (`normal_mode_controller.h/cpp`)
 Normal operation mode (image refresh cycle).
 
-**Purpose:** Execute the main dashboard update cycle with hardware watchdog protection.
+**Purpose:** Execute the main dashboard update cycle with hardware watchdog protection and hourly scheduling support.
 
 **Watchdog Protection:**
 - Enabled at the start of the update cycle to protect against lockups
@@ -320,29 +320,53 @@ Normal operation mode (image refresh cycle).
 - Disabled before entering sleep to allow device to complete the sleep cycle safely
 - NOT active during config mode or AP mode (user configuration must never be interrupted)
 
+**Hourly Scheduling:**
+- After WiFi connection, device syncs time via NTP (pool.ntp.org, time.nist.gov)
+- Checks if current hour is enabled in the 24-bit bitmask
+- If hour is **disabled**: Calculates sleep duration until next enabled hour and enters deep sleep immediately
+- If hour is **enabled**: Proceeds with normal update cycle
+- Default: All 24 hours enabled (backward compatible)
+- Enables significant battery savings by skipping entire disabled periods (e.g., midnight to 6 AM)
+
 **Workflow:**
 1. **Enable watchdog timer** (protects all operations below)
 2. Load configuration
 3. Collect telemetry data early (battery voltage, wake reason)
 4. Connect to WiFi (capture RSSI)
-5. Check CRC32 for image changes (if enabled)
+5. Sync time via NTP and check hourly schedule
+   - If hour disabled: Calculate sleep until next enabled hour and sleep immediately
+   - If hour enabled: Continue to next step
+6. Check CRC32 for image changes (if enabled)
    - If CRC32 matches on timer wake: Publish telemetry with "unchanged" message and sleep immediately
-6. Download and display image
-7. Save CRC32 after successful display (if enabled)
-8. **Publish all MQTT telemetry in single session** (if configured)
+7. Download and display image
+8. Save CRC32 after successful display (if enabled)
+9. **Publish all MQTT telemetry in single session** (if configured)
    - Discovery messages: Only on first boot and hardware reset
    - State messages: Battery, WiFi signal, loop time, optional log message
-9. **Disable watchdog timer** (before entering sleep)
-10. Enter deep sleep until next refresh
+10. **Disable watchdog timer** (before entering sleep)
+11. Enter deep sleep until next refresh
 
 **Special Cases:**
-- **Manual Refresh** - Button press during sleep forces image download even if CRC32 unchanged
+- **Manual Refresh** - Button press during sleep forces image download and ignores hourly schedule
 - **Retry Mechanism** - Up to 3 retry attempts with 20-second delays on download failure
 - **CRC32 Skip** - Timer wake with matching CRC32 skips download entirely
+- **Hourly Skip** - Timer wake during disabled hour skips WiFi connection, image download, and sleeps until next enabled hour
 - **Watchdog Timeout** - Device automatically enters deep sleep for recovery (prevents battery drain from lockups)
+
+**Hourly Schedule Example:**
+```
+Configuration: Sleep 11 PM - 6 AM (hours 0-5 disabled, 6-23 enabled)
+
+3 AM wake:    Hourly check fails → Sleep until 6 AM (3 hours)
+2 PM wake:    Hourly check passes → Perform normal update → Sleep 5 minutes
+```
 
 **Key Methods:**
 - `execute()` - Run complete update cycle (enables watchdog at start, disables before sleep)
+- `calculateSleepUntilNextEnabledHour()` - Find next enabled hour and calculate sleep duration
+
+**See Also:**
+- [Hourly Scheduling Documentation](HOURLY_SCHEDULING.md) - Comprehensive guide to hourly scheduling feature
 
 ### Utilities
 
@@ -385,6 +409,7 @@ struct DashboardConfig {
     String mqttPassword;
     bool useCRC32Check;
     bool debugMode;
+    uint8_t updateHours[3];   // 24-bit bitmask for hourly scheduling (bits 0-23 = hours 0-23)
 };
 ```
 

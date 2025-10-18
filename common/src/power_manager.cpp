@@ -109,7 +109,14 @@ WakeupReason PowerManager::detectWakeupReason() {
                 } else {
                     // Device was not running - genuine first power-on or long power cycle
                     LogBox::line("Device was not running - initial power-on or long power cycle");
+                    LogBox::line("Setting running flag for reset detection on next boot");
                     LogBox::end();
+                    
+                    // Set flag so reset button can be detected on next boot
+                    prefs.begin("power_mgr", false);  // Read-write
+                    prefs.putBool("was_running", true);
+                    prefs.end();
+                    
                     return WAKEUP_FIRST_BOOT;
                 }
             } else if (reset_reason == ESP_RST_SW || reset_reason == ESP_RST_DEEPSLEEP) {

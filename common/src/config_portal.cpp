@@ -147,8 +147,26 @@ void ConfigPortal::handleSubmit() {
     String mqttBroker = _server->arg("mqttbroker");
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
+    String timezoneStr = _server->arg("timezone");
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
+    
+    // Parse timezone offset
+    int timezoneOffset = timezoneStr.toInt();
+    if (timezoneOffset < -12 || timezoneOffset > 14) {
+        timezoneOffset = 0;  // Default to UTC on invalid input
+    }
+    
+    // Parse hourly schedule bitmask (24 checkboxes)
+    uint8_t updateHours[3] = {0, 0, 0};
+    for (int hour = 0; hour < 24; hour++) {
+        String hourKey = "hour_" + String(hour);
+        if (_server->hasArg(hourKey) && _server->arg(hourKey) == "on") {
+            uint8_t byteIndex = hour / 8;
+            uint8_t bitPosition = hour % 8;
+            updateHours[byteIndex] |= (1 << bitPosition);
+        }
+    }
     
     // Validate input
     if (ssid.length() == 0) {
@@ -187,6 +205,10 @@ void ConfigPortal::handleSubmit() {
     config.mqttUsername = mqttUser;
     config.debugMode = debugMode;
     config.useCRC32Check = useCRC32Check;
+    config.updateHours[0] = updateHours[0];
+    config.updateHours[1] = updateHours[1];
+    config.updateHours[2] = updateHours[2];
+    config.timezoneOffset = timezoneOffset;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -398,6 +420,49 @@ String ConfigPortal::generateConfigPage() {
             html += "<div class='help-text'>Password is set. Leave empty to keep current password.</div>";
         } else {
             html += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password'>";
+        }
+        html += "</div>";
+        
+        // Hourly Schedule Section
+        html += "<div class='form-group' style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;'>";
+        html += "<label style='font-size: 18px; margin-bottom: 5px;'>⏰ Update Schedule & Timezone</label>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure when updates should occur and your timezone for accurate scheduling.</div>";
+        html += "</div>";
+        
+        // Timezone Offset
+        html += "<div class='form-group'>";
+        html += "<label for='timezone'>Timezone Offset (UTC)</label>";
+        if (hasConfig) {
+            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
+        } else {
+            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
+        }
+        html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
+        html += "</div>";
+        
+        // Hourly Schedule Section
+        html += "<div class='form-group' style='margin-top: 20px; padding-top: 15px;'>";
+        html += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery.</div>";
+        
+        // 24 checkboxes in a 4x6 grid (4 columns for better UI fit)
+        html += "<div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;'>";
+        for (int hour = 0; hour < 24; hour++) {
+            // Check if hour is enabled: use current config if available, otherwise default to enabled
+            bool isEnabled = hasConfig ? 
+                ((currentConfig.updateHours[hour / 8] >> (hour % 8)) & 1) : 
+                true;  // Default all enabled if no config
+            
+            int nextHour = (hour + 1) % 24;
+            
+            html += "<label style='display: flex; align-items: center; gap: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; cursor: pointer;'>";
+            html += "<input type='checkbox' name='hour_" + String(hour) + "' class='hour-checkbox'";
+            if (isEnabled) {
+                html += " checked";
+            }
+            html += "> <div style='line-height: 1.2;'><div>" + String(hour < 10 ? "0" : "") + String(hour) + ":00</div>";
+            html += "<div style='font-size: 11px; color: #999; margin-top: 1px;'>to " + String(nextHour < 10 ? "0" : "") + String(nextHour) + ":00</div></div>";
+            html += "</label>";
         }
         html += "</div>";
     }

@@ -46,12 +46,14 @@ private:
     
     // Helper methods
     bool loadConfiguration(DashboardConfig& config);
-    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
+    int calculateSleepUntilNextEnabledHour(uint8_t currentHour, const uint8_t updateHours[3]);
+    float calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOffset, const uint8_t updateHours[3]);
+    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
     void publishMQTTTelemetry(const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI, float loopTimeSeconds, const char* message = nullptr, const char* severity = nullptr);
-    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
-    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
+    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
+    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
     void handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime);
-    void enterSleep(uint16_t minutes, unsigned long loopStartTime = 0);
+    void enterSleep(const DashboardConfig& config, time_t currentTime, unsigned long loopStartTime);
 };
 
 #endif // NORMAL_MODE_CONTROLLER_H
