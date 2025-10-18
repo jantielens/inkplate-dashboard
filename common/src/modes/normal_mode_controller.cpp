@@ -147,8 +147,9 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         uiError->showImageError(config.imageURL.c_str(), imageManager->getLastError(), config.refreshRate);
         
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
+        String errorMessage = "Image download failed: " + String(imageManager->getLastError());
         publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, wifiRSSI, loopTimeSeconds,
-                           ("Image download failed: " + String(imageManager->getLastError())).c_str(), "error");
+                           errorMessage.c_str(), "error");
         
         delay(3000);
         enterSleep(config.refreshRate);
