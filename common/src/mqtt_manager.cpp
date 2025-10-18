@@ -53,8 +53,9 @@ bool MQTTManager::begin() {
     _mqttClient->setBufferSize(MQTT_MAX_PACKET_SIZE);
     
     _mqttClient->setServer(host.c_str(), _port);
-    _mqttClient->setKeepAlive(15);
-    _mqttClient->setSocketTimeout(10);
+    // Reduced timeouts for faster connection and publish cycles
+    _mqttClient->setKeepAlive(5);     // Reduced from 15s to 5s
+    _mqttClient->setSocketTimeout(2);  // Reduced from 10s to 2s
     
     _isConfigured = true;
     LogBox::end("MQTT Manager initialized successfully");
@@ -99,8 +100,9 @@ bool MQTTManager::connect() {
     
     // Set server again (ensure it's set correctly)
     _mqttClient->setServer(host.c_str(), port);
-    _mqttClient->setKeepAlive(15);
-    _mqttClient->setSocketTimeout(10);
+    // Reduced timeouts for faster connection and publish cycles
+    _mqttClient->setKeepAlive(5);     // Reduced from 15s to 5s
+    _mqttClient->setSocketTimeout(2);  // Reduced from 10s to 2s
     
     // Attempt connection with retries
     const int maxRetries = 3;
@@ -486,4 +488,202 @@ String MQTTManager::getStateTopic(const String& deviceId, const String& sensorTy
     // State topic format:
     // homeassistant/sensor/[device_id]/[sensor_type]/state
     return "homeassistant/sensor/" + deviceId + "/" + sensorType + "/state";
+}
+
+String MQTTManager::buildDeviceInfoJSON(const String& deviceId, const String& deviceName, const String& modelName, bool full) {
+    // Build device info JSON
+    // full=true: includes all device metadata (for first sensor)
+    // full=false: includes only identifiers (for subsequent sensors)
+    String json = "\"device\":{";
+    json += "\"identifiers\":[\"" + deviceId + "\"]";
+    
+    if (full) {
+        json += ",\"name\":\"" + deviceName + "\"";
+        json += ",\"manufacturer\":\"Soldered Electronics\"";
+        json += ",\"model\":\"" + modelName + "\"";
+        json += ",\"sw_version\":\"" + String(FIRMWARE_VERSION) + "\"";
+    }
+    
+    json += "}";
+    return json;
+}
+
+bool MQTTManager::shouldPublishDiscovery(WakeupReason wakeReason) {
+    // Only publish discovery on:
+    // - WAKEUP_FIRST_BOOT: Initial setup, ensures HA entities are created
+    // - WAKEUP_RESET_BUTTON: Hardware reset, may indicate config/firmware change
+    //
+    // DO NOT publish on:
+    // - WAKEUP_TIMER: Normal refresh cycle (most common)
+    // - WAKEUP_BUTTON: Manual refresh, no config change
+    //
+    // This significantly reduces MQTT traffic and retained message count
+    return (wakeReason == WAKEUP_FIRST_BOOT || wakeReason == WAKEUP_RESET_BUTTON);
+}
+
+bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
+                                      WakeupReason wakeReason, float batteryVoltage, int wifiRSSI,
+                                      float loopTimeSeconds, const String& lastLogMessage,
+                                      const String& lastLogSeverity) {
+    if (!_isConfigured) {
+        LogBox::begin("MQTT");
+        LogBox::line("MQTT not configured - skipping");
+        LogBox::end();
+        return true;  // Not an error
+    }
+    
+    LogBox::begin("Publishing All Telemetry to MQTT");
+    LogBox::line("Connecting to MQTT broker...");
+    
+    // Connect to MQTT
+    if (!connect()) {
+        LogBox::line("ERROR: Failed to connect to MQTT broker");
+        LogBox::line("Error: " + _lastError);
+        LogBox::end();
+        return false;
+    }
+    
+    LogBox::line("Connected successfully");
+    
+    int publishCount = 0;
+    
+    // Publish discovery messages (conditionally based on wake reason)
+    if (shouldPublishDiscovery(wakeReason)) {
+        LogBox::line("Publishing discovery messages...");
+        
+        // Battery voltage sensor discovery
+        {
+            String discoveryTopic = getDiscoveryTopic(deviceId, "battery_voltage");
+            String stateTopic = getStateTopic(deviceId, "battery_voltage");
+            
+            String payload = "{";
+            payload += "\"name\":\"" + deviceName + " Battery\",";
+            payload += "\"unique_id\":\"" + deviceId + "_battery\",";
+            payload += "\"state_topic\":\"" + stateTopic + "\",";
+            payload += "\"device_class\":\"voltage\",";
+            payload += "\"unit_of_measurement\":\"V\",";
+            payload += "\"value_template\":\"{{ value }}\",";
+            payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, true);
+            payload += "}";
+            
+            if (_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+                publishCount++;
+            } else {
+                LogBox::line("  ERROR: Failed to publish battery discovery");
+            }
+        }
+        
+        // Loop time sensor discovery
+        {
+            String discoveryTopic = getDiscoveryTopic(deviceId, "loop_time");
+            String stateTopic = getStateTopic(deviceId, "loop_time");
+            
+            String payload = "{";
+            payload += "\"name\":\"" + deviceName + " Loop Time\",";
+            payload += "\"unique_id\":\"" + deviceId + "_loop_time\",";
+            payload += "\"state_topic\":\"" + stateTopic + "\",";
+            payload += "\"device_class\":\"duration\",";
+            payload += "\"unit_of_measurement\":\"s\",";
+            payload += "\"value_template\":\"{{ value }}\",";
+            payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, false);
+            payload += "}";
+            
+            if (_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+                publishCount++;
+            } else {
+                LogBox::line("  ERROR: Failed to publish loop time discovery");
+            }
+        }
+        
+        // WiFi signal sensor discovery
+        {
+            String discoveryTopic = getDiscoveryTopic(deviceId, "wifi_signal");
+            String stateTopic = getStateTopic(deviceId, "wifi_signal");
+            
+            String payload = "{";
+            payload += "\"name\":\"" + deviceName + " WiFi Signal\",";
+            payload += "\"unique_id\":\"" + deviceId + "_wifi_signal\",";
+            payload += "\"state_topic\":\"" + stateTopic + "\",";
+            payload += "\"device_class\":\"signal_strength\",";
+            payload += "\"unit_of_measurement\":\"dBm\",";
+            payload += "\"value_template\":\"{{ value }}\",";
+            payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, false);
+            payload += "}";
+            
+            if (_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+                publishCount++;
+            } else {
+                LogBox::line("  ERROR: Failed to publish WiFi signal discovery");
+            }
+        }
+        
+        // Last log sensor discovery
+        {
+            String discoveryTopic = getDiscoveryTopic(deviceId, "last_log");
+            String stateTopic = getStateTopic(deviceId, "last_log");
+            
+            String payload = "{";
+            payload += "\"name\":\"" + deviceName + " Last Log\",";
+            payload += "\"unique_id\":\"" + deviceId + "_last_log\",";
+            payload += "\"state_topic\":\"" + stateTopic + "\",";
+            payload += "\"icon\":\"mdi:message-text\",";
+            payload += "\"value_template\":\"{{ value }}\",";
+            payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, false);
+            payload += "}";
+            
+            if (_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+                publishCount++;
+            } else {
+                LogBox::line("  ERROR: Failed to publish last log discovery");
+            }
+        }
+        
+        LogBox::linef("Published %d discovery messages", publishCount);
+        publishCount = 0;  // Reset for state messages
+    } else {
+        LogBox::line("Skipping discovery (normal wake cycle)");
+    }
+    
+    // Publish battery voltage state
+    if (batteryVoltage > 0.0) {
+        String stateTopic = getStateTopic(deviceId, "battery_voltage");
+        String payload = String(batteryVoltage, 3);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        publishCount++;
+    }
+    
+    // Publish WiFi signal state
+    {
+        String stateTopic = getStateTopic(deviceId, "wifi_signal");
+        String payload = String(wifiRSSI);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        publishCount++;
+    }
+    
+    // Publish loop time state
+    {
+        String stateTopic = getStateTopic(deviceId, "loop_time");
+        String payload = String(loopTimeSeconds, 2);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        publishCount++;
+    }
+    
+    // Publish last log state (if provided)
+    if (lastLogMessage.length() > 0) {
+        String stateTopic = getStateTopic(deviceId, "last_log");
+        String severityUpper = lastLogSeverity;
+        severityUpper.toUpperCase();
+        String payload = "[" + severityUpper + "] " + lastLogMessage;
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        publishCount++;
+    }
+    
+    LogBox::linef("Published %d state messages", publishCount);
+    
+    // Disconnect
+    disconnect();
+    
+    LogBox::end("All telemetry published");
+    
+    return true;
 }

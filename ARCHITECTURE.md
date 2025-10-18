@@ -166,22 +166,33 @@ Handles image download and display.
 The server can provide a `.crc32` file alongside the image (e.g., `image.png.crc32`) containing a hex CRC32 hash. The device checks this before downloading to skip unchanged images, saving battery and bandwidth.
 
 #### MQTTManager (`mqtt_manager.h/cpp`)
-Manages MQTT connectivity and Home Assistant integration.
+Manages MQTT connectivity and Home Assistant integration with optimized battery-powered operation.
 
 **Responsibilities:**
 - Connect to MQTT broker with authentication
-- Publish Home Assistant MQTT Discovery messages
+- Publish Home Assistant MQTT Discovery messages (conditional based on wake reason)
 - Publish telemetry (battery, WiFi signal, loop time)
 - Publish log messages for monitoring
+- Batch publishing for single-session efficiency
+
+**Key Features:**
+- **Conditional Discovery**: Only publishes discovery on first boot and hardware reset (skips normal timer wakes)
+- **Single Session Publishing**: `publishAllTelemetry()` batches all MQTT operations into one connection
+- **Fire-and-Forget States**: State messages don't wait for ACK (faster publishing)
+- **Discovery Result Checking**: Discovery messages still verify publish success for debugging
+- **Optimized Timeouts**: Socket timeout 2s, keep-alive 5s for faster connections
 
 **Key Methods:**
 - `begin()` - Initialize MQTT configuration
 - `connect()` - Connect to broker with retry logic
-- `publishDiscovery()` - Send Home Assistant auto-discovery configs
-- `publishBatteryVoltage()` - Send battery level
-- `publishWiFiSignal()` - Send WiFi RSSI
-- `publishLoopTime()` - Send execution duration
-- `publishLastLog()` - Send log message
+- `publishAllTelemetry()` - Batch publish all telemetry in single session (optimized, preferred)
+- `publishDiscovery()` - Send Home Assistant auto-discovery configs (legacy)
+- `publishBatteryVoltage()` - Send battery level (legacy)
+- `publishWiFiSignal()` - Send WiFi RSSI (legacy)
+- `publishLoopTime()` - Send execution duration (legacy)
+- `publishLastLog()` - Send log message (legacy)
+- `shouldPublishDiscovery()` - Determine if discovery should be published based on wake reason
+- `buildDeviceInfoJSON()` - Build device info JSON for discovery messages
 
 #### DisplayManager (`display_manager.h/cpp`)
 Low-level display operations and power management.
@@ -312,12 +323,15 @@ Normal operation mode (image refresh cycle).
 **Workflow:**
 1. **Enable watchdog timer** (protects all operations below)
 2. Load configuration
-3. Connect to WiFi
-4. Publish MQTT telemetry (if configured)
+3. Collect telemetry data early (battery voltage, wake reason)
+4. Connect to WiFi (capture RSSI)
 5. Check CRC32 for image changes (if enabled)
+   - If CRC32 matches on timer wake: Publish telemetry with "unchanged" message and sleep immediately
 6. Download and display image
-7. Save CRC32 after successful display
-8. Publish loop time to MQTT
+7. Save CRC32 after successful display (if enabled)
+8. **Publish all MQTT telemetry in single session** (if configured)
+   - Discovery messages: Only on first boot and hardware reset
+   - State messages: Battery, WiFi signal, loop time, optional log message
 9. **Disable watchdog timer** (before entering sleep)
 10. Enter deep sleep until next refresh
 

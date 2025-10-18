@@ -38,18 +38,20 @@ flowchart TD
 
   WiFi[Connect Wi-Fi] -->|Fail| WiFiErr[Show Wi-Fi error]
   WiFiErr --> Sleep
-  WiFi -->|Success| MQTTChk{MQTT configured?}
-  MQTTChk -->|Yes| MQTT[Publish metrics]
-  MQTTChk -->|No| NoMQTT[Skip MQTT]
-  MQTT --> Img
-  NoMQTT --> Img
+  WiFi -->|Success| CRC32Chk{CRC32 enabled?}
+  
+  CRC32Chk -->|Yes| CRC32[Check CRC32]
+  CRC32Chk -->|No| Img
+  CRC32 -->|Match & timer wake| MQTTFast[Publish telemetry with CRC32 match message]
+  MQTTFast --> Sleep
+  CRC32 -->|Changed or non-timer wake| Img
 
-  Img[Download & display image] -->|Success| ImgOk[Refresh image & publish loop time]
+  Img[Download & display image] -->|Success| ImgOk[Save CRC32 & publish telemetry]
   ImgOk --> Sleep
   Img -->|Retries left| Retry[Increment retry counter]
   Retry --> Sleep20[Sleep 20 s]
   Sleep20 --> Wake
-  Img -->|Final failure| ImgFail[Show final error & log]
+  Img -->|Final failure| ImgFail[Show error & publish telemetry with error]
   ImgFail --> Sleep
 
   Sleep --> Wake
@@ -77,9 +79,17 @@ After setup the firmware branches according to configuration state and wake reas
 
 1. **Load configuration** – Fails fast if preferences cannot be retrieved.
 2. **Conditional status UI** – When `debugMode` is `true`, status messages (SSID, refresh interval, download progress, errors) are rendered to the e-ink panel. When `false`, the device stays silent until the final outcome.
-3. **Wi-Fi connection** – Attempts to associate using stored credentials. On success RSSI is captured for MQTT telemetry.
-4. **MQTT optional phase** – If MQTT settings are present, a publish cycle performs Home Assistant discovery, battery voltage reading, and Wi-Fi signal reporting. Failures do not block image retrieval.
-5. **Download & display** – `ImageManager::downloadAndDisplay()` streams the PNG directly to the Inkplate. Success resets the retry counter and the device sleeps for the configured refresh interval.
+3. **Collect telemetry data** – Battery voltage and wake reason are collected early, before WiFi connection.
+4. **Wi-Fi connection** – Attempts to associate using stored credentials. On success RSSI is captured for MQTT telemetry.
+5. **CRC32 check (optional)** – If enabled, checks if image has changed:
+   - On timer wake with matching CRC32: Skip image download, publish telemetry with "unchanged" message, and sleep immediately.
+   - On button wake or CRC32 change: Continue to image download.
+6. **Download & display** – `ImageManager::downloadAndDisplay()` streams the PNG directly to the Inkplate. Success resets the retry counter and saves the new CRC32 (if enabled).
+7. **MQTT telemetry (single session)** – If MQTT is configured, a single session publishes all data at once:
+   - **Discovery messages** (conditional): Published only on first boot and hardware reset, skipped on normal timer wakes.
+   - **State messages**: Battery voltage, WiFi signal, loop time, and optional log message.
+   - All publishing happens at the end of the cycle, after image display.
+8. **Deep sleep** – Device enters deep sleep for the configured refresh interval.
 
 ## 4. Error and Retry Handling
 
