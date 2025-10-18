@@ -124,26 +124,22 @@ bool NormalModeController::publishMQTTTelemetry(const String& deviceId, const St
     LogBox::linef("Publishing discovery: %s", shouldPublishDiscovery ? "YES" : "NO");
     LogBox::end();
     
-    // Connect to MQTT for initial telemetry (discovery, battery, WiFi)
-    // Loop time will be published later in the same connection after image handling
+    // Connect to MQTT and publish discovery + battery + WiFi in batch
+    // Loop time will be published later after image handling
     if (mqttManager->connect()) {
         LogBox::begin("MQTT Publishing");
         
-        // Publish discovery if needed
-        if (shouldPublishDiscovery) {
-            mqttManager->publishDiscovery(deviceId, deviceName, BOARD_NAME, true);
-        }
-        
-        // Publish battery voltage and WiFi signal
-        mqttManager->publishBatteryVoltage(deviceId, batteryVoltage);
-        mqttManager->publishWiFiSignal(deviceId, wifiRSSI);
+        // Publish discovery + battery + WiFi in single batch
+        // Loop time is 0.0 as placeholder - will be updated after image handling
+        mqttManager->publishTelemetryBatch(deviceId, deviceName, BOARD_NAME, 
+                                          batteryVoltage, wifiRSSI, 0.0, 
+                                          shouldPublishDiscovery);
         
         LogBox::line("Initial telemetry published (discovery + battery + WiFi)");
         LogBox::end();
         
         mqttSuccess = true;
         // Keep connection open - loop time will be published later
-        // Store connection state to know we should publish loop time
     } else {
         LogBox::begin("MQTT Failed");
         LogBox::line("MQTT connection failed - skipping telemetry");
