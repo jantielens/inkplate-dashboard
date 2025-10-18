@@ -23,7 +23,6 @@ bool ConfigModeController::begin() {
         uiError->showConfigLoadError();
         delay(3000);
         
-        powerManager->markDeviceRunning();
         powerManager->prepareForSleep();
         powerManager->enterDeepSleep((uint16_t)5);  // Default 5 minutes
         return false;
@@ -98,7 +97,6 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
             refreshRate = config.refreshRate;
         }
         
-        powerManager->markDeviceRunning();
         powerManager->prepareForSleep();
         powerManager->enterDeepSleep(refreshRate);
         return false;
@@ -196,7 +194,7 @@ void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     uiStatus->showConfigModeTimeout();
     delay(2000);
     
-    powerManager->markDeviceRunning();
     powerManager->prepareForSleep();
     powerManager->enterDeepSleep(refreshMinutes);
 }
+

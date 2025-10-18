@@ -80,6 +80,14 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.debugMode = _preferences.getBool(PREF_DEBUG_MODE, false);
     config.useCRC32Check = _preferences.getBool(PREF_USE_CRC32, false);
     
+    // Load hourly schedule (3 bytes for 24-bit bitmask)
+    config.updateHours[0] = _preferences.getUChar(PREF_UPDATE_HOURS_0, 0xFF);
+    config.updateHours[1] = _preferences.getUChar(PREF_UPDATE_HOURS_1, 0xFF);
+    config.updateHours[2] = _preferences.getUChar(PREF_UPDATE_HOURS_2, 0xFF);
+    
+    // Load timezone offset
+    config.timezoneOffset = _preferences.getInt(PREF_TIMEZONE_OFFSET, 0);
+    
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
         LogBox::begin("Config Error");
@@ -142,6 +150,14 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putBool(PREF_CONFIGURED, true);
     _preferences.putBool(PREF_DEBUG_MODE, config.debugMode);
     _preferences.putBool(PREF_USE_CRC32, config.useCRC32Check);
+    
+    // Save hourly schedule (3 bytes for 24-bit bitmask)
+    _preferences.putUChar(PREF_UPDATE_HOURS_0, config.updateHours[0]);
+    _preferences.putUChar(PREF_UPDATE_HOURS_1, config.updateHours[1]);
+    _preferences.putUChar(PREF_UPDATE_HOURS_2, config.updateHours[2]);
+    
+    // Save timezone offset
+    _preferences.putInt(PREF_TIMEZONE_OFFSET, config.timezoneOffset);
     
     LogBox::begin("Config Saved");
     LogBox::line("Configuration saved successfully");
@@ -351,3 +367,111 @@ void ConfigManager::markAsConfigured() {
     LogBox::line("Device marked as configured");
     LogBox::end();
 }
+
+bool ConfigManager::isHourEnabled(uint8_t hour) {
+    if (hour > 23) {
+        return false;
+    }
+    
+    // Determine which byte and bit position
+    uint8_t byteIndex = hour / 8;      // 0, 1, or 2
+    uint8_t bitPosition = hour % 8;    // 0-7 within the byte
+    
+    if (!_initialized && !begin()) {
+        // Default: all hours enabled
+        return true;
+    }
+    
+    uint8_t hourByte = _preferences.getUChar(PREF_UPDATE_HOURS_0 + byteIndex, 0xFF);
+    return (hourByte >> bitPosition) & 1;
+}
+
+void ConfigManager::setHourEnabled(uint8_t hour, bool enabled) {
+    if (hour > 23) {
+        return;
+    }
+    
+    if (!_initialized && !begin()) {
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
+        return;
+    }
+    
+    uint8_t byteIndex = hour / 8;
+    uint8_t bitPosition = hour % 8;
+    
+    // Read current byte
+    uint8_t hourByte = _preferences.getUChar(PREF_UPDATE_HOURS_0 + byteIndex, 0xFF);
+    
+    // Modify bit
+    if (enabled) {
+        hourByte |= (1 << bitPosition);
+    } else {
+        hourByte &= ~(1 << bitPosition);
+    }
+    
+    // Save byte
+    _preferences.putUChar(PREF_UPDATE_HOURS_0 + byteIndex, hourByte);
+}
+
+void ConfigManager::getUpdateHours(uint8_t hours[3]) {
+    if (!_initialized && !begin()) {
+        // Default: all hours enabled
+        hours[0] = 0xFF;
+        hours[1] = 0xFF;
+        hours[2] = 0xFF;
+        return;
+    }
+    
+    hours[0] = _preferences.getUChar(PREF_UPDATE_HOURS_0, 0xFF);
+    hours[1] = _preferences.getUChar(PREF_UPDATE_HOURS_1, 0xFF);
+    hours[2] = _preferences.getUChar(PREF_UPDATE_HOURS_2, 0xFF);
+}
+
+void ConfigManager::setUpdateHours(const uint8_t hours[3]) {
+    if (!_initialized && !begin()) {
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
+        return;
+    }
+    
+    _preferences.putUChar(PREF_UPDATE_HOURS_0, hours[0]);
+    _preferences.putUChar(PREF_UPDATE_HOURS_1, hours[1]);
+    _preferences.putUChar(PREF_UPDATE_HOURS_2, hours[2]);
+    
+    LogBox::begin("Config Update");
+    LogBox::linef("Update hours bitmask set: 0x%02X%02X%02X", hours[2], hours[1], hours[0]);
+    LogBox::end();
+}
+
+int ConfigManager::getTimezoneOffset() {
+    if (!_initialized && !begin()) {
+        return 0;  // Default to UTC
+    }
+    return _preferences.getInt(PREF_TIMEZONE_OFFSET, 0);
+}
+
+void ConfigManager::setTimezoneOffset(int offset) {
+    if (!_initialized && !begin()) {
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
+        return;
+    }
+    
+    // Validate timezone offset (-12 to +14)
+    if (offset < -12 || offset > 14) {
+        LogBox::begin("Config Error");
+        LogBox::linef("Invalid timezone offset: %d (valid range: -12 to +14)", offset);
+        LogBox::end();
+        return;
+    }
+    
+    _preferences.putInt(PREF_TIMEZONE_OFFSET, offset);
+    LogBox::begin("Config Update");
+    LogBox::linef("Timezone offset set to UTC%s%d", offset >= 0 ? "+" : "", offset);
+    LogBox::end();
+}
+

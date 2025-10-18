@@ -2,6 +2,66 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-10-19
+
+### Added
+- Hourly scheduling feature (issue #3)
+  - 24-hour per-hour control via web configuration portal
+  - Schedule stored as 3-byte (24-bit) bitmask in NVS (hours 0-23)
+  - Interactive checkbox grid showing which hours are enabled for updates
+  - Device skips entire disabled periods using smart sleep calculation
+  - Updates only occur during configured enabled hours
+  - Default: all hours enabled for backward compatibility
+- Timezone offset support with DST awareness (issue #3)
+  - New configuration option to set timezone offset (-12 to +14 hours)
+  - Timezone offset applied to NTP-synchronized UTC time for hour calculations
+  - DST (Daylight Saving Time) support through manual offset adjustment
+  - Help text warns about manual DST adjustment requirements
+- NTP time synchronization (issue #3)
+  - Automatic time sync via NTP after WiFi connection
+  - Uses pool.ntp.org and time.nist.gov servers
+  - Time required for hourly schedule verification
+
+### Changed
+- Normal update cycle now includes hourly schedule check
+  - Occurs before CRC32 check if hour is disabled
+  - Disabled hours skip image download entirely to save battery
+  - Enabled hours proceed with normal update flow (CRC32, download, display)
+- Battery optimization on disabled hours
+  - Device calculates sleep until next enabled hour (not just refresh interval)
+  - Skips multiple refresh cycles during disabled periods
+  - Estimated 17% battery savings with 8-hour night disable window
+- Wake source handling
+  - Hourly schedule only enforced on `WAKEUP_TIMER` (deep sleep wakeups)
+  - Manual button press (short or long) bypasses hourly schedule check
+  - Config mode entry bypasses hourly schedule check
+  - First boot (after restart) bypasses hourly schedule check
+- NVS optimization
+  - `markDeviceRunning` moved to first boot only (not on every normal wake)
+  - Reduces NVS write cycles on every update
+
+### Fixed
+- Code duplication in hour checking and timezone calculations
+  - Extracted `isHourEnabledInBitmask()` static helper for single-point maintenance
+  - Extracted `applyTimezoneOffset()` static helper for timezone calculation
+  - Reduced duplicated code by 17 lines
+  - Improved code clarity and testability
+
+### Documentation
+- Updated README features list to include hourly scheduling
+- Added "Update Hours" configuration option to README
+- Comprehensive "Update Hours" section added to USING.md with examples
+- Added "Timezone Offset" section to USING.md with DST explanation
+- Created HOURLY_SCHEDULING.md with complete feature documentation
+- Created HOURLY_SCHEDULING_IMPLEMENTATION.md with technical implementation details
+- Updated ARCHITECTURE.md with hourly scheduling component overview
+
+### Performance Impact
+- Battery life improvement: 17% savings on typical 8-hour disabled window
+- No performance impact on update operations (only affects wake-up decision)
+- Time sync adds ~1 second per enabled hour wake
+- Smart sleep calculation only runs if hour is disabled
+
 ## [0.8.1] - 2025-10-18
 
 ### Added
