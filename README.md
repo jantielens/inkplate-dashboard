@@ -15,6 +15,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 - 🖼️ **Image Display**: Downloads PNG images from any public URL (HTTP/HTTPS)
 - ⚡ **Power Efficient**: Deep sleep between updates to maximize battery life
 - 🔄 **Configurable Refresh**: Set update interval (default: 5 minutes)
+- ⏰ **Hourly Scheduling**: Select which hours the device should update (e.g., disable updates at night to save battery)
 - 🔋 **CRC32 Change Detection**: Optional feature to skip downloads when image hasn't changed, extending battery life by 2.5×
 - 🌐 **Web Interface**: Beautiful, responsive configuration portal
 - 💾 **Persistent Config**: Settings saved to device flash memory
@@ -218,6 +219,7 @@ See [plan.md](plan.md) for detailed implementation roadmap.
   - WiFi Password: Your network password (optional)
   - Image URL: Full URL to PNG image (required)
   - Refresh Rate: Minutes between updates (default: 5, minimum: 1)
+  - Update Hours: Select which hours (0-23) the device should perform updates (optional, defaults to all hours)
   - MQTT Broker: Optional Home Assistant MQTT broker URL (format: `mqtt://host:port`)
   - MQTT Username: Optional MQTT authentication username
   - MQTT Password: Optional MQTT authentication password

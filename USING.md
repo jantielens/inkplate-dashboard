@@ -210,6 +210,17 @@ Open browser to:
 - **Minimum**: 1 minute
 - **Example**: 15 (updates every 15 minutes)
 
+#### Update Hours
+- **What it is**: Select which hours (0-23) the device should perform scheduled updates
+- **Required**: No (defaults to all hours enabled)
+- **Default**: All 24 hours enabled (updates any time)
+- **How it works**: Check the boxes for hours when you want the device to update. Unchecked hours will be skipped to save battery
+- **Timezone**: Hours are adjusted to your configured timezone offset
+- **Manual override**: Manual button press updates always work regardless of hour setting
+- **Example**: Uncheck hours 0-7 (midnight to 8am) to prevent updates during night hours
+- **Battery impact**: Disabling hours can extend battery life - fewer update cycles per day
+- **Smart scheduling**: Device wakes on timer but checks the schedule; only performs update if current hour is enabled
+
 ### Optional Settings
 
 #### Debug Mode
@@ -230,6 +241,16 @@ Open browser to:
   - If your image doesn't change on every refresh (e.g., once per day)
   - If you're using [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) which automatically generates CRC32 files
 - **When to disable**: If your server doesn't provide `.crc32` files, or if your image changes frequently
+
+#### Timezone Offset
+- **What it is**: Your timezone offset from UTC for adjusting hourly schedule times
+- **Required**: No (defaults to 0 = UTC/GMT)
+- **Range**: -12 to +14 hours
+- **Format**: Enter as a number: `0` for UTC, `-5` for EST, `+1` for CET, `+9` for JST, etc.
+- **Important note**: Daylight Saving Time changes require manual offset update when DST begins/ends in your region
+- **Used by**: The hourly update schedule to convert UTC time to your local time
+- **Example**: If you're in Eastern Time (EST = -5), enter `-5`. When DST begins (EDT = -4), remember to update it
+- **Tip**: If you're unsure of your offset, search "my timezone offset UTC" or check a time zone website
 
 #### MQTT Broker (Home Assistant Integration)
 - **What it is**: Address of your MQTT broker for Home Assistant
