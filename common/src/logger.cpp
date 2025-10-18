@@ -1,7 +1,11 @@
 #include "logger.h"
 #include <stdarg.h>
 
+// Initialize static member
+unsigned long LogBox::startTime = 0;
+
 void LogBox::begin(const char* title) {
+    startTime = millis();
     Serial.print("╭── ");
     Serial.println(title);
 }
@@ -31,11 +35,19 @@ void LogBox::linef(const char* format, ...) {
 }
 
 void LogBox::end(const char* message) {
+    unsigned long elapsed = millis() - startTime;
+    
     if (message == nullptr || strlen(message) == 0) {
-        Serial.println("╰─────────────────────────────────────────────");
+        // Format: ╰──────(NNNNms)───────
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "╰──────(%lums)───────", elapsed);
+        Serial.println(buffer);
     } else {
         Serial.print("╰── ");
-        Serial.println(message);
+        Serial.print(message);
+        Serial.print(" (");
+        Serial.print(elapsed);
+        Serial.println("ms)");
     }
 }
 

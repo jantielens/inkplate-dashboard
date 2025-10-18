@@ -34,6 +34,9 @@ public:
     // Call with no argument for horizontal line, or provide a custom message
     static void end(const char* message = "");
     static void end(const String& message);
+
+private:
+    static unsigned long startTime;  // Tracks time when begin() was called
 };
 
 #endif // LOGGER_H

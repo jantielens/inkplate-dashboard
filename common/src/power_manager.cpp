@@ -261,7 +261,7 @@ void PowerManager::prepareForSleep() {
     LogBox::end();
 }
 
-void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
+void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs) {
     // Calculate sleep duration
     uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
     
@@ -279,6 +279,9 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
     
     LogBox::begin("Entering Deep Sleep");
     LogBox::linef("Duration: %u minutes", refreshRateMinutes);
+    if (loopTimeMs > 0) {
+        LogBox::linef("Full loop time: %lums", loopTimeMs);
+    }
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
     LogBox::line("Wake sources: TIMER + BUTTON");
     #else
@@ -296,7 +299,7 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes) {
     esp_deep_sleep_start();
 }
 
-void PowerManager::enterDeepSleep(float refreshRateMinutes) {
+void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs) {
     // Calculate sleep duration
     uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
     
@@ -314,6 +317,9 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes) {
     
     LogBox::begin("Entering Deep Sleep");
     LogBox::linef("Duration: %.2f minutes", refreshRateMinutes);
+    if (loopTimeMs > 0) {
+        LogBox::linef("Full loop time: %lums", loopTimeMs);
+    }
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
     LogBox::line("Wake sources: TIMER + BUTTON");
     #else
