@@ -122,6 +122,35 @@ public:
     // Mark device as configured
     void markAsConfigured();
     
+    // === Static Helper Methods for Hourly Scheduling ===
+    /**
+     * Check if a specific hour is enabled in the update schedule bitmask
+     * @param hour Hour number (0-23)
+     * @param updateHours Bitmask array (3 bytes for 24 hours)
+     * @return true if hour is enabled for updates, false otherwise
+     */
+    static bool isHourEnabledInBitmask(uint8_t hour, const uint8_t updateHours[3]) {
+        if (hour > 23) return false;
+        uint8_t byteIndex = hour / 8;
+        uint8_t bitPosition = hour % 8;
+        return (updateHours[byteIndex] >> bitPosition) & 1;
+    }
+    
+    /**
+     * Apply timezone offset to UTC hour with proper wrapping
+     * Handles negative offsets and day boundary wrapping correctly
+     * @param utcHour UTC hour (0-23)
+     * @param timezoneOffset Timezone offset in hours (-12 to +14)
+     * @return Local hour (0-23) adjusted for timezone
+     */
+    static int applyTimezoneOffset(int utcHour, int timezoneOffset) {
+        int localHour = (utcHour + timezoneOffset) % 24;
+        if (localHour < 0) {
+            localHour += 24;
+        }
+        return localHour;
+    }
+    
 private:
     Preferences _preferences;
     bool _initialized;

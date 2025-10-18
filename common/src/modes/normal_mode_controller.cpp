@@ -61,10 +61,7 @@ void NormalModeController::execute() {
     struct tm* timeinfo = localtime(&now);
     
     // Apply timezone offset
-    int currentHour = (timeinfo->tm_hour + config.timezoneOffset) % 24;
-    if (currentHour < 0) {
-        currentHour += 24;  // Handle negative offsets
-    }
+    int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, config.timezoneOffset);
     
     // Log current time
     LogBox::begin("Hourly Schedule Check");
@@ -79,9 +76,7 @@ void NormalModeController::execute() {
     
     if (shouldEnforceHourlySchedule) {
         // Check if current hour is enabled using the loaded config
-        uint8_t byteIndex = currentHour / 8;
-        uint8_t bitPosition = currentHour % 8;
-        bool hourEnabled = (config.updateHours[byteIndex] >> bitPosition) & 1;
+        bool hourEnabled = ConfigManager::isHourEnabledInBitmask(currentHour, config.updateHours);
         
         if (!hourEnabled) {
             // Updates disabled for this hour - calculate precise sleep until next enabled hour
@@ -173,18 +168,13 @@ float NormalModeController::calculateSleepMinutesToNextEnabledHour(time_t curren
     struct tm* timeinfo = localtime(&currentTime);
     
     // Calculate current local hour and minutes
-    int currentHour = (timeinfo->tm_hour + timezoneOffset) % 24;
-    if (currentHour < 0) {
-        currentHour += 24;
-    }
+    int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, timezoneOffset);
     int currentMinute = timeinfo->tm_min;
     int currentSecond = timeinfo->tm_sec;
     
     // First check if the current hour is enabled
     // If it is, we don't need to sleep - return invalid to signal "don't sleep"
-    uint8_t byteIndex = currentHour / 8;
-    uint8_t bitPosition = currentHour % 8;
-    bool currentHourEnabled = (updateHours[byteIndex] >> bitPosition) & 1;
+    bool currentHourEnabled = ConfigManager::isHourEnabledInBitmask(currentHour, updateHours);
     
     if (currentHourEnabled) {
         // Current hour is enabled - don't sleep
@@ -195,9 +185,7 @@ float NormalModeController::calculateSleepMinutesToNextEnabledHour(time_t curren
     for (int i = 1; i <= 24; i++) {
         uint8_t checkHour = (currentHour + i) % 24;
         
-        uint8_t checkByteIndex = checkHour / 8;
-        uint8_t checkBitPosition = checkHour % 8;
-        bool isEnabled = (updateHours[checkByteIndex] >> checkBitPosition) & 1;
+        bool isEnabled = ConfigManager::isHourEnabledInBitmask(checkHour, updateHours);
         
         if (isEnabled) {
             // Found next enabled hour - calculate precise sleep time
