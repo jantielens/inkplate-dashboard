@@ -37,11 +37,13 @@ public:
     
     // Enter deep sleep with timer wake source
     // refreshRateMinutes: how long to sleep (in minutes)
-    void enterDeepSleep(uint16_t refreshRateMinutes);
+    // loopTimeMs: optional full loop time in ms (displayed if > 0)
+    void enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs = 0);
     
     // Enter deep sleep with timer wake source (fractional minutes)
     // refreshRateMinutes: how long to sleep (in minutes, supports fractions)
-    void enterDeepSleep(float refreshRateMinutes);
+    // loopTimeMs: optional full loop time in ms (displayed if > 0)
+    void enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs = 0);
     
     // Prepare for sleep (shutdown WiFi, display, etc.)
     void prepareForSleep();

@@ -66,7 +66,7 @@ bool NormalModeController::loadConfiguration(DashboardConfig& config) {
     delay(3000);
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
-    powerManager->enterDeepSleep((uint16_t)5);
+    powerManager->enterDeepSleep((uint16_t)5);  // No loop timing for early failure
     return false;
 }
 
@@ -86,6 +86,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
     // If CRC32 matched during timer wake, skip download and sleep
     if (wakeReason == WAKEUP_TIMER && !shouldDownload) {
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
+        unsigned long loopTimeMs = millis() - loopStartTime;
         
         publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, wifiRSSI, loopTimeSeconds,
                            "Image unchanged (CRC32 match)", "info");
@@ -93,7 +94,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
         powerManager->markDeviceRunning();
         powerManager->disableWatchdog();
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep((uint16_t)config.refreshRate);
+        powerManager->enterDeepSleep((uint16_t)config.refreshRate, loopTimeMs);
         return false;  // Stop execution
     }
     
@@ -123,10 +124,18 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
     *imageRetryCount = 0;
     float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
     
-    publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, wifiRSSI, loopTimeSeconds);
+    // Determine appropriate log message based on CRC32 check results
+    const char* logMessage;
+    if (config.useCRC32Check && crc32WasChecked && !crc32Matched) {
+        logMessage = "Image updated successfully";
+    } else {
+        logMessage = "Image displayed successfully";
+    }
     
-    delay(1000);
-    enterSleep(config.refreshRate);
+    publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, wifiRSSI, loopTimeSeconds,
+                       logMessage, "info");
+    
+    enterSleep(config.refreshRate, loopStartTime);
 }
 
 void NormalModeController::handleImageFailure(const DashboardConfig& config,
@@ -137,7 +146,8 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         (*imageRetryCount)++;
         powerManager->markDeviceRunning();
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep((float)(20.0 / 60.0));  // 20 seconds
+        unsigned long loopTimeMs = millis() - loopStartTime;
+        powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
     } else {
         *imageRetryCount = 0;
         uiError->showImageError(config.imageURL.c_str(), imageManager->getLastError(), config.refreshRate);
@@ -148,7 +158,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
                            errorMessage.c_str(), "error");
         
         delay(3000);
-        enterSleep(config.refreshRate);
+        enterSleep(config.refreshRate, loopStartTime);
     }
 }
 
@@ -156,12 +166,13 @@ void NormalModeController::handleWiFiFailure(const DashboardConfig& config, unsi
     uiError->showWiFiError(config.wifiSSID.c_str(), wifiManager->getStatusString().c_str(), config.refreshRate);
     delay(3000);
     powerManager->disableWatchdog();
-    enterSleep(config.refreshRate);
+    enterSleep(config.refreshRate, loopStartTime);
 }
 
-void NormalModeController::enterSleep(uint16_t minutes) {
+void NormalModeController::enterSleep(uint16_t minutes, unsigned long loopStartTime) {
     powerManager->markDeviceRunning();
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
-    powerManager->enterDeepSleep(minutes);
+    unsigned long loopTimeMs = (loopStartTime > 0) ? (millis() - loopStartTime) : 0;
+    powerManager->enterDeepSleep(minutes, loopTimeMs);
 }

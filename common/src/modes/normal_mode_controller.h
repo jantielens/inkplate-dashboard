@@ -51,7 +51,7 @@ private:
     void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
     void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
     void handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime);
-    void enterSleep(uint16_t minutes);
+    void enterSleep(uint16_t minutes, unsigned long loopStartTime = 0);
 };
 
 #endif // NORMAL_MODE_CONTROLLER_H
