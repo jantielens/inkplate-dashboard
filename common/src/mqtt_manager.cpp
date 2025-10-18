@@ -454,7 +454,7 @@ bool MQTTManager::publishTelemetryBatch(const String& deviceId, const String& de
     
     // Publish discovery if needed
     if (shouldPublishDiscovery) {
-        if (!publishDiscovery(deviceId, deviceName, modelName, true)) {
+        if (!publishDiscovery(deviceId, deviceName, modelName)) {
             allSuccess = false;
         }
     }
