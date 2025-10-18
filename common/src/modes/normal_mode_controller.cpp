@@ -110,10 +110,6 @@ void NormalModeController::publishMQTTTelemetry(const String& deviceId, const St
     }
 }
 
-bool NormalModeController::downloadAndDisplayImage(const DashboardConfig& config, bool showDebug, bool mqttSuccess) {
-    return imageManager->downloadAndDisplay(config.imageURL.c_str());
-}
-
 void NormalModeController::handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32,
                                               bool crc32WasChecked, bool crc32Matched,
                                               unsigned long loopStartTime, const String& deviceId,
