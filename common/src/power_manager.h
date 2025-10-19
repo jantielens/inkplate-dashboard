@@ -62,6 +62,12 @@ public:
     // inkplate: pointer to Inkplate display object (uses Inkplate's readBattery method)
     float readBatteryVoltage(void* inkplate = nullptr);
     
+    // Calculate battery percentage from voltage
+    // Uses lithium-ion discharge curve typical for ESP32 devices
+    // voltage: battery voltage in volts
+    // Returns percentage (0-100), rounded to 5% increments
+    static int calculateBatteryPercentage(float voltage);
+    
     // Mark that device is now running (for reset button detection)
     // This sets a flag in NVS that persists across resets
     // Should be called once when device enters normal operation

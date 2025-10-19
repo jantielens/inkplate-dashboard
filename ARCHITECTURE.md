@@ -123,6 +123,7 @@ Manages power states, wake sources, and watchdog protection.
 - Configure deep sleep with multiple wake sources
 - Enable/disable hardware watchdog timer for operation protection
 - Track device running state for battery calculations
+- Read battery voltage and calculate percentage from Li-ion discharge curve
 
 **Wake Reasons:**
 - `WAKEUP_FIRST_BOOT` - Initial power-on
@@ -142,6 +143,8 @@ Manages power states, wake sources, and watchdog protection.
 - `begin()` - Initialize with button pin
 - `getWakeupReason()` - Detect why device woke up
 - `detectButtonPressType()` - Check for short/long press
+- `readBatteryVoltage()` - Read battery voltage in volts
+- `calculateBatteryPercentage()` - Static method to calculate percentage from voltage (Li-ion curve, 5% granularity)
 - `enableWatchdog()` - Enable hardware watchdog timer (optional timeout parameter, uses board config default if not specified)
 - `disableWatchdog()` - Disable hardware watchdog timer
 - `prepareForSleep()` - Disconnect WiFi and prepare for deep sleep
@@ -171,7 +174,7 @@ Manages MQTT connectivity and Home Assistant integration with optimized battery-
 **Responsibilities:**
 - Connect to MQTT broker with authentication
 - Publish Home Assistant MQTT Discovery messages (conditional based on wake reason)
-- Publish telemetry (battery, WiFi signal, loop time)
+- Publish telemetry (battery voltage, battery percentage, WiFi signal, loop time)
 - Publish log messages for monitoring
 - Batch publishing for single-session efficiency
 
@@ -187,7 +190,8 @@ Manages MQTT connectivity and Home Assistant integration with optimized battery-
 - `connect()` - Connect to broker with retry logic
 - `publishAllTelemetry()` - Batch publish all telemetry in single session (optimized, preferred)
 - `publishDiscovery()` - Send Home Assistant auto-discovery configs (legacy)
-- `publishBatteryVoltage()` - Send battery level (legacy)
+- `publishBatteryVoltage()` - Send battery voltage (legacy)
+- `publishBatteryPercentage()` - Send battery percentage (legacy)
 - `publishWiFiSignal()` - Send WiFi RSSI (legacy)
 - `publishLoopTime()` - Send execution duration (legacy)
 - `publishLastLog()` - Send log message (legacy)

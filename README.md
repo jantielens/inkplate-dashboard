@@ -23,7 +23,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 - ⚡ **Manual Refresh**: Short press button for immediate image update
 - 🗑️ **Factory Reset**: Web-based factory reset to erase all settings and start fresh
 - ⬆️ **OTA Updates**: Upload new firmware directly via web interface
-- 🏠 **Home Assistant Integration**: Optional MQTT battery voltage reporting with auto-discovery
+- 🏠 **Home Assistant Integration**: Optional MQTT battery voltage and percentage reporting with auto-discovery
 
 ## Quick Start
 
@@ -255,13 +255,16 @@ The device can optionally report battery voltage to Home Assistant using MQTT wi
 ### What Gets Reported
 
 - **Battery Voltage**: Published every time device wakes up (timer or button press)
+- **Battery Percentage**: Calculated from voltage using Li-ion discharge curve, rounded to 5% increments
 - **Device Information**: Board type, manufacturer, unique device ID
-- **Sensor Details**: Voltage in Volts with 3 decimal precision
+- **Sensor Details**: Voltage in Volts with 3 decimal precision, percentage as integer 0-100
 
 ### MQTT Topics
 
-- Discovery: `homeassistant/sensor/inkplate-XXXXXX/battery_voltage/config`
-- State: `homeassistant/sensor/inkplate-XXXXXX/battery_voltage/state`
+- Battery Voltage Discovery: `homeassistant/sensor/inkplate-XXXXXX/battery_voltage/config`
+- Battery Voltage State: `homeassistant/sensor/inkplate-XXXXXX/battery_voltage/state`
+- Battery Percentage Discovery: `homeassistant/sensor/inkplate-XXXXXX/battery_percentage/config`
+- Battery Percentage State: `homeassistant/sensor/inkplate-XXXXXX/battery_percentage/state`
 
 ### Behavior
 
