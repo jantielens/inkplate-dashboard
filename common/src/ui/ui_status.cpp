@@ -1,5 +1,6 @@
 #include <src/ui/ui_status.h>
 #include <src/config.h>
+#include <src/logo_bitmap.h>
 
 UIStatus::UIStatus(DisplayManager* display) 
     : displayManager(display) {
@@ -10,7 +11,21 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = MARGIN;
+    // Center logo horizontally and leave space for text
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+    int y = logoY + LOGO_HEIGHT + MARGIN;
     
     displayManager->showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
@@ -51,23 +66,37 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = MARGIN;
-    
+    // Center logo horizontally and leave space for text
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+    int y = logoY + LOGO_HEIGHT + MARGIN;
+
     displayManager->showMessage("Config Mode Active", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
-    
+
     displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
+
     String url = "http://" + String(localIP);
     displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
     y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
-    
+
     if (hasTimeout) {
         String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
         displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
     }
-    
+
     displayManager->refresh();
 }
 
@@ -95,8 +124,22 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = MARGIN;
-    
+    // Center logo horizontally and leave space for text
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+    int y = logoY + LOGO_HEIGHT + MARGIN;
+
     if (isPartialConfig) {
         displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
         y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
@@ -108,11 +151,11 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
         displayManager->showMessage("Active for 5 minutes", MARGIN, y, FONT_NORMAL);
         y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     }
-    
+
     displayManager->showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     displayManager->showMessage(ssid, INDENT_MARGIN, y, FONT_NORMAL);
-    
+
     displayManager->refresh();
 }
 
@@ -219,7 +262,21 @@ void UIStatus::showManualRefresh() {
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = MARGIN;
+    // Place logo for manual refresh
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+    int y = logoY + LOGO_HEIGHT + MARGIN;
     
     displayManager->showMessage("Manual Refresh", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;

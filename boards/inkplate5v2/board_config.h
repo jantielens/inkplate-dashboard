@@ -30,8 +30,8 @@
 #define DISPLAY_TIMEOUT_MS 10000
 
 // Font sizes for text hierarchy
-#define FONT_HEADING1 6   // Large headings (e.g., "Dashboard", screen titles)
-#define FONT_HEADING2 4   // Medium headings (e.g., section titles)
+#define FONT_HEADING1 5   // Large headings (e.g., "Dashboard", screen titles)
+#define FONT_HEADING2 3   // Medium headings (e.g., section titles)
 #define FONT_NORMAL 2     // Normal text (e.g., descriptions, status messages)
 
 // Line spacing (pixels between lines of text)

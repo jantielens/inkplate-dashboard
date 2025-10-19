@@ -1,5 +1,7 @@
 #include <src/ui/ui_messages.h>
 #include <src/config.h>
+#include <src/version.h>
+#include <src/logo_bitmap.h>
 
 UIMessages::UIMessages(DisplayManager* display) 
     : displayManager(display) {
@@ -37,18 +39,35 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height) 
     // Enable rotation for splash screen
     // User sees this on first boot or debug mode - should be readable
     displayManager->enableRotation();
-    
     displayManager->clear();
-    
-    int y = MARGIN;
-    y = showHeading("Dashboard", y);
-    y = addLineSpacing(y, 3);
-    
-    y = showSubheading(boardName, y);
+
+    // Use board-specific MARGIN for logo position
+    // Center the logo horizontally within the margins
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        // Not enough space to center, use left margin
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+    int textStartY = logoY + LOGO_HEIGHT + MARGIN; // spacing below logo uses MARGIN
+
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+
+    int y = textStartY;
+    y = showHeading("Inkplate Dashboard", y);
     y = addLineSpacing(y, 2);
-    
-    String dimensions = String(width) + "x" + String(height);
-    y = showNormalText(dimensions.c_str(), y);
+    y = showNormalText("github.com/jantielens/inkplate-dashboard", y);
+    y = addLineSpacing(y, 2);
+    String versionInfo = String(boardName) + " - v" + String(FIRMWARE_VERSION);
+    y = showNormalText(versionInfo.c_str(), y);
+    displayManager->refresh();
 }
 
 void UIMessages::showConfigInitError() {

@@ -106,6 +106,13 @@ void DisplayManager::drawVersionLabel() {
     _display->print(versionLabel);
 }
 
+void DisplayManager::drawBitmap(const uint8_t* bitmap, int x, int y, int w, int h) {
+    if (!bitmap || w <= 0 || h <= 0) return;
+
+    // Use Inkplate's drawImage for embedded bitmaps
+    _display->drawImage(bitmap, x, y, w, h);
+}
+
 // Helper to calculate approximate font height in pixels
 // Inkplate uses a 5x7 font matrix, scaled by textSize
 int DisplayManager::getFontHeight(int textSize) {
