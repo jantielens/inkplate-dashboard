@@ -25,6 +25,10 @@
 - Battery percentage displayed in serial logs alongside voltage
 - Home Assistant device now shows both battery voltage and percentage sensors
 - MQTT sensor names updated for clarity (e.g., "Battery Voltage" instead of "Battery")
+- MQTT state messages now published with retain flag
+  - Ensures Home Assistant receives telemetry values even on first boot timing issues
+  - State messages persist on broker for reliability across reconnections
+  - Matches discovery message behavior (both now use retained messages)
 
 ## [0.9.0] - 2025-10-19
 

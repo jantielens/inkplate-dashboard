@@ -108,48 +108,77 @@ jobs:
           name: firmware-${{ matrix.board }}
           path: build/${{ matrix.board }}/${{ matrix.board }}.ino.bin
           retention-days: 30
+  
+  comment-summary:
+    name: Comment PR with build summary
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    if: github.event_name == 'pull_request' && always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
       
-      - name: Comment firmware size on PR
-        if: github.event_name == 'pull_request'
+      - name: Generate build summary
+        id: summary
+        run: |
+          boards='${{ needs.prepare.outputs.matrix }}'
+          boards_array=$(echo "$boards" | jq -r '.[]')
+          
+          summary="## Firmware Build Summary\n\n"
+          summary+="All board configurations built successfully!\n\n"
+          summary+="| Board | Size (MB) | Size (bytes) |\n"
+          summary+="|-------|-----------|-------------|\n"
+          
+          for board in $boards_array; do
+            bin_file="artifacts/firmware-${board}/${board}.ino.bin"
+            if [ -f "$bin_file" ]; then
+              size=$(stat -f%z "$bin_file" 2>/dev/null || stat -c%s "$bin_file" 2>/dev/null)
+              size_mb=$(echo "scale=2; $size / 1048576" | bc)
+              summary+="| \`${board}\` | ${size_mb} MB | ${size} bytes |\n"
+            fi
+          done
+          
+          summary+="\nFirmware artifacts available in the Actions run for download."
+          
+          # Escape for GitHub Actions output
+          summary="${summary//'%'/'%25'}"
+          summary="${summary//$'\n'/'%0A'}"
+          summary="${summary//$'\r'/'%0D'}"
+          echo "summary=$summary" >> $GITHUB_OUTPUT
+      
+      - name: Comment on PR
         uses: actions/github-script@v7
         with:
           script: |
-            const board = '${{ matrix.board }}';
-            const size = '${{ steps.size.outputs.size }}';
-            const sizeMb = '${{ steps.size.outputs.size_mb }}';
+            const summary = `${{ steps.summary.outputs.summary }}`.replace(/%0A/g, '\n').replace(/%0D/g, '\r').replace(/%25/g, '%');
             
-            const comment = `### 📦 Firmware Build: \`${board}\`
-            
-            ✅ Build successful!
-            
-            **Firmware Size:** ${sizeMb} MB (${size} bytes)
-            
-            Download artifact from the Actions run.`;
-            
-            // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
             
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes(`Firmware Build: \`${board}\``)
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Firmware Build Summary')
             );
             
-            if (botComment) {
+            if (existingComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: comment
+                comment_id: existingComment.id,
+                body: summary
               });
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: comment
+                body: summary
               });
             }
+

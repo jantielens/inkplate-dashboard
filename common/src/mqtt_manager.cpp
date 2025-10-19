@@ -568,7 +568,7 @@ String MQTTManager::buildDeviceInfoJSON(const String& deviceId, const String& de
     
     if (full) {
         json += ",\"name\":\"" + deviceName + "\"";
-        json += ",\"manufacturer\":\"Soldered Electronics\"";
+        json += ",\"manufacturer\":\"Inkplate Dashboard\"";
         json += ",\"model\":\"" + modelName + "\"";
         json += ",\"sw_version\":\"" + String(FIRMWARE_VERSION) + "\"";
     }
@@ -660,7 +660,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     if (batteryVoltage > 0.0) {
         String stateTopic = getStateTopic(deviceId, "battery_voltage");
         String payload = String(batteryVoltage, 3);
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Battery: " + payload + " V");
         publishCount++;
     }
@@ -669,7 +669,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     if (batteryPercentage >= 0) {
         String stateTopic = getStateTopic(deviceId, "battery_percentage");
         String payload = String(batteryPercentage);
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Battery Percentage: " + payload + " %");
         publishCount++;
     }
@@ -678,7 +678,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     {
         String stateTopic = getStateTopic(deviceId, "wifi_signal");
         String payload = String(wifiRSSI);
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("WiFi Signal: " + payload + " dBm");
         publishCount++;
     }
@@ -687,7 +687,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     {
         String stateTopic = getStateTopic(deviceId, "loop_time");
         String payload = String(loopTimeSeconds, 2);
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Loop Time: " + payload + " s");
         publishCount++;
     }
@@ -698,7 +698,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String severityUpper = lastLogSeverity;
         severityUpper.toUpperCase();
         String payload = "[" + severityUpper + "] " + lastLogMessage;
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Last Log: " + payload);
         publishCount++;
     }
@@ -718,7 +718,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
             payload = String(buffer);
         }
         
-        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Image CRC32: " + payload);
         publishCount++;
     }
