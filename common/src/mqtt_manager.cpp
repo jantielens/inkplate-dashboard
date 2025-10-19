@@ -228,6 +228,35 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         }
     }
     
+    // Publish battery percentage sensor discovery
+    {
+        String discoveryTopic = getDiscoveryTopic(deviceId, "battery_percentage");
+        String stateTopic = getStateTopic(deviceId, "battery_percentage");
+        
+        String payload = "{";
+        payload += "\"name\":\"" + deviceName + " Battery Percentage\",";
+        payload += "\"unique_id\":\"" + deviceId + "_battery_percentage\",";
+        payload += "\"state_topic\":\"" + stateTopic + "\",";
+        payload += "\"device_class\":\"battery\",";
+        payload += "\"unit_of_measurement\":\"%\",";
+        payload += "\"value_template\":\"{{ value }}\",";
+        payload += "\"device\":{";
+        payload += "\"identifiers\":[\"" + deviceId + "\"]";
+        payload += "}";
+        payload += "}";
+        
+        LogBox::line("Battery Percentage Discovery:");
+        LogBox::line("  Topic: " + discoveryTopic);
+        LogBox::linef("  Payload: %d bytes", payload.length());
+        
+        if (!_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+            LogBox::line("  ERROR: Failed to publish battery percentage discovery");
+            allSuccess = false;
+        } else {
+            LogBox::line("  Success!");
+        }
+    }
+    
     // Publish loop time sensor discovery
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "loop_time");
@@ -343,6 +372,32 @@ bool MQTTManager::publishBatteryVoltage(const String& deviceId, float voltage) {
         LogBox::end("Battery voltage published successfully");
     } else {
         _lastError = "Failed to publish battery voltage";
+        LogBox::line("ERROR: " + _lastError);
+        LogBox::end();
+    }
+    
+    return success;
+}
+
+bool MQTTManager::publishBatteryPercentage(const String& deviceId, int percentage) {
+    if (!_isConfigured || _mqttClient == nullptr || !_mqttClient->connected()) {
+        return true;  // Skip if not configured or not connected
+    }
+    
+    LogBox::begin("Publishing battery percentage to MQTT");
+    
+    String stateTopic = getStateTopic(deviceId, "battery_percentage");
+    String payload = String(percentage);
+    
+    LogBox::line("State Topic: " + stateTopic);
+    LogBox::line("Percentage: " + payload + " %");
+    
+    bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+    
+    if (success) {
+        LogBox::end("Battery percentage published successfully");
+    } else {
+        _lastError = "Failed to publish battery percentage";
         LogBox::line("ERROR: " + _lastError);
         LogBox::end();
     }
@@ -522,8 +577,8 @@ bool MQTTManager::shouldPublishDiscovery(WakeupReason wakeReason) {
 }
 
 bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
-                                      WakeupReason wakeReason, float batteryVoltage, int wifiRSSI,
-                                      float loopTimeSeconds, const String& lastLogMessage,
+                                      WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
+                                      int wifiRSSI, float loopTimeSeconds, const String& lastLogMessage,
                                       const String& lastLogSeverity) {
     if (!_isConfigured) {
         LogBox::begin("MQTT");
@@ -570,6 +625,28 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
                 publishCount++;
             } else {
                 LogBox::line("  ERROR: Failed to publish battery discovery");
+            }
+        }
+        
+        // Battery percentage sensor discovery
+        {
+            String discoveryTopic = getDiscoveryTopic(deviceId, "battery_percentage");
+            String stateTopic = getStateTopic(deviceId, "battery_percentage");
+            
+            String payload = "{";
+            payload += "\"name\":\"" + deviceName + " Battery Percentage\",";
+            payload += "\"unique_id\":\"" + deviceId + "_battery_percentage\",";
+            payload += "\"state_topic\":\"" + stateTopic + "\",";
+            payload += "\"device_class\":\"battery\",";
+            payload += "\"unit_of_measurement\":\"%\",";
+            payload += "\"value_template\":\"{{ value }}\",";
+            payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, false);
+            payload += "}";
+            
+            if (_mqttClient->publish(discoveryTopic.c_str(), payload.c_str(), true)) {
+                publishCount++;
+            } else {
+                LogBox::line("  ERROR: Failed to publish battery percentage discovery");
             }
         }
         
@@ -650,6 +727,15 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String payload = String(batteryVoltage, 3);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str());
         LogBox::line("Battery: " + payload + " V");
+        publishCount++;
+    }
+    
+    // Publish battery percentage state
+    if (batteryPercentage >= 0) {
+        String stateTopic = getStateTopic(deviceId, "battery_percentage");
+        String payload = String(batteryPercentage);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str());
+        LogBox::line("Battery Percentage: " + payload + " %");
         publishCount++;
     }
     

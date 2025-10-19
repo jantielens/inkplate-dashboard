@@ -36,6 +36,11 @@ public:
     // voltage: battery voltage in volts
     bool publishBatteryVoltage(const String& deviceId, float voltage);
     
+    // Publish battery percentage to Home Assistant
+    // deviceId: unique device identifier (must match discovery)
+    // percentage: battery percentage (0-100)
+    bool publishBatteryPercentage(const String& deviceId, int percentage);
+    
     // Publish loop time to Home Assistant
     // deviceId: unique device identifier (must match discovery)
     // loopTimeSeconds: loop duration in seconds
@@ -59,13 +64,14 @@ public:
     // modelName: board model name (e.g., "Inkplate 5 V2")
     // wakeReason: reason for waking (determines if discovery is published)
     // batteryVoltage: battery voltage in volts (0.0 to skip)
+    // batteryPercentage: battery percentage (0-100, -1 to skip)
     // wifiRSSI: WiFi signal strength in dBm
     // loopTimeSeconds: loop duration in seconds
     // lastLogMessage: optional log message (empty to skip)
     // lastLogSeverity: "info", "warning", or "error"
     bool publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
-                             WakeupReason wakeReason, float batteryVoltage, int wifiRSSI, 
-                             float loopTimeSeconds, const String& lastLogMessage = "", 
+                             WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
+                             int wifiRSSI, float loopTimeSeconds, const String& lastLogMessage = "", 
                              const String& lastLogSeverity = "info");
     
     // Check if MQTT is configured

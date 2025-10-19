@@ -48,10 +48,10 @@ private:
     bool loadConfiguration(DashboardConfig& config);
     int calculateSleepUntilNextEnabledHour(uint8_t currentHour, const uint8_t updateHours[3]);
     float calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOffset, const uint8_t updateHours[3]);
-    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
-    void publishMQTTTelemetry(const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI, float loopTimeSeconds, const char* message = nullptr, const char* severity = nullptr);
-    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
-    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int wifiRSSI);
+    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI);
+    void publishMQTTTelemetry(const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, float loopTimeSeconds, const char* message = nullptr, const char* severity = nullptr);
+    void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI);
+    void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI);
     void handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime);
     void enterSleep(const DashboardConfig& config, time_t currentTime, unsigned long loopStartTime);
 };

@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-10-19
+
+### Added
+- Battery percentage reporting via MQTT alongside voltage
+  - New `battery_percentage` sensor with Home Assistant auto-discovery
+  - Calculates percentage from voltage using lithium-ion discharge curve
+  - Uses 5% granularity (100%, 95%, 90%, etc.) to reduce MQTT update frequency
+  - Typical Li-ion/LiPo battery characteristics for ESP32 devices
+  - Voltage range: 4.2V (100%) to 3.0V (0%) with non-linear interpolation
+  - Static calculation method `PowerManager::calculateBatteryPercentage()`
+  - Published in all MQTT telemetry updates
+
+### Changed
+- MQTT telemetry now includes battery percentage in addition to voltage
+- Battery percentage displayed in serial logs alongside voltage
+- Home Assistant device now shows both battery voltage and percentage sensors
+
 ## [0.9.0] - 2025-10-19
 
 ### Added
