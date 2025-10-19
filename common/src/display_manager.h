@@ -26,6 +26,9 @@ public:
     int getWidth();
     int getHeight();
     
+    // Draw embedded bitmap image (array) at specified location
+    void drawBitmap(const uint8_t* bitmap, int x, int y, int w, int h);
+    
 private:
     Inkplate* _display;
     uint8_t _configuredRotation = 0;  // The rotation configured by user

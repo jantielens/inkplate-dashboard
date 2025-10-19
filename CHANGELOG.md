@@ -3,6 +3,15 @@
 
 ## [Unreleased]
 
+## [0.12.1] - 2025-10-19
+
+### Added
+- New 200x200 Inkplate logo implemented as a packed 4bpp bitmap for better splash branding
+
+### Fixed
+- Build error in `config_portal.cpp` due to missing include for logo symbols (now resolved)
+
+
 ## [0.12.0] - 2025-10-19
 
 ### Added

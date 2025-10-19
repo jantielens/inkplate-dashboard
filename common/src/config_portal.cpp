@@ -2,6 +2,7 @@
 #include "config_portal_css.h"
 #include "version.h"
 #include "config.h"
+#include <src/logo_bitmap.h>
 #include "logger.h"
 
 ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager)
@@ -45,7 +46,21 @@ bool ConfigPortal::begin(PortalMode mode) {
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
                         _displayManager->clear();
-                        int y = MARGIN;
+                        // Draw logo at top area for visual branding
+                        int screenWidth = _displayManager->getWidth();
+                        int minLogoX = MARGIN;
+                        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+                        int logoX;
+                        if (maxLogoX <= minLogoX) {
+                            logoX = minLogoX;
+                        } else {
+                            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+                        }
+                        int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+                        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+                        int y = logoY + LOGO_HEIGHT + MARGIN;
                         _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
                         y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
                         _displayManager->showMessage("Installing firmware...", MARGIN, y, FONT_NORMAL);
