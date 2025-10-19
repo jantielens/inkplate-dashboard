@@ -127,35 +127,34 @@ jobs:
           boards='${{ needs.prepare.outputs.matrix }}'
           boards_array=$(echo "$boards" | jq -r '.[]')
           
-          summary="## Firmware Build Summary\n\n"
-          summary+="All board configurations built successfully!\n\n"
-          summary+="| Board | Size (MB) | Size (bytes) |\n"
-          summary+="|-------|-----------|-------------|\n"
-          
-          for board in $boards_array; do
-            bin_file="artifacts/firmware-${board}/${board}.ino.bin"
-            if [ -f "$bin_file" ]; then
-              size=$(stat -f%z "$bin_file" 2>/dev/null || stat -c%s "$bin_file" 2>/dev/null)
-              size_mb=$(echo "scale=2; $size / 1048576" | bc)
-              summary+="| \`${board}\` | ${size_mb} MB | ${size} bytes |\n"
-            fi
-          done
-          
-          summary+="\nFirmware artifacts available in the Actions run for download."
-          
-          # Escape for GitHub Actions output
-          summary="${summary//'%'/'%25'}"
-          summary="${summary//$'\n'/'%0A'}"
-          summary="${summary//$'\r'/'%0D'}"
-          echo "summary=$summary" >> $GITHUB_OUTPUT
+          {
+            echo "summary<<EOF"
+            echo "## Firmware Build Summary"
+            echo ""
+            echo "All board configurations built successfully!"
+            echo ""
+            echo "| Board | Size (MB) | Size (bytes) |"
+            echo "|-------|-----------|-------------|"
+            
+            for board in $boards_array; do
+              bin_file="artifacts/firmware-${board}/${board}.ino.bin"
+              if [ -f "$bin_file" ]; then
+                size=$(stat -f%z "$bin_file" 2>/dev/null || stat -c%s "$bin_file" 2>/dev/null)
+                size_mb=$(echo "scale=2; $size / 1048576" | bc)
+                echo "| \`${board}\` | ${size_mb} MB | ${size} bytes |"
+              fi
+            done
+            
+            echo ""
+            echo "Firmware artifacts available in the Actions run for download."
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
       
       - name: Comment on PR
         uses: actions/github-script@v7
-        env:
-          SUMMARY: ${{ steps.summary.outputs.summary }}
         with:
           script: |
-            const summary = process.env.SUMMARY.replace(/%0A/g, '\n').replace(/%0D/g, '\r').replace(/%25/g, '%');
+            const summary = `${{ steps.summary.outputs.summary }}`;
             
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
