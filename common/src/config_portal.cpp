@@ -148,6 +148,7 @@ void ConfigPortal::handleSubmit() {
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
     String timezoneStr = _server->arg("timezone");
+    String rotationStr = _server->arg("rotation");
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
     
@@ -155,6 +156,12 @@ void ConfigPortal::handleSubmit() {
     int timezoneOffset = timezoneStr.toInt();
     if (timezoneOffset < -12 || timezoneOffset > 14) {
         timezoneOffset = 0;  // Default to UTC on invalid input
+    }
+    
+    // Parse screen rotation
+    uint8_t screenRotation = rotationStr.toInt();
+    if (screenRotation > 3) {
+        screenRotation = 0;  // Default to 0° on invalid input
     }
     
     // Parse hourly schedule bitmask (24 checkboxes)
@@ -209,6 +216,7 @@ void ConfigPortal::handleSubmit() {
     config.updateHours[1] = updateHours[1];
     config.updateHours[2] = updateHours[2];
     config.timezoneOffset = timezoneOffset;
+    config.screenRotation = screenRotation;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -438,6 +446,19 @@ String ConfigPortal::generateConfigPage() {
             html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
         }
         html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
+        html += "</div>";
+        
+        // Screen Rotation
+        html += "<div class='form-group'>";
+        html += "<label for='rotation'>Screen Rotation</label>";
+        html += "<select id='rotation' name='rotation'>";
+        uint8_t currentRotation = hasConfig ? currentConfig.screenRotation : 0;
+        html += "<option value='0'" + String(currentRotation == 0 ? " selected" : "") + ">0° (Landscape)</option>";
+        html += "<option value='1'" + String(currentRotation == 1 ? " selected" : "") + ">90° (Portrait)</option>";
+        html += "<option value='2'" + String(currentRotation == 2 ? " selected" : "") + ">180° (Inverted Landscape)</option>";
+        html += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
+        html += "</select>";
+        html += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
         html += "</div>";
         
         // Hourly Schedule Section

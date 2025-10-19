@@ -31,7 +31,7 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 // Display specifications
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
-#define BOARD_ROTATION 0  // 0, 1, 2, or 3
+#define BOARD_ROTATION 0  // Default rotation (not used - rotation is user-configurable)
 
 // Display mode
 // For standard Inkplate boards (5, 6, 10): Use INKPLATE_1BIT or INKPLATE_3BIT
@@ -71,7 +71,8 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 ```
 
 **Important Notes:**
-- Adjust `SCREEN_WIDTH` and `SCREEN_HEIGHT` to match your board's display resolution
+- Adjust `SCREEN_WIDTH` and `SCREEN_HEIGHT` to match your board's display resolution in landscape orientation
+- `BOARD_ROTATION` is defined but not used - rotation is user-configurable via web portal
 - For Inkplate 2, use `DISPLAY_MODE_INKPLATE2` instead of `DISPLAY_MODE`
 - Scale `FONT_HEADING1`, `FONT_HEADING2`, and `FONT_NORMAL` appropriately for the screen size
 - Smaller screens should use smaller fonts and tighter `LINE_SPACING`

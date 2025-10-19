@@ -34,6 +34,10 @@ int UIMessages::addLineSpacing(int currentY, int multiplier) {
 }
 
 void UIMessages::showSplashScreen(const char* boardName, int width, int height) {
+    // Enable rotation for splash screen
+    // User sees this on first boot or debug mode - should be readable
+    displayManager->enableRotation();
+    
     displayManager->clear();
     
     int y = MARGIN;
@@ -48,6 +52,9 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height) 
 }
 
 void UIMessages::showConfigInitError() {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = 240;
     showNormalText("ERROR: Config Init Failed", y);

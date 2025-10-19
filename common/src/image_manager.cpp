@@ -199,16 +199,28 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     // The library supports drawing PNG directly from a stream
     bool success = false;
     
+    // Temporarily set rotation to 0 for image drawing
+    // Images are expected to be pre-rotated by the user to match their desired orientation
+    // This avoids expensive on-device rotation during image rendering
+    uint8_t currentRotation = ((Adafruit_GFX*)_display)->getRotation();
+    _display->setRotation(0);
+    
     // Try to draw the image from the web stream
     // InkPlate library has drawImage that can work with WiFiClient streams
     if (_display->drawImage(url, 0, 0, true, false)) {
         LogBox::line("Image downloaded and displayed successfully!");
+        
+        // Restore the original rotation before calling display()
+        // This ensures text overlays (like version label) use correct rotation
+        _display->setRotation(currentRotation);
         
         // Actually refresh the e-ink display to show the new image
         _display->display();
         
         success = true;
     } else {
+        // Restore rotation even on failure
+        _display->setRotation(currentRotation);
         showError("Failed to draw image (invalid format or size mismatch)");
         success = false;
     }

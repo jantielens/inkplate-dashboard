@@ -68,6 +68,14 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Minimum**: 1 minute
 - **Description**: How often to download and update the image
 
+### Screen Rotation
+- **Required**: No
+- **Type**: Dropdown
+- **Default**: 0° (Landscape)
+- **Options**: 0° (Landscape), 90° (Portrait), 180° (Landscape Inverted), 270° (Portrait Inverted)
+- **Description**: Display orientation for wall mounting
+- **Note**: **Images must be pre-rotated to match your chosen orientation.** For example, if you select 90° for portrait mounting, provide portrait-oriented images (e.g., 720×1280 instead of 1280×720 for Inkplate 5 V2). The device does not rotate images automatically.
+
 ### MQTT Broker (Optional - Home Assistant Integration)
 - **Required**: No
 - **Type**: URL
@@ -186,6 +194,7 @@ The portal validates:
 1. **WiFi SSID** must not be empty
 2. **Image URL** must not be empty
 3. **Refresh rate** must be at least 1 minute (defaults to 5 if invalid)
+4. **Screen rotation** must be 0-3 (defaults to 0 if invalid)
 
 ## After Configuration
 

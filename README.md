@@ -13,6 +13,7 @@ A multi-board dashboard firmware for Inkplate e-ink displays that periodically d
 
 - 📱 **Easy Setup**: WiFi configuration via captive portal on first boot
 - 🖼️ **Image Display**: Downloads PNG images from any public URL (HTTP/HTTPS)
+- 🔄 **Screen Rotation**: Configure display orientation (0°, 90°, 180°, 270°) for portrait/landscape mounting
 - ⚡ **Power Efficient**: Deep sleep between updates to maximize battery life
 - 🔄 **Configurable Refresh**: Set update interval (default: 5 minutes)
 - ⏰ **Hourly Scheduling**: Select which hours the device should update (e.g., disable updates at night to save battery)
@@ -195,11 +196,13 @@ See [plan.md](plan.md) for detailed implementation roadmap.
 ## Image Requirements
 
 - **Format**: PNG only
-- **Resolution**: Must match your screen:
-  - Inkplate 5 V2: 1280x720 pixels
-  - Inkplate 10: 1200x825 pixels
+- **Resolution**: Must match your screen and rotation setting:
+  - Inkplate 2: 212×104 (landscape) or 104×212 (portrait)
+  - Inkplate 5 V2: 1280×720 (landscape) or 720×1280 (portrait)
+  - Inkplate 10: 1200×825 (landscape) or 825×1200 (portrait)
+  - Inkplate 6 Flick: 1024×758 (landscape) or 758×1024 (portrait)
 - **Source**: Public web server (HTTP/HTTPS)
-- **Processing**: No resizing or rotation (provide correct dimensions)
+- **Processing**: No resizing or rotation (provide pre-rotated images matching your rotation setting)
 
 ## Configuration
 

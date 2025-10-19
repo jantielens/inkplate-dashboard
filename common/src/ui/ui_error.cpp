@@ -6,6 +6,9 @@ UIError::UIError(DisplayManager* display)
 }
 
 void UIError::showWiFiError(const char* ssid, const char* status, int refreshMinutes) {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -33,17 +36,20 @@ void UIError::showWiFiError(const char* ssid, const char* status, int refreshMin
 }
 
 void UIError::showImageError(const char* url, const char* error, int refreshMinutes) {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
     displayManager->showMessage("Image Error!", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
     
-    displayManager->showMessage("Failed to download", MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Failed to display", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     
     displayManager->showMessage(url, MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     
     String errorMsg = "Error: " + String(error);
     displayManager->showMessage(errorMsg.c_str(), MARGIN, y, FONT_NORMAL);
@@ -66,24 +72,36 @@ void UIError::showImageError(const char* url, const char* error, int refreshMinu
 }
 
 void UIError::showAPStartError() {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     int y = 300;
     displayManager->showMessage("ERROR: AP Start Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }
 
 void UIError::showPortalError() {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     int y = 400;
     displayManager->showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }
 
 void UIError::showConfigLoadError() {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     int y = 240;
     displayManager->showMessage("ERROR: Config Load Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }
 
 void UIError::showConfigModeFailure() {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
