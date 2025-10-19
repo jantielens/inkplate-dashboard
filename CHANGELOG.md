@@ -13,11 +13,18 @@
   - Voltage range: 4.2V (100%) to 3.0V (0%) with non-linear interpolation
   - Static calculation method `PowerManager::calculateBatteryPercentage()`
   - Published in all MQTT telemetry updates
+- Image CRC32 checksum reporting via MQTT
+  - New `image_crc32` sensor with Home Assistant auto-discovery
+  - Publishes hexadecimal CRC32 of currently displayed image (e.g., `0xABCD1234`)
+  - Published with every MQTT telemetry update
+  - Allows monitoring of which image version is currently displayed
+  - Useful for tracking display state across device reboots
 
 ### Changed
 - MQTT telemetry now includes battery percentage in addition to voltage
 - Battery percentage displayed in serial logs alongside voltage
 - Home Assistant device now shows both battery voltage and percentage sensors
+- MQTT sensor names updated for clarity (e.g., "Battery Voltage" instead of "Battery")
 
 ## [0.9.0] - 2025-10-19
 

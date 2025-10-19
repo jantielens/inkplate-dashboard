@@ -57,6 +57,11 @@ public:
     // severity: "info", "warning", or "error" (prefixed to message)
     bool publishLastLog(const String& deviceId, const String& message, const String& severity);
     
+    // Publish image CRC32 to Home Assistant
+    // deviceId: unique device identifier (must match discovery)
+    // crc32: CRC32 value of currently displayed image (0 if none)
+    bool publishImageCRC32(const String& deviceId, uint32_t crc32);
+    
     // Publish all telemetry in a single MQTT session (optimized for battery-powered devices)
     // This method connects, publishes discovery (conditionally) + all state messages, then disconnects
     // deviceId: unique device identifier
@@ -67,12 +72,13 @@ public:
     // batteryPercentage: battery percentage (0-100, -1 to skip)
     // wifiRSSI: WiFi signal strength in dBm
     // loopTimeSeconds: loop duration in seconds
+    // imageCRC32: CRC32 of currently displayed image (0 if none)
     // lastLogMessage: optional log message (empty to skip)
     // lastLogSeverity: "info", "warning", or "error"
     bool publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
                              WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
-                             int wifiRSSI, float loopTimeSeconds, const String& lastLogMessage = "", 
-                             const String& lastLogSeverity = "info");
+                             int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32 = 0,
+                             const String& lastLogMessage = "", const String& lastLogSeverity = "info");
     
     // Check if MQTT is configured
     bool isConfigured();
@@ -103,6 +109,11 @@ private:
     
     // Determine if discovery should be published based on wake reason
     bool shouldPublishDiscovery(WakeupReason wakeReason);
+    
+    // Helper methods to publish sensor discovery (reduces code duplication)
+    bool publishSensorDiscovery(const String& discoveryTopic, const String& deviceId, const String& sensorType,
+                                const String& name, const String& deviceClass, const String& unit,
+                                const String& deviceName, const String& modelName, bool includeFullDevice);
 };
 
 #endif // MQTT_MANAGER_H
