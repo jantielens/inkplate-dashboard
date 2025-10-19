@@ -267,6 +267,107 @@ Open browser to:
 - **Use case**: For mounting your display in portrait orientation or upside-down
 - **Example**: Set to 90° if your Inkplate is mounted vertically
 
+### Battery Life Estimator
+
+The configuration portal includes a real-time battery life estimator that helps you understand how your settings impact battery life. This interactive tool updates instantly as you adjust your configuration, providing immediate feedback on your power consumption choices.
+
+#### What It Shows
+
+The estimator displays:
+- **Estimated battery life** in days and months
+- **Color-coded status indicator**:
+  - 🟢 **Excellent** (180+ days / 6+ months) - Great configuration for battery life
+  - 🔵 **Good** (90-179 days / 3-6 months) - Balanced approach
+  - 🟠 **Moderate** (45-89 days / 1.5-3 months) - Reasonable for frequent updates
+  - 🔴 **Poor** (<45 days / <1.5 months) - Very aggressive settings or large battery needed
+- **Detailed metrics**:
+  - Daily power consumption (mAh/day)
+  - Wake-ups per day
+  - Active time per day (device awake with WiFi on)
+  - Sleep time per day (deep sleep mode)
+- **Visual progress bar** with color gradient matching the status
+- **Context-aware tips** suggesting how to improve battery life
+
+#### Battery Capacity Selection
+
+You can select your battery capacity from the dropdown:
+- **600 mAh** (Small) - Compact battery
+- **1200 mAh** (Standard) - Default, typical for most Inkplate devices
+- **1800 mAh** (Medium) - Mid-range extended battery
+- **3000 mAh** (Large) - Extended battery pack
+- **6000 mAh** (Extra Large) - Maximum battery capacity
+
+#### Expected Image Changes Per Day
+
+This setting helps the estimator provide more accurate predictions by accounting for your specific use case:
+
+- **Default**: 5 changes/day (suitable for most dashboards)
+- **Weather dashboards**: 24+ changes/day (updates every hour)
+- **Calendar/events**: 5-10 changes/day (typical for agenda displays)
+- **Static info**: 1-2 changes/day (rarely changing content)
+
+When CRC32 change detection is enabled, this value represents how many times per day your image server actually generates a *different* image. Wake-ups that find no change only take 1 second (CRC32 check) instead of 7 seconds (full download), significantly improving battery life.
+
+**Why it matters**: A weather dashboard might wake up every 5 minutes but only get new weather data once per hour (24 actual changes), while a meeting room display might check every 10 minutes but only update 3-4 times per day.
+
+#### How Settings Impact Battery Life
+
+The estimator considers all battery-impacting settings:
+- **Refresh Rate**: Lower intervals = more wake-ups = shorter battery life
+- **CRC32 Change Detection**: When enabled, dramatically extends battery life (5-8× improvement) by skipping unnecessary downloads
+- **Update Hours**: Disabling night hours or off-peak times reduces daily wake-ups
+- **Expected Image Changes Per Day**: Higher values = more full downloads = shorter battery life (only relevant with CRC32 enabled)
+- **Battery Capacity**: Larger batteries last longer proportionally
+
+#### Understanding the Calculations
+
+The estimator uses these assumptions (clearly disclosed in the portal):
+- **Power consumption**: WiFi active = 100mA, Display refresh = 50mA, Deep sleep = 20µA
+- **Timing**: Full image update = 7 seconds, CRC32 check = 1 second
+- **Signal strength**: Good WiFi signal (poor signal increases power consumption)
+- **Image changes**: User-configurable (default 5/day) - represents actual content changes when using CRC32
+
+**Important Note**: Real-world battery life may vary by ±20% based on:
+- WiFi signal strength variations
+- Image file size differences
+- Battery quality and age
+- Temperature effects
+- Network latency
+
+#### Example Scenarios
+
+**Optimal Setup** (5-min refresh, CRC32 on, 17h active, 1200mAh):
+- **Result**: ~174 days (5.8 months) - GOOD status
+- **Daily power**: 6.9 mAh
+- **Wake-ups**: 204 per day
+- **Active time**: 3.4 minutes/day
+
+**Aggressive Setup** (1-min refresh, CRC32 on, 24h active, 1200mAh):
+- **Result**: ~40 days (1.3 months) - POOR status
+- **Daily power**: 29.8 mAh
+- **Wake-ups**: 1,020 per day
+- **Tip shown**: "Consider increasing refresh rate to 5-10 minutes"
+
+**Conservative Setup** (10-min refresh, CRC32 on, 17h active, 1200mAh):
+- **Result**: ~300 days (10.0 months) - EXCELLENT status
+- **Daily power**: 4.0 mAh
+- **Wake-ups**: 102 per day
+
+**Without CRC32** (5-min refresh, CRC32 off, 17h active, 1200mAh):
+- **Result**: ~35 days (1.2 months) - POOR status
+- **Daily power**: 34.1 mAh
+- **Tip shown**: "Enable CRC32 change detection to extend battery life by 5-8×!"
+
+#### Using the Estimator
+
+1. **Access it** in the configuration portal after the "Update Hours" section
+2. **Adjust your settings** and watch the estimator update in real-time
+3. **Pay attention to tips** - they provide actionable advice for your configuration
+4. **Balance your needs** between update frequency and battery life
+5. **Consider CRC32** - it's the single biggest battery life improvement you can make
+
+The estimator helps you make informed decisions without trial and error, setting realistic expectations for your battery-powered deployment.
+
 #### MQTT Broker (Home Assistant Integration)
 - **What it is**: Address of your MQTT broker for Home Assistant
 - **Format**: `mqtt://hostname:port` or `mqtt://IP:port`

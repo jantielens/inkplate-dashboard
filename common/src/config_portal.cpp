@@ -358,17 +358,30 @@ String ConfigPortal::generateConfigPage() {
         html += "<div class='help-text'>Must be a PNG image matching your screen resolution</div>";
         html += "</div>";
         
-        // Refresh Rate - only shown in CONFIG_MODE
+        // Timezone Offset
         html += "<div class='form-group'>";
-        html += "<label for='refresh'>Refresh Rate (minutes)</label>";
+        html += "<label for='timezone'>Timezone Offset (UTC)</label>";
         if (hasConfig) {
-            html += "<input type='number' id='refresh' name='refresh' min='1' value='" + String(currentConfig.refreshRate) + "' placeholder='5'>";
+            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
         } else {
-            html += "<input type='number' id='refresh' name='refresh' min='1' value='5' placeholder='5'>";
+            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
         }
-        html += "<div class='help-text'>How often to update the image (default: 5 minutes)</div>";
+        html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
         html += "</div>";
-
+        
+        // Screen Rotation
+        html += "<div class='form-group'>";
+        html += "<label for='rotation'>Screen Rotation</label>";
+        html += "<select id='rotation' name='rotation'>";
+        uint8_t currentRotation = hasConfig ? currentConfig.screenRotation : 0;
+        html += "<option value='0'" + String(currentRotation == 0 ? " selected" : "") + ">0° (Landscape)</option>";
+        html += "<option value='1'" + String(currentRotation == 1 ? " selected" : "") + ">90° (Portrait)</option>";
+        html += "<option value='2'" + String(currentRotation == 2 ? " selected" : "") + ">180° (Inverted Landscape)</option>";
+        html += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
+        html += "</select>";
+        html += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
+        html += "</div>";
+        
         // Debug mode toggle
         html += "<div class='form-group'>";
         html += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
@@ -381,19 +394,7 @@ String ConfigPortal::generateConfigPage() {
         html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         html += "</div>";
         
-        // CRC32 change detection toggle
-        html += "<div class='form-group'>";
-        html += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
-        html += "<input type='checkbox' id='crc32check' name='crc32check'";
-        if (hasConfig && currentConfig.useCRC32Check) {
-            html += " checked";
-        }
-        html += "> Enable CRC32-based change detection";
-        html += "</label>";
-        html += "<div class='help-text'>Skips image download & refresh when unchanged. Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
-        html += "</div>";
-        
-        // MQTT Configuration - optional section in CONFIG_MODE
+        // MQTT Configuration - optional section
         html += "<div class='form-group' style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;'>";
         html += "<label style='font-size: 18px; margin-bottom: 5px;'>📡 MQTT / Home Assistant (Optional)</label>";
         html += "<div class='help-text' style='margin-bottom: 15px;'>Configure MQTT to send battery voltage to Home Assistant</div>";
@@ -431,38 +432,37 @@ String ConfigPortal::generateConfigPage() {
         }
         html += "</div>";
         
-        // Hourly Schedule Section
+        // Power & Update Schedule Section
         html += "<div class='form-group' style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;'>";
-        html += "<label style='font-size: 18px; margin-bottom: 5px;'>⏰ Update Schedule & Timezone</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure when updates should occur and your timezone for accurate scheduling.</div>";
+        html += "<label style='font-size: 18px; margin-bottom: 5px;'>⚡ Power & Update Schedule</label>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure update frequency and schedule to optimize battery life</div>";
         html += "</div>";
         
-        // Timezone Offset
+        // Refresh Rate
         html += "<div class='form-group'>";
-        html += "<label for='timezone'>Timezone Offset (UTC)</label>";
+        html += "<label for='refresh'>Refresh Rate (minutes)</label>";
         if (hasConfig) {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
+            html += "<input type='number' id='refresh' name='refresh' min='1' value='" + String(currentConfig.refreshRate) + "' placeholder='5'>";
         } else {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
+            html += "<input type='number' id='refresh' name='refresh' min='1' value='5' placeholder='5'>";
         }
-        html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
+        html += "<div class='help-text'>How often to update the image (default: 5 minutes)</div>";
         html += "</div>";
         
-        // Screen Rotation
+        // CRC32 change detection toggle
         html += "<div class='form-group'>";
-        html += "<label for='rotation'>Screen Rotation</label>";
-        html += "<select id='rotation' name='rotation'>";
-        uint8_t currentRotation = hasConfig ? currentConfig.screenRotation : 0;
-        html += "<option value='0'" + String(currentRotation == 0 ? " selected" : "") + ">0° (Landscape)</option>";
-        html += "<option value='1'" + String(currentRotation == 1 ? " selected" : "") + ">90° (Portrait)</option>";
-        html += "<option value='2'" + String(currentRotation == 2 ? " selected" : "") + ">180° (Inverted Landscape)</option>";
-        html += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
-        html += "</select>";
-        html += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
+        html += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
+        html += "<input type='checkbox' id='crc32check' name='crc32check'";
+        if (hasConfig && currentConfig.useCRC32Check) {
+            html += " checked";
+        }
+        html += "> Enable CRC32-based change detection";
+        html += "</label>";
+        html += "<div class='help-text'>Skips image download & refresh when unchanged. Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
         html += "</div>";
         
-        // Hourly Schedule Section
-        html += "<div class='form-group' style='margin-top: 20px; padding-top: 15px;'>";
+        // Hourly Schedule - Update Hours
+        html += "<div class='form-group' style='margin-top: 20px;'>";
         html += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
         html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery.</div>";
         
@@ -477,7 +477,7 @@ String ConfigPortal::generateConfigPage() {
             int nextHour = (hour + 1) % 24;
             
             html += "<label style='display: flex; align-items: center; gap: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; cursor: pointer;'>";
-            html += "<input type='checkbox' name='hour_" + String(hour) + "' class='hour-checkbox'";
+            html += "<input type='checkbox' id='hour_" + String(hour) + "' name='hour_" + String(hour) + "' class='hour-checkbox'";
             if (isEnabled) {
                 html += " checked";
             }
@@ -486,6 +486,10 @@ String ConfigPortal::generateConfigPage() {
             html += "</label>";
         }
         html += "</div>";
+        html += "</div>";
+        
+        // Battery Life Estimator - placed after all power-impacting settings
+        html += CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML;
     }
     
     // Submit button - text varies by mode
@@ -522,18 +526,7 @@ String ConfigPortal::generateConfigPage() {
     
     // Modal dialog for factory reset confirmation (only in CONFIG_MODE)
     if (_mode == CONFIG_MODE && hasConfig) {
-        html += "<div id='resetModal' class='modal'>";
-        html += "<div class='modal-content'>";
-        html += "<h2 style='color: #dc2626; margin-bottom: 15px;'>⚠️ Confirm Factory Reset</h2>";
-        html += "<p style='color: #666; font-size: 14px; margin-bottom: 20px;'>This will permanently delete all configuration settings. Are you sure you want to continue?</p>";
-        html += "<div class='modal-buttons'>";
-        html += "<button class='btn-cancel' onclick='hideResetModal()'>Cancel</button>";
-        html += "<form action='/factory-reset' method='POST' style='flex: 1; margin: 0;'>";
-        html += "<button type='submit' class='btn-confirm' style='width: 100%;'>Yes, Reset</button>";
-        html += "</form>";
-        html += "</div>";
-        html += "</div>";
-        html += "</div>";
+        html += CONFIG_PORTAL_RESET_MODAL_HTML;
         
         // JavaScript for modal
         html += "<script>";
@@ -544,9 +537,116 @@ String ConfigPortal::generateConfigPage() {
     }
     
     // Footer with version
-    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
-    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
-    html += "</div>";
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
+    // Battery Life Estimator JavaScript - only in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        html += "<script>";
+        
+        // Power consumption constants - well commented for future refinement
+        html += "const POWER_CONSTANTS = {";
+        html += "  ACTIVE_MA: 100,";  // WiFi active (downloading, connecting) in milliamps
+        html += "  DISPLAY_MA: 50,";  // E-paper display update power consumption in mA
+        html += "  SLEEP_MA: 0.02,";  // Deep sleep mode: ~20 microamps = 0.02 milliamps
+        html += "  IMAGE_UPDATE_SEC: 7,";  // Time for full image update: WiFi + download + display
+        html += "  CRC32_CHECK_SEC: 1";  // Time for quick CRC32 check: only checksum download
+        html += "};";
+        
+        // Main calculation function
+        html += "function calculateBatteryLife() {";
+        html += "  const refreshRate = parseInt(document.getElementById('refresh').value) || 5;";
+        html += "  const useCRC32 = document.getElementById('crc32check').checked;";
+        html += "  const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;";
+        html += "  const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;";
+        html += "  ";
+        html += "  let activeHours = 0;";
+        html += "  for (let hour = 0; hour < 24; hour++) {";
+        html += "    const checkbox = document.getElementById('hour_' + hour);";
+        html += "    if (checkbox && checkbox.checked) activeHours++;";
+        html += "  }";
+        html += "  if (activeHours === 0) activeHours = 24;";
+        html += "  ";
+        html += "  const wakeupsPerDay = activeHours * (60 / refreshRate);";
+        html += "  let dailyPower = 0;";
+        html += "  let activeTimeMinutes = 0;";
+        html += "  ";
+        html += "  if (useCRC32) {";
+        html += "    const fullUpdates = Math.min(dailyChanges, wakeupsPerDay);";  // Can't have more updates than wake-ups
+        html += "    const crc32Checks = wakeupsPerDay - fullUpdates;";
+        html += "    const activeSecondsPerUpdate = 5;";
+        html += "    const displaySecondsPerUpdate = 2;";
+        html += "    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);";
+        html += "    dailyPower += fullUpdates * powerPerFullUpdate;";
+        html += "    const powerPerCRC32Check = (POWER_CONSTANTS.CRC32_CHECK_SEC * POWER_CONSTANTS.ACTIVE_MA / 3600);";
+        html += "    dailyPower += crc32Checks * powerPerCRC32Check;";
+        html += "    activeTimeMinutes = (fullUpdates * POWER_CONSTANTS.IMAGE_UPDATE_SEC + crc32Checks * POWER_CONSTANTS.CRC32_CHECK_SEC) / 60;";
+        html += "  } else {";
+        html += "    const activeSecondsPerUpdate = 5;";
+        html += "    const displaySecondsPerUpdate = 2;";
+        html += "    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);";
+        html += "    dailyPower += wakeupsPerDay * powerPerFullUpdate;";
+        html += "    activeTimeMinutes = (wakeupsPerDay * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;";
+        html += "  }";
+        html += "  ";
+        html += "  const sleepHours = 24 - (activeTimeMinutes / 60);";
+        html += "  dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;";
+        html += "  ";
+        html += "  const batteryLifeDays = Math.round(batteryCapacity / dailyPower);";
+        html += "  const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);";
+        html += "  ";
+        html += "  let status = 'poor', statusText = 'SHORT';";
+        html += "  if (batteryLifeDays >= 180) { status = 'excellent'; statusText = 'EXCELLENT'; }";
+        html += "  else if (batteryLifeDays >= 90) { status = 'good'; statusText = 'GOOD'; }";
+        html += "  else if (batteryLifeDays >= 45) { status = 'moderate'; statusText = 'MODERATE'; }";
+        html += "  ";
+        html += "  document.getElementById('battery-days').textContent = batteryLifeDays + ' days';";
+        html += "  document.getElementById('battery-months').textContent = 'Approximately ' + batteryLifeMonths + ' months';";
+        html += "  document.getElementById('daily-power').textContent = dailyPower.toFixed(1) + ' mAh';";
+        html += "  document.getElementById('wakeups').textContent = wakeupsPerDay;";
+        html += "  document.getElementById('active-time').textContent = activeTimeMinutes.toFixed(1) + ' min/day';";
+        html += "  document.getElementById('sleep-time').textContent = sleepHours.toFixed(1) + ' hrs/day';";
+        html += "  ";
+        html += "  document.getElementById('status-badge').textContent = statusText;";
+        html += "  document.getElementById('status-badge').className = 'status-badge status-' + status;";
+        html += "  document.getElementById('battery-result').className = 'battery-result ' + status;";
+        html += "  ";
+        html += "  const progressBar = document.getElementById('progress-bar');";
+        html += "  const progressPercent = Math.min(100, (batteryLifeDays / 300) * 100);";
+        html += "  progressBar.style.width = progressPercent + '%';";
+        html += "  progressBar.className = 'battery-progress-bar ' + status;";
+        html += "  ";
+        html += "  const tipsDiv = document.getElementById('battery-tips');";
+        html += "  const tipText = document.getElementById('tip-text');";
+        html += "  if (!useCRC32) {";
+        html += "    tipsDiv.style.display = 'block';";
+        html += "    tipText.textContent = 'Enable CRC32 change detection to extend battery life by 5-8×!';";
+        html += "  } else if (refreshRate <= 2) {";
+        html += "    tipsDiv.style.display = 'block';";
+        html += "    tipText.textContent = 'Consider increasing refresh rate to 5-10 minutes to extend battery life.';";
+        html += "  } else if (batteryLifeDays < 60) {";
+        html += "    tipsDiv.style.display = 'block';";
+        html += "    tipText.textContent = 'Consider using a larger battery or reducing refresh frequency.';";
+        html += "  } else {";
+        html += "    tipsDiv.style.display = 'none';";
+        html += "  }";
+        html += "}";
+        
+        // Event listeners setup
+        html += "document.addEventListener('DOMContentLoaded', function() {";
+        html += "  document.getElementById('refresh').addEventListener('input', calculateBatteryLife);";
+        html += "  document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);";
+        html += "  document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);";
+        html += "  document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);";
+        html += "  for (let hour = 0; hour < 24; hour++) {";
+        html += "    const checkbox = document.getElementById('hour_' + hour);";
+        html += "    if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);";
+        html += "  }";
+        html += "  calculateBatteryLife();";
+        html += "});";
+        html += "</script>";
+    }
     
     html += "</body></html>";
     
@@ -568,9 +668,11 @@ String ConfigPortal::generateSuccessPage() {
     html += "<p style='margin-top: 10px;'>The device will restart and connect to your WiFi network.</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>";
     html += "</div>";
-    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
-    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
-    html += "</div>";
+    
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
     html += "</div>";
     html += "</body></html>";
     
@@ -591,9 +693,11 @@ String ConfigPortal::generateErrorPage(const String& error) {
     html += "<p style='margin-top: 15px;'>" + error + "</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>";
     html += "</div>";
-    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
-    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
-    html += "</div>";
+    
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
     html += "</div>";
     html += "</body></html>";
     
@@ -614,9 +718,11 @@ String ConfigPortal::generateFactoryResetPage() {
     html += "<p style='margin-top: 10px;'>The device will reboot now and start in setup mode.</p>";
     html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
     html += "</div>";
-    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
-    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
-    html += "</div>";
+    
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
     html += "</div>";
     html += "</body></html>";
     
@@ -680,9 +786,9 @@ String ConfigPortal::generateOTAPage() {
     html += "</div>";
     
     // Footer
-    html += "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>";
-    html += "Inkplate Dashboard v" + String(FIRMWARE_VERSION);
-    html += "</div>";
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
     
     html += "</div>"; // Close container
     
