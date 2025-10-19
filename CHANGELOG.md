@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-10-19
+
+### Added
+- Battery life estimator in configuration portal (issue #43)
+  - Real-time battery life calculation based on user configuration
+  - Interactive estimator updates instantly as settings change (refresh rate, CRC32, hourly schedule, battery capacity, daily changes)
+  - User-configurable "Expected Image Changes Per Day" parameter for accurate CRC32 savings calculations
+  - Displays estimated battery life in days and months with color-coded status indicators
+  - Four status levels: Excellent (180+ days), Good (90-179 days), Moderate (45-89 days), Poor (<45 days)
+  - Detailed metrics: daily power consumption, wake-ups per day, active time, sleep time
+  - Visual progress bar with color-coded gradients matching status
+  - Context-aware tips for optimizing battery life based on current configuration
+  - Battery capacity selector: 600mAh, 1200mAh (default), 1800mAh, 3000mAh, 6000mAh
+  - Informational banner clarifying estimator is information-only (battery capacity setting not persisted)
+  - Transparent calculation assumptions disclosed to users
+  - Pure client-side JavaScript implementation - zero ESP32 memory overhead
+  - Well-commented power constants for easy refinement based on real-world measurements
+  - Helps users make informed decisions about power vs. convenience tradeoffs
+
 ## [0.11.0] - 2025-10-19
 
 ### Added
