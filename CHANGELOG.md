@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-10-19
+
+### Added
+- Screen rotation configuration parameter (issue #41)
+  - New user-configurable setting to rotate display for portrait/landscape mounting
+  - Four rotation options: 0° (Landscape), 90° (Portrait), 180° (Inverted Landscape), 270° (Portrait Inverted)
+  - Dropdown selector in web configuration portal with help text
+  - Setting persists across reboots in NVS storage
+  - Default: 0° (landscape) for backward compatibility with existing devices
+  - Applied to essential UI screens (errors, setup instructions, confirmation messages)
+  - Images must be pre-rotated to match the selected orientation
+  - Documentation updated with rotation configuration guide and image dimension tables
+  - Validation ensures only valid rotation values (0-3) are accepted
+
+### Changed
+- `DisplayManager::init()` now accepts optional rotation parameter
+- Display coordinate system selectively adjusts rotation based on screen type
+- Image size requirements tables updated to show both landscape and portrait dimensions
+- Configuration portal includes rotation field after timezone offset setting
+- Image rendering temporarily resets rotation to 0 for performance (images expected to be pre-rotated)
+
+### Performance
+- **Selective rotation optimization**: Rotation is enabled for nearly all screens (errors, setup, splash, confirmations, manual refresh), with only 2 extremely transient debug screens skipping rotation for speed
+- Normal operation cycle time: ~6 seconds without debug mode (no text screens shown), ~6 seconds with debug mode (transient screens skip rotation)
+- Only 2 transient screens skip rotation: `showDebugStatus()` (debug mode only) and `showDownloading()` (immediately replaced by image)
+- All user-facing screens display at configured rotation for optimal readability (15+ screens including errors, setup, splash, manual refresh, confirmations)
+- Added rotation state caching to avoid redundant `setRotation()` calls
+- See `ROTATION_PERFORMANCE_OPTIMIZATION.md` for detailed analysis and implementation notes
+
 ## [0.10.0] - 2025-10-19
 
 ### Added

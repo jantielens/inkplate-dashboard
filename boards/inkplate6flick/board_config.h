@@ -38,7 +38,7 @@
 #define LINE_SPACING 10
 
 // Margins
-#define MARGIN 10          // General margin (left, top)
+#define MARGIN 20          // General margin (left, top)
 #define INDENT_MARGIN 30   // Indentation for nested content
 
 #endif // BOARD_CONFIG_H

@@ -66,19 +66,21 @@ void setup() {
     powerManager.begin(WAKE_BUTTON_PIN);
     WakeupReason wakeReason = powerManager.getWakeupReason();
 
-    // Initialize configuration early to determine debug behavior
+    // Initialize configuration early to determine debug behavior and rotation
     bool configInitialized = configManager.begin();
     bool debugModeEnabled = false;
+    uint8_t screenRotation = 0;
     if (configInitialized && configManager.isConfigured()) {
         debugModeEnabled = configManager.getDebugMode();
+        screenRotation = configManager.getScreenRotation();
     }
     bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled;
     
     // Set config manager for image manager (for CRC32 storage)
     imageManager.setConfigManager(&configManager);
     
-    // Initialize display
-    displayManager.init(shouldShowSplash);
+    // Initialize display with rotation
+    displayManager.init(shouldShowSplash, screenRotation);
     
     if (shouldShowSplash) {
         uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT);

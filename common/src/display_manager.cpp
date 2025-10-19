@@ -6,11 +6,40 @@ DisplayManager::DisplayManager(Inkplate* display) {
     _display = display;
 }
 
-void DisplayManager::init(bool clearOnInit) {
+void DisplayManager::init(bool clearOnInit, uint8_t rotation) {
     _display->begin();
+    
+    // Store configured rotation but don't apply it yet
+    // This allows performance optimization where rotation is only enabled when needed
+    if (rotation <= 3) {
+        _configuredRotation = rotation;
+        _currentRotation = 0;  // Start with rotation disabled for performance
+    }
+    
     if (clearOnInit) {
         _display->clearDisplay();
     }
+}
+
+void DisplayManager::setRotation(uint8_t rotation) {
+    if (rotation <= 3 && rotation != _currentRotation) {
+        _display->setRotation(rotation);
+        _currentRotation = rotation;
+    }
+}
+
+uint8_t DisplayManager::getRotation() const {
+    return _currentRotation;
+}
+
+void DisplayManager::enableRotation() {
+    // Enable the user-configured rotation for full-screen UI elements
+    setRotation(_configuredRotation);
+}
+
+void DisplayManager::disableRotation() {
+    // Disable rotation (set to 0) for performance-critical operations
+    setRotation(0);
 }
 
 void DisplayManager::clear() {

@@ -6,6 +6,9 @@ UIStatus::UIStatus(DisplayManager* display)
 }
 
 void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
+    // Enable rotation for essential setup screen (user needs to read instructions)
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -32,6 +35,10 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
 }
 
 void UIStatus::showAPModeStarting() {
+    // Enable rotation for AP mode starting message
+    // First boot scenario - user is looking at device
+    displayManager->enableRotation();
+    
     int y = 240;
     displayManager->showMessage("Status: First Boot", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
@@ -40,6 +47,9 @@ void UIStatus::showAPModeStarting() {
 }
 
 void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes) {
+    // Enable rotation for essential setup screen (user needs to read URL)
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -62,6 +72,9 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
 }
 
 void UIStatus::showConfigModePartialSetup(const char* localIP) {
+    // Enable rotation for essential setup screen (user needs to read URL)
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -78,6 +91,9 @@ void UIStatus::showConfigModePartialSetup(const char* localIP) {
 }
 
 void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) {
+    // Enable rotation for essential setup screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -101,6 +117,9 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
 }
 
 void UIStatus::showConfigModeWiFiFailed(const char* ssid) {
+    // Enable rotation for essential error screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -118,6 +137,9 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid) {
 }
 
 void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes) {
+    // Enable rotation for essential setup screen (user needs to read instructions)
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -141,6 +163,9 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
 }
 
 void UIStatus::showConfigModeTimeout() {
+    // Enable rotation for essential message
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -152,6 +177,8 @@ void UIStatus::showConfigModeTimeout() {
 }
 
 void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes) {
+    // Transient debug message - skip rotation for performance
+    // This screen appears briefly before image download in debug mode
     int y = 240;
     displayManager->showMessage("Status: Configured", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
@@ -169,6 +196,8 @@ void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes) {
 }
 
 void UIStatus::showDownloading(const char* url, bool mqttConnected) {
+    // Transient status message - skip rotation for performance
+    // This screen appears briefly before image replaces it
     displayManager->clear();
     int y = MARGIN;
     
@@ -185,6 +214,10 @@ void UIStatus::showDownloading(const char* url, bool mqttConnected) {
 }
 
 void UIStatus::showManualRefresh() {
+    // Enable rotation for manual refresh acknowledgment
+    // User intentionally triggered this, so they're likely looking at the screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -196,6 +229,9 @@ void UIStatus::showManualRefresh() {
 }
 
 void UIStatus::showWiFiConfigured() {
+    // Enable rotation for success confirmation screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     
@@ -207,6 +243,9 @@ void UIStatus::showWiFiConfigured() {
 }
 
 void UIStatus::showSettingsUpdated() {
+    // Enable rotation for success confirmation screen
+    displayManager->enableRotation();
+    
     displayManager->clear();
     int y = MARGIN;
     

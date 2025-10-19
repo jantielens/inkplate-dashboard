@@ -88,6 +88,9 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     // Load timezone offset
     config.timezoneOffset = _preferences.getInt(PREF_TIMEZONE_OFFSET, 0);
     
+    // Load screen rotation
+    config.screenRotation = _preferences.getUChar(PREF_SCREEN_ROTATION, DEFAULT_SCREEN_ROTATION);
+    
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
         LogBox::begin("Config Error");
@@ -158,6 +161,9 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     
     // Save timezone offset
     _preferences.putInt(PREF_TIMEZONE_OFFSET, config.timezoneOffset);
+    
+    // Save screen rotation
+    _preferences.putUChar(PREF_SCREEN_ROTATION, config.screenRotation);
     
     LogBox::begin("Config Saved");
     LogBox::line("Configuration saved successfully");
@@ -335,6 +341,35 @@ bool ConfigManager::getUseCRC32Check() {
         return false;
     }
     return _preferences.getBool(PREF_USE_CRC32, false);
+}
+
+uint8_t ConfigManager::getScreenRotation() {
+    if (!_initialized && !begin()) {
+        return DEFAULT_SCREEN_ROTATION;
+    }
+    return _preferences.getUChar(PREF_SCREEN_ROTATION, DEFAULT_SCREEN_ROTATION);
+}
+
+void ConfigManager::setScreenRotation(uint8_t rotation) {
+    if (!_initialized && !begin()) {
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("ConfigManager not initialized");
+        LogBox::end();
+        return;
+    }
+    
+    // Validate rotation value (only 0, 1, 2, 3 are valid)
+    if (rotation > 3) {
+        LogBox::begin("ConfigManager Error");
+        LogBox::line("Invalid rotation value: " + String(rotation) + " (must be 0-3)");
+        LogBox::end();
+        return;
+    }
+    
+    _preferences.putUChar(PREF_SCREEN_ROTATION, rotation);
+    LogBox::begin("Screen Rotation");
+    LogBox::line("Rotation updated: " + String(rotation * 90) + "°");
+    LogBox::end();
 }
 
 uint32_t ConfigManager::getLastCRC32() {

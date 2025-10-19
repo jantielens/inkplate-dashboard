@@ -21,9 +21,11 @@
 #define PREF_UPDATE_HOURS_1 "upd_hours_1"
 #define PREF_UPDATE_HOURS_2 "upd_hours_2"
 #define PREF_TIMEZONE_OFFSET "tz_offset"
+#define PREF_SCREEN_ROTATION "screen_rot"
 
 // Default values
 #define DEFAULT_REFRESH_RATE 5  // 5 minutes
+#define DEFAULT_SCREEN_ROTATION 0  // 0 degrees (landscape)
 
 // Configuration data structure
 struct DashboardConfig {
@@ -39,6 +41,7 @@ struct DashboardConfig {
     bool useCRC32Check;  // Enable CRC32-based change detection
     uint8_t updateHours[3];  // 24-bit bitmask: bit i = hour i enabled (0-23)
     int timezoneOffset;  // Timezone offset in hours (-12 to +14)
+    uint8_t screenRotation;  // Screen rotation: 0, 1, 2, 3 (0°, 90°, 180°, 270°)
     
     // Constructor with defaults
     DashboardConfig() : 
@@ -52,7 +55,8 @@ struct DashboardConfig {
         isConfigured(false),
         debugMode(false),
         useCRC32Check(false),
-        timezoneOffset(0) {
+        timezoneOffset(0),
+        screenRotation(DEFAULT_SCREEN_ROTATION) {
         // Initialize all hours enabled by default (0xFF = all bits set)
         updateHours[0] = 0xFF;  // Hours 0-7
         updateHours[1] = 0xFF;  // Hours 8-15
@@ -96,6 +100,7 @@ public:
     String getMQTTPassword();
     bool getDebugMode();
     bool getUseCRC32Check();
+    uint8_t getScreenRotation();
     
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
@@ -104,6 +109,7 @@ public:
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
     void setUseCRC32Check(bool enabled);
+    void setScreenRotation(uint8_t rotation);
     
     // CRC32 storage management
     uint32_t getLastCRC32();

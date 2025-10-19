@@ -196,11 +196,12 @@ Open browser to:
 
 **Image Requirements:**
 - **Format**: PNG only (JPG/GIF not supported)
-- **Resolution**: Must match your screen exactly:
-  - Inkplate 2: 212×104 pixels
-  - Inkplate 5 V2: 1280×720 pixels
-  - Inkplate 10: 1200×825 pixels
-  - Inkplate 6 Flick: 1024×758 pixels
+- **Resolution**: Must match your screen exactly (in the orientation you've configured):
+  - Inkplate 2: 212×104 pixels (landscape) or 104×212 pixels (portrait)
+  - Inkplate 5 V2: 1280×720 pixels (landscape) or 720×1280 pixels (portrait)
+  - Inkplate 10: 1200×825 pixels (landscape) or 825×1200 pixels (portrait)
+  - Inkplate 6 Flick: 1024×758 pixels (landscape) or 758×1024 pixels (portrait)
+- **Rotation**: Your image must be pre-rotated to match the Screen Rotation setting (see below)
 - **Accessibility**: Must be reachable from the device's network - can be a local server on your network or a public URL on the internet
 
 #### Refresh Rate
@@ -251,6 +252,20 @@ Open browser to:
 - **Used by**: The hourly update schedule to convert UTC time to your local time
 - **Example**: If you're in Eastern Time (EST = -5), enter `-5`. When DST begins (EDT = -4), remember to update it
 - **Tip**: If you're unsure of your offset, search "my timezone offset UTC" or check a time zone website
+
+#### Screen Rotation
+- **What it is**: The orientation of your display
+- **Required**: No (defaults to 0° = Landscape)
+- **Options**: 
+  - **0° (Landscape)**: Default horizontal orientation
+  - **90° (Portrait)**: Rotated 90 degrees clockwise
+  - **180° (Inverted Landscape)**: Upside down
+  - **270° (Portrait Inverted)**: Rotated 270 degrees clockwise (or 90° counter-clockwise)
+- **Important**: Your images must be oriented to match this setting
+  - If you select 90° (Portrait), provide a portrait-oriented image (e.g., 720×1280 for Inkplate 5 V2)
+  - If you select 0° (Landscape), provide a landscape-oriented image (e.g., 1280×720 for Inkplate 5 V2)
+- **Use case**: For mounting your display in portrait orientation or upside-down
+- **Example**: Set to 90° if your Inkplate is mounted vertically
 
 #### MQTT Broker (Home Assistant Integration)
 - **What it is**: Address of your MQTT broker for Home Assistant
@@ -523,10 +538,11 @@ Open browser to:
 1. **Check image URL** - must be complete URL starting with `http://` or `https://`
 2. **Test URL in browser** - open the URL on your computer to verify it works
 3. **Check image format** - must be PNG (JPG/GIF not supported)
-4. **Verify image size** - must match your screen exactly (see Configuration Options)
-5. **Check network access** - image must be accessible from your WiFi network
-6. **Try HTTP instead of HTTPS** - some HTTPS certificates cause issues
-7. **Check server** - ensure the web server hosting the image is online and responsive
+4. **Verify image size and orientation** - must match your screen exactly in the orientation you've configured (see Configuration Options)
+5. **Check rotation setting** - if you changed Screen Rotation, make sure your image matches (landscape images for 0°/180°, portrait for 90°/270°)
+6. **Check network access** - image must be accessible from your WiFi network
+7. **Try HTTP instead of HTTPS** - some HTTPS certificates cause issues
+8. **Check server** - ensure the web server hosting the image is online and responsive
 
 **Common URL Mistakes:**
 - ❌ `www.example.com/image.png` - missing `http://`
@@ -693,7 +709,15 @@ If you're still having issues:
 
 ### Image Preparation
 
-Getting the best results from your e-ink display starts with properly preparing your image. The most important requirement is using the exact resolution that matches your screen size - images must be pixel-perfect or they won't display correctly. Before uploading your image, test the URL in a web browser to verify it's accessible and displays properly.
+Getting the best results from your e-ink display starts with properly preparing your image. The most important requirement is using the exact resolution that matches your screen size **in the orientation you've configured** - images must be pixel-perfect or they won't display correctly. 
+
+**Important:** Images must be pre-rotated to match your Screen Rotation setting:
+- **0° or 180° (Landscape)**: Provide landscape-oriented images (e.g., 1280×720 for Inkplate 5 V2)
+- **90° or 270° (Portrait)**: Provide portrait-oriented images (e.g., 720×1280 for Inkplate 5 V2)
+
+The device does **not** rotate images on-device for performance reasons. If you change your rotation setting, you'll need to update your image source to provide images in the new orientation.
+
+Before uploading your image, test the URL in a web browser to verify it's accessible and displays properly.
 
 Your image can be hosted on a local web server on your home network, such as a Home Assistant installation, or on a public web server accessible from the internet. The device doesn't care where the image comes from as long as it can reach it over the network. Make sure to use high-contrast images, as this improves readability on e-ink displays which excel at showing clear, sharp text and graphics. While you can include fine details in your images, keep in mind that e-ink displays have physical resolution limitations, so extremely intricate elements might not render as crisply as on an LCD screen.
 
@@ -744,12 +768,14 @@ Once configured, your device will automatically appear in Home Assistant as "Ink
 
 ### Required Image Sizes
 
-| Device | Resolution | Color Mode |
-|--------|-----------|------------|
-| Inkplate 2 | 212×104 | 1-bit (black & white) |
-| Inkplate 5 V2 | 1280×720 | 3-bit (8 grayscale levels) |
-| Inkplate 10 | 1200×825 | 1-bit (black & white) |
-| Inkplate 6 Flick | 1024×758 | 3-bit (8 grayscale levels) |
+| Device | Resolution (Landscape) | Resolution (Portrait) | Color Mode |
+|--------|----------------------|---------------------|------------|
+| Inkplate 2 | 212×104 | 104×212 | 1-bit (black & white) |
+| Inkplate 5 V2 | 1280×720 | 720×1280 | 3-bit (8 grayscale levels) |
+| Inkplate 10 | 1200×825 | 825×1200 | 1-bit (black & white) |
+| Inkplate 6 Flick | 1024×758 | 758×1024 | 3-bit (8 grayscale levels) |
+
+**Note:** Image resolution must match your Screen Rotation setting (0°/180° = Landscape, 90°/270° = Portrait)
 
 ### Configuration URLs
 
@@ -782,6 +808,9 @@ A: The device displays whatever PNG image you provide via the URL. You'll need t
 
 **Q: How do I change the image?**  
 A: Just update the image file on your web server. The device automatically downloads the latest version during each refresh cycle - you don't need to reconfigure anything on the device itself.
+
+**Q: Can I rotate the display for portrait mounting?**  
+A: Yes! Use the Screen Rotation setting in the configuration portal to select 0° (landscape), 90° (portrait), 180° (inverted landscape), or 270° (portrait inverted). **Important:** Your images must be pre-rotated to match your chosen orientation. For example, if you select 90° portrait mode, you need to provide portrait-oriented images (e.g., 720×1280 instead of 1280×720 for Inkplate 5 V2). The device does not rotate images automatically.
 
 **Q: What if my WiFi password changes?**  
 A: Enter config mode (long button press or reset button) and update the WiFi password in the web interface.
