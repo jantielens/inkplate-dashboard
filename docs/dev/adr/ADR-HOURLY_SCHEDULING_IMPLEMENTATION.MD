@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Hourly Scheduling Implementation
+
+## Status
+Accepted
+
+## Context
+To provide users with granular control over update times and maximize battery savings, the device must support enabling/disabling updates for each hour of the day.
+
+## Decision
+Store the hourly schedule as a 24-bit bitmask in configuration. Provide a web portal UI for users to select enabled hours. Implement logic to sleep until the next enabled hour if the current hour is disabled.
+
+## Consequences
+- Efficient storage (3 bytes) and flexible scheduling for users.
+- Requires changes to configuration storage, web UI, and update logic.
+- Improves battery life by skipping unnecessary updates.
+
 # Implementation Summary: Hourly Scheduling (Issue #3)
 
 ## Overview

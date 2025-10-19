@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Selective Screen Rotation for Performance
+
+## Status
+Accepted
+
+## Context
+The initial implementation of screen rotation applied rotation globally, causing significant performance overhead for all text rendering operations during the update cycle.
+
+## Decision
+Optimize screen rotation by enabling rotation only for screens that require it (user-facing screens), and skipping rotation for transient status messages. This selective approach reduces unnecessary coordinate transformations.
+
+## Consequences
+- Reduces update cycle time by approximately 1 second when rotation is enabled.
+- Maintains user-configurable rotation options without impacting performance for transient messages.
+- Adds some complexity to display state management.
+
 # Screen Rotation Performance Optimization
 
 ## Overview

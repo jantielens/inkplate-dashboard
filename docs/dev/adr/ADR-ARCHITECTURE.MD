@@ -1,3 +1,23 @@
+
+# Architecture Decision Record: Multi-Board Architecture
+
+## Status
+Accepted
+
+## Context
+The Inkplate Dashboard project must support multiple e-ink display boards (Inkplate 2, 5 V2, 6 Flick, 10) with both shared and board-specific code, while minimizing code duplication and maintenance overhead.
+
+## Decision
+Adopt a multi-board architecture where:
+- Common code is placed in a shared `common/` directory.
+- Each board has its own directory under `boards/` with a board-specific sketch and configuration header.
+- The build system copies shared code into each board's build context and compiles with board-specific settings.
+
+## Consequences
+- Enables support for multiple Inkplate boards with minimal duplication.
+- Board-specific features and configuration are isolated, while core logic is shared.
+- The build system is more complex but flexible for future board additions.
+
 # Architecture Documentation
 
 ## Overview

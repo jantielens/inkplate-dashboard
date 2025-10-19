@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: User-Configurable Screen Rotation
+
+## Status
+Accepted
+
+## Context
+Users may want to mount their Inkplate displays in different orientations (landscape, portrait, inverted, etc.). The firmware must support user-configurable screen rotation.
+
+## Decision
+Add support for four rotation options (0°, 90°, 180°, 270°) via a configuration setting. Store the rotation in persistent storage and apply it at display initialization. Update the configuration portal to allow user selection.
+
+## Consequences
+- Users can flexibly mount their devices in any orientation.
+- Requires changes to configuration storage, display manager, and web UI.
+- All drawing operations must respect the current rotation setting.
+
 # Screen Rotation Implementation
 
 This document describes the implementation of screen rotation functionality for issue #41.

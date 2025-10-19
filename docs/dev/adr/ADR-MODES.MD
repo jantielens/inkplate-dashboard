@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Device Modes and Configuration
+
+## Status
+Accepted
+
+## Context
+The Inkplate Dashboard firmware must support multiple operating modes (normal, AP, config, error, etc.) to handle setup, configuration, and normal operation for a variety of user scenarios.
+
+## Decision
+Implement a mode-based architecture where the device state determines which mode controller is active. Each mode (normal, AP, config, error, etc.) has clear entry/exit conditions and responsibilities.
+
+## Consequences
+- Provides a flexible and extensible framework for device behavior.
+- Simplifies adding new modes or modifying existing ones.
+- Increases code complexity but improves maintainability and user experience.
+
 # Device Modes and Configuration
 
 ## Overview

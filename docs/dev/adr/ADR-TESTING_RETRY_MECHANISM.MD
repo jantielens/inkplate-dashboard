@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Image Download Retry Mechanism
+
+## Status
+Accepted
+
+## Context
+Image downloads may fail due to network or server issues. The device must be able to recover from transient failures by retrying downloads before displaying an error to the user.
+
+## Decision
+Implement a retry mechanism with up to 3 attempts (20 seconds apart) for image downloads. If all attempts fail, display an error and sleep for the full refresh interval. Document the test procedure for this mechanism.
+
+## Consequences
+- Improves reliability and user experience in the face of network errors.
+- Adds complexity to the download logic and error handling.
+- Requires thorough testing to ensure correct behavior.
+
 # Testing Image Download Retry Mechanism
 
 This document describes how to test the retry mechanism for image download failures.

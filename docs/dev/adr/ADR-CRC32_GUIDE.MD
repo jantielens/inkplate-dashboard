@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: CRC32-Based Change Detection
+
+## Status
+Accepted
+
+## Context
+Frequent image downloads drain battery life. The device needs a way to avoid downloading large images when the content has not changed.
+
+## Decision
+Implement CRC32-based change detection: the device downloads a small CRC32 checksum file and only downloads the full image if the checksum has changed. The server must provide a `.crc32` file alongside each image.
+
+## Consequences
+- Dramatically extends battery life (e.g., from ~13 to ~33 days for daily image changes).
+- Requires server-side support for `.crc32` files.
+- Adds logic for checksum comparison and error handling.
+
 # CRC32 Change Detection Guide
 
 This guide explains how to set up CRC32-based change detection to dramatically extend battery life.

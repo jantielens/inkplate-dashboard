@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: CI/CD Workflow Testing
+
+## Status
+Accepted
+
+## Context
+To ensure firmware quality and reliability, the project must have a repeatable process for testing builds and validating CI/CD workflows across platforms (Windows, Linux, GitHub Actions).
+
+## Decision
+Define a standard process for local and CI/CD testing: run build scripts for all boards, verify output artifacts, and validate workflow YAML files. Document the process for contributors.
+
+## Consequences
+- Ensures consistent build/test results across environments.
+- Reduces risk of broken builds or releases.
+- Contributors have clear instructions for validating changes.
+
 # Testing the CI/CD Workflow
 
 ## Before You Commit

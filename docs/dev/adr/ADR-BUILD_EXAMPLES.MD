@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Build System Example Approach
+
+## Status
+Accepted
+
+## Context
+The project requires a build system that can handle multiple board variants, shared code, and board-specific configuration, while being easy to understand and extend.
+
+## Decision
+Document the build process with real-world examples, showing how the build system copies shared code, compiles for each board, and manages output artifacts. Use these examples to guide contributors and maintainers.
+
+## Consequences
+- Provides clear guidance for contributors on how the build system works.
+- Makes it easier to add new boards or features to the build process.
+- Ensures consistency and reproducibility in firmware builds.
+
 # Build System Explained with Examples
 
 This document walks through actual examples of what happens during the build process.

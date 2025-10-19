@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Image Download Retry Mechanism & Deferred CRC32 Save
+
+## Status
+Accepted
+
+## Context
+Image downloads may fail due to network or server issues. Saving CRC32 checksums before successful display can cause inconsistencies. The device needs robust retry and save logic.
+
+## Decision
+Implement an automatic retry mechanism with exponential backoff for image downloads (up to 3 attempts, 20 seconds apart). Only save CRC32 checksums after a successful image display, not after a failed download.
+
+## Consequences
+- Improves reliability of image updates and CRC32 tracking.
+- Ensures persistent storage only reflects successful updates.
+- Adds complexity to error handling and retry logic.
+
 # Implementation Notes: Image Download Retry Mechanism & Deferred CRC32
 
 ## Overview

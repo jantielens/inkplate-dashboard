@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Hourly Scheduling with 24-bit Bitmask
+
+## Status
+Accepted
+
+## Context
+To optimize battery life, the Inkplate Dashboard needs a way to control which hours of the day the device performs updates, allowing users to skip unnecessary refreshes during inactive periods.
+
+## Decision
+Implement per-hour update scheduling using a 24-bit bitmask, where each bit represents an hour (0-23). Users can enable or disable updates for each hour via the configuration portal. The device sleeps until the next enabled hour if the current hour is disabled.
+
+## Consequences
+- Users have granular control over update times, improving battery life.
+- The implementation is efficient (3 bytes of storage) and backward compatible.
+- Adds complexity to configuration and update logic, but provides significant power savings.
+
 # Hourly Scheduling Feature
 
 ## Overview

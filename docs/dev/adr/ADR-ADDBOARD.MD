@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Adding Support for New Inkplate Boards
+
+## Status
+Accepted
+
+## Context
+The project must support new Inkplate board variants as they are released, while maintaining a shared codebase and minimizing duplication.
+
+## Decision
+Define a process for adding new boards: create a new board directory, add a board-specific configuration header, and update the build system to recognize the new board. Board-specific code is isolated, while shared logic remains in the common directory.
+
+## Consequences
+- New boards can be added with minimal changes to the shared codebase.
+- The build system and configuration files must be updated for each new board.
+- Ensures maintainability and scalability as the hardware lineup grows.
+
 # Adding a New Inkplate Board
 
 This guide describes the steps required to add support for a new Inkplate board to the firmware.

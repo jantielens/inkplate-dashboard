@@ -2,29 +2,27 @@
 
 A multi-board dashboard firmware for Inkplate e-ink displays that periodically downloads and displays images from a web URL.
 
-## Supported Devices
-
-- ✅ **Inkplate 2** (212x104, 1-bit black & white) - _No physical button_
-- ✅ **Inkplate 5 V2** (1280x720, 3-bit grayscale)
-- ✅ **Inkplate 10** (1200x825, 1-bit black & white)
-- ✅ **Inkplate 6 Flick** (1024x758, 3-bit grayscale)
 
 ## Features
 
-- 📱 **Easy Setup**: WiFi configuration via captive portal on first boot
-- 🖼️ **Image Display**: Downloads PNG images from any public URL (HTTP/HTTPS)
-- 🔄 **Screen Rotation**: Configure display orientation (0°, 90°, 180°, 270°) for portrait/landscape mounting
-- ⚡ **Power Efficient**: Deep sleep between updates to maximize battery life
-- 🔄 **Configurable Refresh**: Set update interval (default: 5 minutes)
-- ⏰ **Hourly Scheduling**: Select which hours the device should update (e.g., disable updates at night to save battery)
-- 🔋 **CRC32 Change Detection**: Optional feature to skip downloads when image hasn't changed, extending battery life by 2.5×
-- 🌐 **Web Interface**: Beautiful, responsive configuration portal
-- 💾 **Persistent Config**: Settings saved to device flash memory
-- 🔧 **Button Config Mode**: Long press button to reconfigure settings anytime (2-minute timeout)
-- ⚡ **Manual Refresh**: Short press button for immediate image update
-- 🗑️ **Factory Reset**: Web-based factory reset to erase all settings and start fresh
-- ⬆️ **OTA Updates**: Upload new firmware directly via web interface
-- 🏠 **Home Assistant Integration**: Optional MQTT battery voltage and percentage reporting with auto-discovery
+- **Easy WiFi setup** via captive portal
+- **Displays PNG images** from any public URL
+- **Configurable screen rotation** (portrait/landscape)
+- **Power efficient**: deep sleep between updates
+- **Web-based configuration** and OTA firmware updates
+- **Button controls** for config mode and manual refresh
+- **Home Assistant integration** (optional MQTT battery reporting)
+- **Advanced options**: CRC32-based battery saver, flexible hourly scheduling, and more
+
+
+## Supported Devices
+
+- **Inkplate 5 V2**
+- **Inkplate 2**
+- **Inkplate 6 Flick** *(not tested on hardware)*
+- **Inkplate 10** *(not tested on hardware)*
+
+> **Note:** Inkplate 10 and Inkplate 6 Flick are not tested on real hardware, as I do not own these boards. If you have one of these devices and want to help test or ensure support, please [create an issue](https://github.com/jantielens/inkplate-dashboard/issues) or open a discussion!
 
 ## Quick Start
 

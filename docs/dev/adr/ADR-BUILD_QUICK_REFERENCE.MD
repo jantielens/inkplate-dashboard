@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Build System Quick Reference
+
+## Status
+Accepted
+
+## Context
+Contributors need a concise reference for the build system to quickly understand the workflow, commands, and code flow for building firmware for multiple boards.
+
+## Decision
+Provide a quick reference guide with visual diagrams and code flowcharts, summarizing the build process and key commands for building and uploading firmware.
+
+## Consequences
+- Reduces onboarding time for new contributors.
+- Ensures consistent build practices across the team.
+- Serves as a handy reference for troubleshooting build issues.
+
 # Build System Quick Reference
 
 ## Visual Overview

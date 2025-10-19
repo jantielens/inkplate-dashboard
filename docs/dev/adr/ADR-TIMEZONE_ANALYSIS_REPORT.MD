@@ -1,3 +1,20 @@
+
+# Architecture Decision Record: Timezone Handling and DST Calculation
+
+## Status
+Proposed
+
+## Context
+The current implementation uses standard timezone names but lacks automatic Daylight Saving Time (DST) adjustments, leading to potential errors and manual maintenance.
+
+## Decision
+Investigate and compare options for automatic DST calculation, including using libraries or custom implementations. Prototype and assess feasibility, memory impact, and user experience before adopting a solution.
+
+## Consequences
+- May increase memory usage and code complexity.
+- Reduces manual errors and improves time accuracy for users.
+- Requires careful evaluation and phased rollout.
+
 # Analysis Report on Timezone Names with Automatic DST Calculation Feasibility
 
 ## Current State Assessment
