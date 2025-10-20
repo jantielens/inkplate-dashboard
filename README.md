@@ -12,6 +12,23 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 - 🏠 **Home Assistant integration** (optional MQTT battery reporting)
 - ⚡ **Advanced options**: CRC32-based battery saver, flexible hourly scheduling, and more
 
+<div align="left">
+  <table>
+    <tr>
+      <th style="min-width:260px;">Splashscreen during first boot</th>
+      <th style="min-width:220px;">Config Portal in brower</th>
+    </tr>
+    <tr>
+      <td style="vertical-align:top; text-align:center;">
+        <img src="docs/assets/device-splashscreen.jpg" alt="Inkplate Dashboard Example" style="max-width:300px; height:auto;" /><br>
+      </td>
+      <td style="vertical-align:top; text-align:center;">
+        <img src="docs/assets/config-in-browser.gif" alt="Inkplate Dashboard - In-Browser Configuration" style="max-width:200px; height:auto;" /><br>
+      </td>
+    </tr>
+  </table>
+</div>
+
 
 ## Supported Devices
 
