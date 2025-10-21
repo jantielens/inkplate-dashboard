@@ -146,6 +146,10 @@ jobs:
           token: ${{ secrets.FLASHER_REPO_TOKEN }}
           path: flasher
 
+      - name: Ensure jq is installed
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+
       - name: Build and publish latest.json
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
