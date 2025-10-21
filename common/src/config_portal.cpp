@@ -530,8 +530,8 @@ String ConfigPortal::generateConfigPage() {
         html += "</div>";
     }
     
-    // Factory Reset & VCOM Section - only show in CONFIG_MODE if device is configured
-    if (_mode == CONFIG_MODE && hasConfig) {
+    // Factory Reset & VCOM Section - only show in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
         html += "<div class='factory-reset-section'>";
         html += "<div class='danger-zone'>";
         html += "<h2>⚠️ Danger Zone</h2>";
@@ -539,12 +539,14 @@ String ConfigPortal::generateConfigPage() {
         html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
         #ifndef DISPLAY_MODE_INKPLATE2
         // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
-        html += "<hr>";
-        html += "<p><b>Advanced:</b></p>";
-        html += "<p style='color:darkred;'><b>Warning:</b> Incorrect VCOM settings can permanently damage your e-ink display. Only use this if you understand the risks.</p>";
-        html += "<div style='display:flex; gap:10px; margin-top:8px;'>";
-        html += "<a href='/vcom' style='text-decoration:none; display:inline-block;'><button type='button' class='btn-danger'>⚠️ VCOM Management</button></a>";
-        html += "</div>";
+        if (hasConfig) {
+            html += "<hr>";
+            html += "<p><b>Advanced:</b></p>";
+            html += "<p style='color:darkred;'><b>Warning:</b> Incorrect VCOM settings can permanently damage your e-ink display. Only use this if you understand the risks.</p>";
+            html += "<div style='display:flex; gap:10px; margin-top:8px;'>";
+            html += "<a href='/vcom' style='text-decoration:none; display:inline-block;'><button type='button' class='btn-danger'>⚠️ VCOM Management</button></a>";
+            html += "</div>";
+        }
         #endif
         html += "</div>";
         html += "</div>";
