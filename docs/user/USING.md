@@ -778,6 +778,41 @@ Open browser to:
 
 **What Doesn't Change:**
 - ❌ Firmware version (stays the same)
+- ❌ VCOM setting (display calibration voltage - stored in TPS65186 PMIC)
+
+### VCOM Management (Advanced)
+
+**⚠️ WARNING: This is an advanced feature. Only use if you know your panel's correct VCOM value.**
+
+**What is VCOM?**
+
+VCOM (Common Voltage) is a critical voltage setting that controls e-ink display contrast and quality. Each e-ink panel has an optimal VCOM value typically printed on a label on the panel itself.
+
+**When to Use:**
+- You're replacing the e-ink panel with a different model
+- The panel manufacturer specifies a different VCOM value
+- Display quality issues persist after trying other troubleshooting
+
+**How to Access:**
+
+1. **Enter config mode** (long press wake button or press reset button)
+2. **Open the configuration page** in your web browser
+3. **Scroll to the "Danger Zone" section**
+4. **Click "⚠️ VCOM Management"** button
+5. **View current VCOM** (displayed on the page)
+6. **To program new value**:
+   - Enter the voltage (e.g., "-1.53")
+   - Click "Program VCOM"
+   - Read and confirm the warning
+   - Wait for verification
+
+**Important Notes:**
+- Programming an incorrect VCOM can damage your display
+- Only change if you have the correct value from the panel label or manufacturer
+- Valid range: -5.0V to 0V (typically -1.0V to -3.0V)
+- The value persists in the TPS65186 PMIC EEPROM (not affected by factory reset)
+- See the [Configuration Portal Guide](config_portal_guide.md#vcom-management) for detailed instructions
+
 - ❌ Board type
 - ❌ MAC address
 

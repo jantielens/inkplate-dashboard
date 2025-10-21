@@ -278,7 +278,107 @@ The device will boot into AP mode and display setup instructions.
 - Ensure all required fields are filled
 - Verify image URL is accessible
 
+
 ### Device keeps entering AP mode
 - Configuration may not be saved properly
 - Check NVS partition is not corrupted
 - Try factory reset and reconfigure
+
+## VCOM Management
+
+**⚠️ WARNING: Advanced Feature - Use with Caution**
+
+VCOM (Common Voltage) is a critical voltage setting that affects e-ink display contrast and image quality. Each e-ink panel has an optimal VCOM value typically printed on a label on the panel itself or specified by the manufacturer.
+
+### What is VCOM?
+
+VCOM is the common voltage used by the e-ink display controller (TPS65186 PMIC) to drive the e-ink panel. The correct VCOM value ensures:
+- Optimal contrast
+- Clear image reproduction
+- Minimal ghosting
+- Proper grayscale levels
+
+### Accessing VCOM Management
+
+1. Navigate to the Configuration Portal main page
+2. Scroll to the **Danger Zone** section
+3. Click the **⚠️ VCOM Management** button
+
+### Reading VCOM
+
+The VCOM Management page displays:
+- **Current VCOM**: The voltage currently programmed in the TPS65186 EEPROM (e.g., "-1.53V")
+- This value is automatically loaded by the PMIC when the device powers on
+- The value is also displayed in serial logs at startup
+
+### Programming VCOM
+
+**⚠️ CRITICAL SAFETY INFORMATION:**
+- Programming an incorrect VCOM value can damage your display
+- Only change VCOM if you know the correct value for your specific panel
+- The optimal value is typically on a label on the e-ink panel or in manufacturer documentation
+- Valid range: -5.0V to 0V (typically between -1.0V and -3.0V)
+
+**To program a new VCOM value:**
+
+1. Enter the desired VCOM voltage in the input field (e.g., "-1.53")
+2. Click **Program VCOM**
+3. Read and acknowledge the warning dialog
+4. The system will:
+   - Validate the input range
+   - Program the value to TPS65186 EEPROM (takes ~260ms)
+   - Power cycle the display to reload from EEPROM
+   - Verify the programmed value
+   - Display detailed diagnostics
+
+### Understanding Diagnostics
+
+After programming, the page shows detailed diagnostics:
+```
+Initial VCOM Read: -1.53V (0x199)
+Attempting to program: -1.53V (0x199)
+Register 0x04 before programming: 0x01
+Register 0x04 after programming: 0x41 (bit 6 set)
+Bit 6 cleared after 260ms (EEPROM write complete)
+Registers zeroed for verification
+Power cycled for EEPROM reload
+Register 0x04 after power cycle: 0x01
+Verification VCOM Read: -1.53V (0x199)
+✓ VCOM programming successful and verified!
+```
+
+**Key indicators:**
+- **Bit 6 cleared after Xms**: Confirms EEPROM write completed successfully
+- **Verification VCOM Read**: Must match the programmed value
+- **✓ Success message**: Indicates the value persisted after power cycle
+
+### When to Adjust VCOM
+
+Consider adjusting VCOM if:
+- Display images appear washed out or too dark
+- Replacing the e-ink panel with a different model
+- Manufacturer documentation specifies a different value
+- Experiencing persistent ghosting issues
+
+**Do NOT adjust VCOM:**
+- As a troubleshooting step for connectivity issues
+- Without knowing the correct value for your panel
+- If the display is working properly
+
+### Troubleshooting
+
+**Programming fails:**
+- Check serial logs for detailed I2C transaction information
+- Ensure stable power supply during EEPROM write
+- Verify the TPS65186 PMIC is responding (I2C address 0x48)
+
+**Value doesn't persist:**
+- Diagnostic logs should show "Bit 6 cleared" confirming EEPROM write
+- Verification read should match programmed value after power cycle
+- If verification fails, check hardware connections
+
+**Display quality issues after programming:**
+- If you programmed an incorrect value, reprogram with the correct value
+- Check the panel label or manufacturer specs for the optimal VCOM
+- Some panels may have tolerances (e.g., ±0.05V)
+

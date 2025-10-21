@@ -50,6 +50,8 @@ private:
     void handleOTA();
     void handleOTAUpload();
     void handleNotFound();
+        void handleVcom();
+        void handleVcomSubmit();
     
     // HTML page generators
     String generateConfigPage();
@@ -57,6 +59,7 @@ private:
     String generateErrorPage(const String& error);
     String generateFactoryResetPage();
     String generateOTAPage();
+        String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
     
     // CSS styles
     String getCSS();

@@ -84,6 +84,17 @@ void setup() {
     
     if (shouldShowSplash) {
         uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT);
+        // Read and log the panel VCOM for diagnostic purposes
+        double panelVcom = displayManager.readPanelVCOM();
+        if (!isnan(panelVcom)) {
+            LogBox::begin("VCOM");
+            LogBox::linef("VCOM: %.2f V", panelVcom);
+            LogBox::end();
+        } else {
+            LogBox::begin("VCOM");
+            LogBox::line("VCOM read failed or not supported");
+            LogBox::end();
+        }
     }
 
     if (!configInitialized) {

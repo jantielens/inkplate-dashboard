@@ -29,7 +29,8 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->on("/", [this]() { this->handleRoot(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
-    
+    _server->on("/vcom", HTTP_GET, [this]() { this->handleVcom(); });
+    _server->on("/vcom", HTTP_POST, [this]() { this->handleVcomSubmit(); });
     // OTA routes - only available in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         _server->on("/ota", HTTP_GET, [this]() { this->handleOTA(); });
@@ -526,13 +527,19 @@ String ConfigPortal::generateConfigPage() {
         html += "</div>";
     }
     
-    // Factory Reset Section - only show in CONFIG_MODE if device is configured
+    // Factory Reset & VCOM Section - only show in CONFIG_MODE if device is configured
     if (_mode == CONFIG_MODE && hasConfig) {
         html += "<div class='factory-reset-section'>";
         html += "<div class='danger-zone'>";
         html += "<h2>⚠️ Danger Zone</h2>";
         html += "<p>Factory reset will erase all settings including WiFi credentials and configuration. The device will reboot and start fresh.</p>";
         html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
+        html += "<hr>";
+        html += "<p><b>Advanced:</b></p>";
+        html += "<p style='color:darkred;'><b>Warning:</b> Incorrect VCOM settings can permanently damage your e-ink display. Only use this if you understand the risks.</p>";
+        html += "<div style='display:flex; gap:10px; margin-top:8px;'>";
+        html += "<a href='/vcom' style='text-decoration:none; display:inline-block;'><button type='button' class='btn-danger'>⚠️ VCOM Management</button></a>";
+        html += "</div>";
         html += "</div>";
         html += "</div>";
     }
@@ -878,5 +885,76 @@ void ConfigPortal::handleOTAUpload() {
         delay(1000);
         ESP.restart();
     }
+}
+
+// VCOM management page handler
+void ConfigPortal::handleVcom() {
+    double currentVcom = NAN;
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String page = generateVcomPage(currentVcom);
+    _server->send(200, "text/html", page);
+}
+
+// VCOM programming POST handler
+void ConfigPortal::handleVcomSubmit() {
+    String vcomStr = _server->arg("vcom");
+    String confirm = _server->arg("confirm");
+    double currentVcom = NAN;
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String message;
+    if (confirm != "on") {
+        message = "<span style='color:red;'>You must check the confirmation box to proceed.</span>";
+        String page = generateVcomPage(currentVcom, message);
+        _server->send(200, "text/html", page);
+        return;
+    }
+    double vcom = vcomStr.toDouble();
+    if (vcom < -3.3 || vcom > 0) {
+        message = "<span style='color:red;'>Invalid VCOM value. Must be between -3.3V and 0V.</span>";
+        String page = generateVcomPage(currentVcom, message);
+        _server->send(200, "text/html", page);
+        return;
+    }
+    bool ok = false;
+    String diagnostics;
+    if (_displayManager) ok = _displayManager->programPanelVCOM(vcom, &diagnostics);
+    if (ok) {
+        message = "<span style='color:green;'>VCOM programmed successfully. New value: " + String(vcom, 3) + " V</span>";
+    } else {
+        message = "<span style='color:red;'>Failed to program VCOM. See diagnostics below.</span>";
+    }
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String page = generateVcomPage(currentVcom, message, diagnostics);
+    _server->send(200, "text/html", page);
+}
+
+// VCOM management HTML page
+String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
+    String html = "<html><head><title>VCOM Management</title><style>" + getCSS() + "</style></head><body>";
+    html += "<div class='container'>";
+    html += "<h2>VCOM Management</h2>";
+    html += "<p style='color:red;'><b>Warning:</b> Changing the VCOM value can permanently damage your e-ink display if set incorrectly. Only proceed if you know what you are doing!<br>Programming VCOM writes to the PMIC EEPROM.</p>";
+    if (!isnan(currentVcom)) {
+        html += "<p>Current VCOM value: <b>" + String(currentVcom, 3) + " V</b></p>";
+    } else {
+        html += "<p>Current VCOM value: <b>Unavailable</b></p>";
+    }
+    if (!message.isEmpty()) {
+        html += "<div>" + message + "</div>";
+    }
+    html += "<form method='POST' action='/vcom'>";
+    html += "<label for='vcom'>New VCOM value (V, -3.3 to 0): </label>";
+    html += "<input type='number' id='vcom' name='vcom' step='0.001' min='-3.3' max='0' required>";
+    html += "<br><input type='checkbox' id='confirm' name='confirm'> <label for='confirm'><b>I understand the risks and want to program VCOM</b></label><br>";
+    html += "<input type='submit' value='Program VCOM' class='btn-primary'>";
+    html += "</form>";
+    if (!diagnostics.isEmpty()) {
+        html += "<div style='margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-family: monospace; font-size: 12px;'>";
+        html += "<strong>Diagnostics:</strong><br>" + diagnostics;
+        html += "</div>";
+    }
+    html += "<br><a href='/' class='btn-secondary'>Back to main config</a>";
+    html += "</div></body></html>";
+    return html;
 }
 
