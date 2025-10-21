@@ -3,6 +3,25 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2025-10-21
+
+### Added
+- VCOM (Common Voltage) management system for e-ink display calibration
+  - Read current panel VCOM value from TPS65186 PMIC via I2C
+  - Display VCOM value at startup in serial logs for diagnostics
+  - Program new VCOM values to TPS65186 EEPROM with safety validation
+  - Dedicated VCOM management page in configuration portal
+  - Explicit warnings and user confirmation required before programming
+  - Range validation: -5.0V to 0V with automatic conversion to raw register values
+  - Comprehensive diagnostics logging (both serial console and web UI)
+  - Automatic verification: power cycle and readback from EEPROM after programming
+  - Polling-based wait for EEPROM programming completion (bit 6 auto-clear detection)
+  - Integrated into "Danger Zone" section with styled warning button
+  - Helps users optimize display contrast and image quality safely
+
+### Changed
+- Configuration portal danger zone layout improved with dedicated VCOM warning
+
 ## [0.12.1] - 2025-10-19
 
 ### Added

@@ -47,16 +47,25 @@ private:
     void handleRoot();
     void handleSubmit();
     void handleFactoryReset();
+    void handleReboot();
     void handleOTA();
     void handleOTAUpload();
     void handleNotFound();
+    #ifndef DISPLAY_MODE_INKPLATE2
+    void handleVcom();
+    void handleVcomSubmit();
+    #endif
     
     // HTML page generators
     String generateConfigPage();
     String generateSuccessPage();
     String generateErrorPage(const String& error);
     String generateFactoryResetPage();
+    String generateRebootPage();
     String generateOTAPage();
+    #ifndef DISPLAY_MODE_INKPLATE2
+    String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
+    #endif
     
     // CSS styles
     String getCSS();

@@ -84,6 +84,19 @@ void setup() {
     
     if (shouldShowSplash) {
         uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT);
+        #ifndef DISPLAY_MODE_INKPLATE2
+        // Read and log the panel VCOM for diagnostic purposes (not available on Inkplate 2)
+        double panelVcom = displayManager.readPanelVCOM();
+        if (!isnan(panelVcom)) {
+            LogBox::begin("VCOM");
+            LogBox::linef("VCOM: %.2f V", panelVcom);
+            LogBox::end();
+        } else {
+            LogBox::begin("VCOM");
+            LogBox::line("VCOM read failed or not supported");
+            LogBox::end();
+        }
+        #endif
     }
 
     if (!configInitialized) {

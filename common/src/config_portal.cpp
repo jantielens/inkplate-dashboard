@@ -29,7 +29,12 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->on("/", [this]() { this->handleRoot(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
-    
+    _server->on("/reboot", HTTP_POST, [this]() { this->handleReboot(); });
+    #ifndef DISPLAY_MODE_INKPLATE2
+    // VCOM routes only available on boards with TPS65186 PMIC (not Inkplate 2)
+    _server->on("/vcom", HTTP_GET, [this]() { this->handleVcom(); });
+    _server->on("/vcom", HTTP_POST, [this]() { this->handleVcomSubmit(); });
+    #endif
     // OTA routes - only available in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         _server->on("/ota", HTTP_GET, [this]() { this->handleOTA(); });
@@ -288,6 +293,22 @@ void ConfigPortal::handleFactoryReset() {
     ESP.restart();
 }
 
+void ConfigPortal::handleReboot() {
+    LogBox::begin("Reboot");
+    LogBox::line("Device reboot requested");
+    LogBox::end();
+    
+    // Send reboot page
+    _server->send(200, "text/html", generateRebootPage());
+    
+    // Device will reboot after the response is sent
+    LogBox::begin("Reboot");
+    LogBox::line("Device will reboot in 2 seconds");
+    LogBox::end();
+    delay(2000);
+    ESP.restart();
+}
+
 void ConfigPortal::handleNotFound() {
     _server->send(404, "text/html", generateErrorPage("Page not found"));
 }
@@ -524,15 +545,27 @@ String ConfigPortal::generateConfigPage() {
         html += "<button type='button' class='btn-secondary'>⬆️ Firmware Update</button>";
         html += "</a>";
         html += "</div>";
+        
+        // Reboot button - only shown in CONFIG_MODE
+        html += "<div style='margin-top: 10px;'>";
+        html += "<form method='POST' action='/reboot' style='display: block;'>";
+        html += "<button type='submit' class='btn-secondary' style='width: 100%;'>🔄 Reboot Device</button>";
+        html += "</form>";
+        html += "</div>";
     }
     
-    // Factory Reset Section - only show in CONFIG_MODE if device is configured
-    if (_mode == CONFIG_MODE && hasConfig) {
+    // Factory Reset & VCOM Section - only show in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
         html += "<div class='factory-reset-section'>";
         html += "<div class='danger-zone'>";
         html += "<h2>⚠️ Danger Zone</h2>";
         html += "<p>Factory reset will erase all settings including WiFi credentials and configuration. The device will reboot and start fresh.</p>";
         html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
+        #ifndef DISPLAY_MODE_INKPLATE2
+        // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
+        html += "<p style='margin-top:20px;'>VCOM management allows you to view and adjust the display panel's VCOM voltage. This is an advanced feature for correcting image artifacts or ghosting. Use with caution.</p>";
+        html += "<button class='btn-danger' style='width:100%; margin-top:10px;' onclick=\"window.location.href='/vcom'\">⚠️ VCOM Management</button>";
+        #endif
         html += "</div>";
         html += "</div>";
     }
@@ -744,6 +777,31 @@ String ConfigPortal::generateFactoryResetPage() {
     return html;
 }
 
+String ConfigPortal::generateRebootPage() {
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='UTF-8'>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    html += "<title>Rebooting</title>";
+    html += getCSS();
+    html += "</head><body>";
+    html += "<div class='container'>";
+    html += "<div class='success'>";
+    html += "<h1>🔄 Rebooting</h1>";
+    html += "<p style='margin-top: 15px;'>The device is restarting now.</p>";
+    html += "<p style='margin-top: 10px;'>Configuration has been preserved.</p>";
+    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
+    html += "</div>";
+    
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
+    html += "</div>";
+    html += "</body></html>";
+    
+    return html;
+}
+
 String ConfigPortal::generateOTAPage() {
     String html = "<!DOCTYPE html><html><head>";
     html += "<meta charset='UTF-8'>";
@@ -880,3 +938,97 @@ void ConfigPortal::handleOTAUpload() {
     }
 }
 
+#ifndef DISPLAY_MODE_INKPLATE2
+// VCOM management handlers (not available on Inkplate 2 - no TPS65186 PMIC)
+
+// VCOM management page handler
+void ConfigPortal::handleVcom() {
+    double currentVcom = NAN;
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String page = generateVcomPage(currentVcom);
+    _server->send(200, "text/html", page);
+    
+    // Display test pattern on device screen
+    if (_displayManager) {
+        _displayManager->showVcomTestPattern();
+    }
+}
+
+// VCOM programming POST handler
+void ConfigPortal::handleVcomSubmit() {
+    String vcomStr = _server->arg("vcom");
+    String confirm = _server->arg("confirm");
+    double currentVcom = NAN;
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String message;
+    if (confirm != "on") {
+        message = "<span style='color:red;'>You must check the confirmation box to proceed.</span>";
+        String page = generateVcomPage(currentVcom, message);
+        _server->send(200, "text/html", page);
+        return;
+    }
+    double vcom = vcomStr.toDouble();
+    if (vcom < -3.3 || vcom > 0) {
+        message = "<span style='color:red;'>Invalid VCOM value. Must be between -3.3V and 0V.</span>";
+        String page = generateVcomPage(currentVcom, message);
+        _server->send(200, "text/html", page);
+        return;
+    }
+    bool ok = false;
+    String diagnostics;
+    if (_displayManager) ok = _displayManager->programPanelVCOM(vcom, &diagnostics);
+    if (ok) {
+        message = "<span style='color:green;'>VCOM programmed successfully. New value: " + String(vcom, 3) + " V</span>";
+    } else {
+        message = "<span style='color:red;'>Failed to program VCOM. See diagnostics below.</span>";
+    }
+    if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
+    String page = generateVcomPage(currentVcom, message, diagnostics);
+    _server->send(200, "text/html", page);
+    
+    // Display updated test pattern on device screen
+    if (_displayManager) {
+        _displayManager->showVcomTestPattern();
+    }
+}
+
+// VCOM management HTML page
+String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
+    String html = "<html><head><meta charset='UTF-8'><title>VCOM Management</title><style>" + getCSS() + "</style></head><body>";
+    html += "<div class='container'>";
+    html += "<h2>VCOM Management</h2>";
+    html += "<p style='color:red;'><b>Warning:</b> Changing the VCOM value can permanently damage your e-ink display if set incorrectly. Only proceed if you know what you are doing!<br>Programming VCOM writes to the PMIC EEPROM.</p>";
+    
+    // Test pattern info box
+    html += "<div style='margin: 15px 0; padding: 12px; background: #e8f4f8; border-left: 4px solid #0066cc; border-radius: 4px;'>";
+    html += "<strong>📊 Test Pattern:</strong> Your device is now displaying a test pattern with 8 grayscale bars. ";
+    html += "Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.";
+    html += "</div>";
+    
+    if (!isnan(currentVcom)) {
+        html += "<p>Current VCOM value: <b>" + String(currentVcom, 3) + " V</b></p>";
+    } else {
+        html += "<p>Current VCOM value: <b>Unavailable</b></p>";
+    }
+    if (!message.isEmpty()) {
+        html += "<div>" + message + "</div>";
+    }
+    html += "<form method='POST' action='/vcom'>";
+    html += "<label for='vcom'>New VCOM value (V, -3.3 to 0): </label>";
+    html += "<input type='number' id='vcom' name='vcom' step='0.001' min='-3.3' max='0' required>";
+    html += "<br><input type='checkbox' id='confirm' name='confirm'> <label for='confirm'><b>I understand the risks and want to program VCOM</b></label><br>";
+    html += "<button type='submit' class='btn-primary' style='width:100%;'>Program VCOM</button>";
+    html += "</form>";
+    
+    
+    if (!diagnostics.isEmpty()) {
+        html += "<div style='margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-family: monospace; font-size: 12px;'>";
+        html += "<strong>Diagnostics:</strong><br>" + diagnostics;
+        html += "</div>";
+    }
+    html += "<div style='margin-top:20px;'><a href='/' style='text-decoration:none;display:block;'><button type='button' class='btn-secondary' style='width:100%;'>Back to main config</button></a></div>";
+    html += "</div></body></html>";
+    return html;
+}
+
+#endif // DISPLAY_MODE_INKPLATE2

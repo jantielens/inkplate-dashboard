@@ -113,8 +113,11 @@ The configuration portal features a modern, responsive design:
    - Shows device information (AP name, IP)
    - Configuration form
    - Field validation
+   - Success/Error feedback
+   - OTA firmware update button (full-width secondary button, only shown in CONFIG_MODE)
+   - Reboot device button (full-width secondary button, only shown in CONFIG_MODE)
    - Factory reset option (only shown on configured devices)
-   - OTA firmware update button (full-width green button, only shown in CONFIG_MODE)
+   - VCOM management button (advanced, only shown on devices with TPS65186 PMIC)
 
 2. **Success Page** (`/submit` - POST success)
    - Confirmation message
@@ -177,6 +180,7 @@ configPortal.stop();
 - `GET /` - Configuration form
 - `POST /submit` - Form submission handler
 - `POST /factory-reset` - Factory reset handler (CONFIG_MODE only)
+- `POST /reboot` - Device reboot handler (CONFIG_MODE only)
 - `GET /ota` - OTA firmware update page (CONFIG_MODE only)
 - `POST /ota` - OTA firmware upload handler (CONFIG_MODE only)
 - `404` - Not found (redirects to home)
@@ -254,6 +258,46 @@ Factory reset permanently deletes:
 
 The device will boot into AP mode and display setup instructions.
 
+## Device Reboot
+
+### Via Web Interface
+
+You can reboot your device without changing any configuration:
+
+1. **Enter Config Mode**:
+   - Long press the button (2.5+ seconds) if device is configured
+   - Or connect to the AP if device is already in setup mode
+
+2. **Access Configuration Page**:
+   - Open browser to device IP address
+   - For AP mode: `http://192.168.4.1`
+   - For WiFi mode: Use device's local IP
+
+3. **Locate Reboot Button**:
+   - Scroll to middle of configuration page
+   - Find the blue "Reboot Device" button (below "Firmware Update" button)
+   - Only visible in CONFIG_MODE
+
+4. **Perform Reboot**:
+   - Click "Reboot Device" button
+   - Device confirms action and reboots
+   - Device retains all current settings
+   - Useful for troubleshooting connection issues
+
+### Use Cases
+
+- **WiFi connectivity issues**: Reboot to reset network state
+- **Display refresh stuck**: Reboot to restart the update loop
+- **General troubleshooting**: Soft reset without losing configuration
+- **After network changes**: Reconnect to new WiFi after reboot
+
+### Via Code (Advanced)
+
+For programmatic reboot:
+```cpp
+ESP.restart();
+```
+
 ## Security Considerations
 
 - **Open AP**: No password required for initial setup
@@ -278,7 +322,107 @@ The device will boot into AP mode and display setup instructions.
 - Ensure all required fields are filled
 - Verify image URL is accessible
 
+
 ### Device keeps entering AP mode
 - Configuration may not be saved properly
 - Check NVS partition is not corrupted
 - Try factory reset and reconfigure
+
+## VCOM Management
+
+**⚠️ WARNING: Advanced Feature - Use with Caution**
+
+VCOM (Common Voltage) is a critical voltage setting that affects e-ink display contrast and image quality. Each e-ink panel has an optimal VCOM value typically printed on a label on the panel itself or specified by the manufacturer.
+
+### What is VCOM?
+
+VCOM is the common voltage used by the e-ink display controller (TPS65186 PMIC) to drive the e-ink panel. The correct VCOM value ensures:
+- Optimal contrast
+- Clear image reproduction
+- Minimal ghosting
+- Proper grayscale levels
+
+### Accessing VCOM Management
+
+1. Navigate to the Configuration Portal main page
+2. Scroll to the **Danger Zone** section
+3. Click the **⚠️ VCOM Management** button
+
+### Reading VCOM
+
+The VCOM Management page displays:
+- **Current VCOM**: The voltage currently programmed in the TPS65186 EEPROM (e.g., "-1.53V")
+- This value is automatically loaded by the PMIC when the device powers on
+- The value is also displayed in serial logs at startup
+
+### Programming VCOM
+
+**⚠️ CRITICAL SAFETY INFORMATION:**
+- Programming an incorrect VCOM value can damage your display
+- Only change VCOM if you know the correct value for your specific panel
+- The optimal value is typically on a label on the e-ink panel or in manufacturer documentation
+- Valid range: -5.0V to 0V (typically between -1.0V and -3.0V)
+
+**To program a new VCOM value:**
+
+1. Enter the desired VCOM voltage in the input field (e.g., "-1.53")
+2. Click **Program VCOM**
+3. Read and acknowledge the warning dialog
+4. The system will:
+   - Validate the input range
+   - Program the value to TPS65186 EEPROM (takes ~260ms)
+   - Power cycle the display to reload from EEPROM
+   - Verify the programmed value
+   - Display detailed diagnostics
+
+### Understanding Diagnostics
+
+After programming, the page shows detailed diagnostics:
+```
+Initial VCOM Read: -1.53V (0x199)
+Attempting to program: -1.53V (0x199)
+Register 0x04 before programming: 0x01
+Register 0x04 after programming: 0x41 (bit 6 set)
+Bit 6 cleared after 260ms (EEPROM write complete)
+Registers zeroed for verification
+Power cycled for EEPROM reload
+Register 0x04 after power cycle: 0x01
+Verification VCOM Read: -1.53V (0x199)
+✓ VCOM programming successful and verified!
+```
+
+**Key indicators:**
+- **Bit 6 cleared after Xms**: Confirms EEPROM write completed successfully
+- **Verification VCOM Read**: Must match the programmed value
+- **✓ Success message**: Indicates the value persisted after power cycle
+
+### When to Adjust VCOM
+
+Consider adjusting VCOM if:
+- Display images appear washed out or too dark
+- Replacing the e-ink panel with a different model
+- Manufacturer documentation specifies a different value
+- Experiencing persistent ghosting issues
+
+**Do NOT adjust VCOM:**
+- As a troubleshooting step for connectivity issues
+- Without knowing the correct value for your panel
+- If the display is working properly
+
+### Troubleshooting
+
+**Programming fails:**
+- Check serial logs for detailed I2C transaction information
+- Ensure stable power supply during EEPROM write
+- Verify the TPS65186 PMIC is responding (I2C address 0x48)
+
+**Value doesn't persist:**
+- Diagnostic logs should show "Bit 6 cleared" confirming EEPROM write
+- Verification read should match programmed value after power cycle
+- If verification fails, check hardware connections
+
+**Display quality issues after programming:**
+- If you programmed an incorrect value, reprogram with the correct value
+- Check the panel label or manufacturer specs for the optimal VCOM
+- Some panels may have tolerances (e.g., ±0.05V)
+

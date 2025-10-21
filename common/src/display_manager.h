@@ -29,6 +29,17 @@ public:
     // Draw embedded bitmap image (array) at specified location
     void drawBitmap(const uint8_t* bitmap, int x, int y, int w, int h);
     
+    #ifndef DISPLAY_MODE_INKPLATE2
+    // VCOM management (not available on Inkplate 2 - no TPS65186 PMIC)
+    // Read panel VCOM value (in volts, negative). Returns NAN on error.
+    double readPanelVCOM();
+    // DANGEROUS: Programs the VCOM value in the TPS65186 EEPROM. Use only if you know what you are doing.
+    // vcom: negative voltage in volts (e.g., -1.23). Returns true if successful.
+    bool programPanelVCOM(double vcom, String* diagnostics = nullptr);
+    // Display VCOM test pattern with grayscale bars
+    void showVcomTestPattern();
+    #endif
+    
 private:
     Inkplate* _display;
     uint8_t _configuredRotation = 0;  // The rotation configured by user
