@@ -1,0 +1,76 @@
+name: Update Flasher latest.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The release tag to generate latest.json for (e.g. v1.2.3)'
+        required: true
+        default: ''
+
+jobs:
+  update:
+    name: Update latest.json in flasher repo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set tag variable
+        id: set_tag
+        run: |
+          TAG=${{ github.event.inputs.tag }}
+          # strip leading v if present for the script, but keep original tag for release path
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Download release artifacts
+        run: |
+          set -euo pipefail
+          TAG=${{ steps.set_tag.outputs.tag }}
+          mkdir -p artifacts
+          echo "Downloading artifacts for $TAG"
+          # Download all .bin files attached to the release
+          gh release download "$TAG" --pattern "*.bin" -D artifacts
+
+      - name: Verify artifacts found
+        run: |
+          if [ -z "$(ls -A artifacts 2>/dev/null)" ]; then
+            echo "No artifacts found in artifacts/"
+            ls -la artifacts || true
+            exit 1
+          fi
+
+      - name: Checkout flasher repo
+        uses: actions/checkout@v4
+        with:
+          repository: jantielens/inkplate-dashboard-flasher
+          token: ${{ secrets.FLASHER_REPO_TOKEN }}
+          path: flasher
+
+      - name: Ensure jq is installed
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate latest.json
+        run: |
+          TAG=${{ steps.set_tag.outputs.tag }}
+          chmod +x scripts/generate_latest_json.sh
+          scripts/generate_latest_json.sh "${TAG}" artifacts flasher/latest.json
+
+      - name: Commit and push latest.json if changed
+        env:
+          TAG: ${{ steps.set_tag.outputs.tag }}
+        run: |
+          cd flasher
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Action"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add latest.json
+            git commit -m "Update latest.json for ${TAG} [skip ci]"
+            git push
+          else
+            echo "No changes to latest.json"
+          fi

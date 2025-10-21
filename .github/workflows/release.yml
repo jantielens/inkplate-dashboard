@@ -138,3 +138,31 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout flasher repo
+        uses: actions/checkout@v4
+        with:
+          repository: jantielens/inkplate-dashboard-flasher
+          token: ${{ secrets.FLASHER_REPO_TOKEN }}
+          path: flasher
+
+      - name: Build and publish latest.json
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # Use helper script to generate the manifest with friendly names
+          chmod +x scripts/generate_latest_json.sh
+          scripts/generate_latest_json.sh "${TAG}" artifacts flasher/latest.json
+
+          cd flasher
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Action"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add latest.json
+            git commit -m "Update latest.json for ${TAG} [skip ci]"
+            git push
+          else
+            echo "No changes to latest.json"
+          fi
