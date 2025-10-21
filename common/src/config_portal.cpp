@@ -29,6 +29,7 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->on("/", [this]() { this->handleRoot(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
+    _server->on("/reboot", HTTP_POST, [this]() { this->handleReboot(); });
     #ifndef DISPLAY_MODE_INKPLATE2
     // VCOM routes only available on boards with TPS65186 PMIC (not Inkplate 2)
     _server->on("/vcom", HTTP_GET, [this]() { this->handleVcom(); });
@@ -292,6 +293,22 @@ void ConfigPortal::handleFactoryReset() {
     ESP.restart();
 }
 
+void ConfigPortal::handleReboot() {
+    LogBox::begin("Reboot");
+    LogBox::line("Device reboot requested");
+    LogBox::end();
+    
+    // Send reboot page
+    _server->send(200, "text/html", generateRebootPage());
+    
+    // Device will reboot after the response is sent
+    LogBox::begin("Reboot");
+    LogBox::line("Device will reboot in 2 seconds");
+    LogBox::end();
+    delay(2000);
+    ESP.restart();
+}
+
 void ConfigPortal::handleNotFound() {
     _server->send(404, "text/html", generateErrorPage("Page not found"));
 }
@@ -528,6 +545,13 @@ String ConfigPortal::generateConfigPage() {
         html += "<button type='button' class='btn-secondary'>⬆️ Firmware Update</button>";
         html += "</a>";
         html += "</div>";
+        
+        // Reboot button - only shown in CONFIG_MODE
+        html += "<div style='margin-top: 10px;'>";
+        html += "<form method='POST' action='/reboot' style='display: block;'>";
+        html += "<button type='submit' class='btn-secondary' style='width: 100%;'>🔄 Reboot Device</button>";
+        html += "</form>";
+        html += "</div>";
     }
     
     // Factory Reset & VCOM Section - only show in CONFIG_MODE if device is configured
@@ -539,12 +563,8 @@ String ConfigPortal::generateConfigPage() {
         html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
         #ifndef DISPLAY_MODE_INKPLATE2
         // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
-        html += "<hr>";
-        html += "<p><b>Advanced:</b></p>";
-        html += "<p style='color:darkred;'><b>Warning:</b> Incorrect VCOM settings can permanently damage your e-ink display. Only use this if you understand the risks.</p>";
-        html += "<div style='display:flex; gap:10px; margin-top:8px;'>";
-        html += "<a href='/vcom' style='text-decoration:none; display:inline-block;'><button type='button' class='btn-danger'>⚠️ VCOM Management</button></a>";
-        html += "</div>";
+        html += "<p style='margin-top:20px;'>VCOM management allows you to view and adjust the display panel's VCOM voltage. This is an advanced feature for correcting image artifacts or ghosting. Use with caution.</p>";
+        html += "<button class='btn-danger' style='width:100%; margin-top:10px;' onclick=\"window.location.href='/vcom'\">⚠️ VCOM Management</button>";
         #endif
         html += "</div>";
         html += "</div>";
@@ -757,6 +777,31 @@ String ConfigPortal::generateFactoryResetPage() {
     return html;
 }
 
+String ConfigPortal::generateRebootPage() {
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='UTF-8'>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    html += "<title>Rebooting</title>";
+    html += getCSS();
+    html += "</head><body>";
+    html += "<div class='container'>";
+    html += "<div class='success'>";
+    html += "<h1>🔄 Rebooting</h1>";
+    html += "<p style='margin-top: 15px;'>The device is restarting now.</p>";
+    html += "<p style='margin-top: 10px;'>Configuration has been preserved.</p>";
+    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
+    html += "</div>";
+    
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
+    html += "</div>";
+    html += "</body></html>";
+    
+    return html;
+}
+
 String ConfigPortal::generateOTAPage() {
     String html = "<!DOCTYPE html><html><head>";
     html += "<meta charset='UTF-8'>";
@@ -949,7 +994,7 @@ void ConfigPortal::handleVcomSubmit() {
 
 // VCOM management HTML page
 String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
-    String html = "<html><head><title>VCOM Management</title><style>" + getCSS() + "</style></head><body>";
+    String html = "<html><head><meta charset='UTF-8'><title>VCOM Management</title><style>" + getCSS() + "</style></head><body>";
     html += "<div class='container'>";
     html += "<h2>VCOM Management</h2>";
     html += "<p style='color:red;'><b>Warning:</b> Changing the VCOM value can permanently damage your e-ink display if set incorrectly. Only proceed if you know what you are doing!<br>Programming VCOM writes to the PMIC EEPROM.</p>";
@@ -972,21 +1017,16 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     html += "<label for='vcom'>New VCOM value (V, -3.3 to 0): </label>";
     html += "<input type='number' id='vcom' name='vcom' step='0.001' min='-3.3' max='0' required>";
     html += "<br><input type='checkbox' id='confirm' name='confirm'> <label for='confirm'><b>I understand the risks and want to program VCOM</b></label><br>";
-    html += "<input type='submit' value='Program VCOM' class='btn-primary'>";
+    html += "<button type='submit' class='btn-primary' style='width:100%;'>Program VCOM</button>";
     html += "</form>";
     
-    // Refresh test pattern button
-    html += "<div style='margin-top: 15px;'>";
-    html += "<button onclick='location.reload()' class='btn-secondary' style='margin-right: 10px;'>🔄 Refresh Test Pattern</button>";
-    html += "<span style='color: #666; font-size: 14px;'>Click to redisplay the test pattern without changing VCOM</span>";
-    html += "</div>";
     
     if (!diagnostics.isEmpty()) {
         html += "<div style='margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-family: monospace; font-size: 12px;'>";
         html += "<strong>Diagnostics:</strong><br>" + diagnostics;
         html += "</div>";
     }
-    html += "<br><a href='/' class='btn-secondary'>Back to main config</a>";
+    html += "<div style='margin-top:20px;'><a href='/' style='text-decoration:none;display:block;'><button type='button' class='btn-secondary' style='width:100%;'>Back to main config</button></a></div>";
     html += "</div></body></html>";
     return html;
 }
