@@ -50,8 +50,10 @@ private:
     void handleOTA();
     void handleOTAUpload();
     void handleNotFound();
-        void handleVcom();
-        void handleVcomSubmit();
+    #ifndef DISPLAY_MODE_INKPLATE2
+    void handleVcom();
+    void handleVcomSubmit();
+    #endif
     
     // HTML page generators
     String generateConfigPage();
@@ -59,7 +61,9 @@ private:
     String generateErrorPage(const String& error);
     String generateFactoryResetPage();
     String generateOTAPage();
-        String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
+    #ifndef DISPLAY_MODE_INKPLATE2
+    String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
+    #endif
     
     // CSS styles
     String getCSS();

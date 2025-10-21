@@ -29,8 +29,11 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->on("/", [this]() { this->handleRoot(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
+    #ifndef DISPLAY_MODE_INKPLATE2
+    // VCOM routes only available on boards with TPS65186 PMIC (not Inkplate 2)
     _server->on("/vcom", HTTP_GET, [this]() { this->handleVcom(); });
     _server->on("/vcom", HTTP_POST, [this]() { this->handleVcomSubmit(); });
+    #endif
     // OTA routes - only available in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         _server->on("/ota", HTTP_GET, [this]() { this->handleOTA(); });
@@ -534,12 +537,15 @@ String ConfigPortal::generateConfigPage() {
         html += "<h2>⚠️ Danger Zone</h2>";
         html += "<p>Factory reset will erase all settings including WiFi credentials and configuration. The device will reboot and start fresh.</p>";
         html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
+        #ifndef DISPLAY_MODE_INKPLATE2
+        // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
         html += "<hr>";
         html += "<p><b>Advanced:</b></p>";
         html += "<p style='color:darkred;'><b>Warning:</b> Incorrect VCOM settings can permanently damage your e-ink display. Only use this if you understand the risks.</p>";
         html += "<div style='display:flex; gap:10px; margin-top:8px;'>";
         html += "<a href='/vcom' style='text-decoration:none; display:inline-block;'><button type='button' class='btn-danger'>⚠️ VCOM Management</button></a>";
         html += "</div>";
+        #endif
         html += "</div>";
         html += "</div>";
     }
@@ -887,12 +893,20 @@ void ConfigPortal::handleOTAUpload() {
     }
 }
 
+#ifndef DISPLAY_MODE_INKPLATE2
+// VCOM management handlers (not available on Inkplate 2 - no TPS65186 PMIC)
+
 // VCOM management page handler
 void ConfigPortal::handleVcom() {
     double currentVcom = NAN;
     if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
     String page = generateVcomPage(currentVcom);
     _server->send(200, "text/html", page);
+    
+    // Display test pattern on device screen
+    if (_displayManager) {
+        _displayManager->showVcomTestPattern();
+    }
 }
 
 // VCOM programming POST handler
@@ -926,6 +940,11 @@ void ConfigPortal::handleVcomSubmit() {
     if (_displayManager) currentVcom = _displayManager->readPanelVCOM();
     String page = generateVcomPage(currentVcom, message, diagnostics);
     _server->send(200, "text/html", page);
+    
+    // Display updated test pattern on device screen
+    if (_displayManager) {
+        _displayManager->showVcomTestPattern();
+    }
 }
 
 // VCOM management HTML page
@@ -934,6 +953,13 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     html += "<div class='container'>";
     html += "<h2>VCOM Management</h2>";
     html += "<p style='color:red;'><b>Warning:</b> Changing the VCOM value can permanently damage your e-ink display if set incorrectly. Only proceed if you know what you are doing!<br>Programming VCOM writes to the PMIC EEPROM.</p>";
+    
+    // Test pattern info box
+    html += "<div style='margin: 15px 0; padding: 12px; background: #e8f4f8; border-left: 4px solid #0066cc; border-radius: 4px;'>";
+    html += "<strong>📊 Test Pattern:</strong> Your device is now displaying a test pattern with 8 grayscale bars. ";
+    html += "Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.";
+    html += "</div>";
+    
     if (!isnan(currentVcom)) {
         html += "<p>Current VCOM value: <b>" + String(currentVcom, 3) + " V</b></p>";
     } else {
@@ -948,6 +974,13 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     html += "<br><input type='checkbox' id='confirm' name='confirm'> <label for='confirm'><b>I understand the risks and want to program VCOM</b></label><br>";
     html += "<input type='submit' value='Program VCOM' class='btn-primary'>";
     html += "</form>";
+    
+    // Refresh test pattern button
+    html += "<div style='margin-top: 15px;'>";
+    html += "<button onclick='location.reload()' class='btn-secondary' style='margin-right: 10px;'>🔄 Refresh Test Pattern</button>";
+    html += "<span style='color: #666; font-size: 14px;'>Click to redisplay the test pattern without changing VCOM</span>";
+    html += "</div>";
+    
     if (!diagnostics.isEmpty()) {
         html += "<div style='margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-family: monospace; font-size: 12px;'>";
         html += "<strong>Diagnostics:</strong><br>" + diagnostics;
@@ -958,3 +991,4 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     return html;
 }
 
+#endif // DISPLAY_MODE_INKPLATE2
