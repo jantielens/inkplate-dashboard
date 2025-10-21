@@ -554,8 +554,8 @@ String ConfigPortal::generateConfigPage() {
         html += "</div>";
     }
     
-    // Factory Reset & VCOM Section - only show in CONFIG_MODE if device is configured
-    if (_mode == CONFIG_MODE && hasConfig) {
+    // Factory Reset & VCOM Section - only show in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
         html += "<div class='factory-reset-section'>";
         html += "<div class='danger-zone'>";
         html += "<h2>⚠️ Danger Zone</h2>";
