@@ -113,8 +113,11 @@ The configuration portal features a modern, responsive design:
    - Shows device information (AP name, IP)
    - Configuration form
    - Field validation
+   - Success/Error feedback
+   - OTA firmware update button (full-width secondary button, only shown in CONFIG_MODE)
+   - Reboot device button (full-width secondary button, only shown in CONFIG_MODE)
    - Factory reset option (only shown on configured devices)
-   - OTA firmware update button (full-width green button, only shown in CONFIG_MODE)
+   - VCOM management button (advanced, only shown on devices with TPS65186 PMIC)
 
 2. **Success Page** (`/submit` - POST success)
    - Confirmation message
@@ -177,6 +180,7 @@ configPortal.stop();
 - `GET /` - Configuration form
 - `POST /submit` - Form submission handler
 - `POST /factory-reset` - Factory reset handler (CONFIG_MODE only)
+- `POST /reboot` - Device reboot handler (CONFIG_MODE only)
 - `GET /ota` - OTA firmware update page (CONFIG_MODE only)
 - `POST /ota` - OTA firmware upload handler (CONFIG_MODE only)
 - `404` - Not found (redirects to home)
@@ -253,6 +257,46 @@ Factory reset permanently deletes:
 - Configuration status flag
 
 The device will boot into AP mode and display setup instructions.
+
+## Device Reboot
+
+### Via Web Interface
+
+You can reboot your device without changing any configuration:
+
+1. **Enter Config Mode**:
+   - Long press the button (2.5+ seconds) if device is configured
+   - Or connect to the AP if device is already in setup mode
+
+2. **Access Configuration Page**:
+   - Open browser to device IP address
+   - For AP mode: `http://192.168.4.1`
+   - For WiFi mode: Use device's local IP
+
+3. **Locate Reboot Button**:
+   - Scroll to middle of configuration page
+   - Find the blue "Reboot Device" button (below "Firmware Update" button)
+   - Only visible in CONFIG_MODE
+
+4. **Perform Reboot**:
+   - Click "Reboot Device" button
+   - Device confirms action and reboots
+   - Device retains all current settings
+   - Useful for troubleshooting connection issues
+
+### Use Cases
+
+- **WiFi connectivity issues**: Reboot to reset network state
+- **Display refresh stuck**: Reboot to restart the update loop
+- **General troubleshooting**: Soft reset without losing configuration
+- **After network changes**: Reconnect to new WiFi after reboot
+
+### Via Code (Advanced)
+
+For programmatic reboot:
+```cpp
+ESP.restart();
+```
 
 ## Security Considerations
 
