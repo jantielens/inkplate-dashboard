@@ -212,8 +212,9 @@ jobs:
           echo "Files in flasher directory after copy:"
           ls -lR flasher/
           
-          # Add all changes (including untracked files)
-          git add flasher/
+          # Add all changes (force-add firmware directory to override .gitignore)
+          git add flasher/*.json flasher/*.html
+          git add -f flasher/firmware/
           
           echo ""
           echo "Git status after add:"
