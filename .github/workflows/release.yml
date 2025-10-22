@@ -203,10 +203,9 @@ jobs:
           # Commit and push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
             git add flasher/
-            git commit -m "Update flasher for ${TAG} [skip ci]
-
-- Add firmware binaries for ${TAG}
-- Update manifests for ${TAG}"
+            git commit -m "Update flasher for ${TAG} [skip ci]" \
+                       -m "- Add firmware binaries for ${TAG}" \
+                       -m "- Update manifests for ${TAG}"
             git push origin main-flasher
             echo "✅ Binaries and manifests committed to main-flasher branch"
           else
