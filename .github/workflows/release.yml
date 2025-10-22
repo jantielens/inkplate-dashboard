@@ -185,7 +185,15 @@ jobs:
           # Save the generated manifests and binaries
           mkdir -p /tmp/flasher-release
           cp flasher/manifest_*.json flasher/latest.json /tmp/flasher-release/
-          cp artifacts/*.bin /tmp/flasher-release/
+          
+          # Copy all binaries (with verification)
+          echo "Copying binaries from artifacts/:"
+          ls -l artifacts/*.bin
+          cp -v artifacts/*.bin /tmp/flasher-release/
+          
+          echo ""
+          echo "Binaries staged for commit:"
+          ls -l /tmp/flasher-release/*.bin
           
           # Fetch and checkout main-flasher branch (clean checkout)
           git fetch origin main-flasher
