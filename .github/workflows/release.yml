@@ -203,19 +203,29 @@ jobs:
           mkdir -p flasher/firmware/${TAG}
           
           # Copy binaries to versioned directory
-          cp /tmp/flasher-release/*.bin flasher/firmware/${TAG}/
+          cp -v /tmp/flasher-release/*.bin flasher/firmware/${TAG}/
           
           # Copy manifests to flasher root
-          cp /tmp/flasher-release/manifest_*.json /tmp/flasher-release/latest.json flasher/
+          cp -v /tmp/flasher-release/manifest_*.json /tmp/flasher-release/latest.json flasher/
+          
+          echo ""
+          echo "Files in flasher directory after copy:"
+          ls -lR flasher/
+          
+          # Add all changes (including untracked files)
+          git add flasher/
+          
+          echo ""
+          echo "Git status after add:"
+          git status
           
           # Commit and push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
-            git add flasher/
             git commit -m "Update flasher for ${TAG} [skip ci]" \
                        -m "- Add firmware binaries for ${TAG}" \
                        -m "- Update manifests for ${TAG}"
             git push origin main-flasher
             echo "✅ Binaries and manifests committed to main-flasher branch"
           else
-            echo "No changes to flasher files"
+            echo "ℹ️  No changes to commit"
           fi
