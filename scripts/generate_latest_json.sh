@@ -46,12 +46,13 @@ for f in "$ARTIFACTS_DIR"/*-v*.bin; do
   TAG=$(printf "%s" "$TAG" | tr -d '\r\n')
   board=$(echo "$filename" | sed -E 's/-v.*//')
   
-  # Construct URLs for all files
-  firmware_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${filename}"
+  # Construct URLs for all files (use GitHub Pages to avoid CORS issues)
+  base_url="https://jantielens.github.io/inkplate-dashboard/firmware/${TAG}"
+  firmware_url="${base_url}/${filename}"
   bootloader_file="${board}-v${TAG#v}.bootloader.bin"
-  bootloader_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${bootloader_file}"
+  bootloader_url="${base_url}/${bootloader_file}"
   partitions_file="${board}-v${TAG#v}.partitions.bin"
-  partitions_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${partitions_file}"
+  partitions_url="${base_url}/${partitions_file}"
   
   # remove any stray CR/LF that may exist in variables
   firmware_url=$(printf "%s" "$firmware_url" | tr -d '\r\n')

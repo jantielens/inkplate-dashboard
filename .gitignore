@@ -42,6 +42,9 @@ flasher/*_local.json
 flasher/builds/
 flasher/latest.json
 
+# Flasher - firmware binaries (only on main-flasher branch)
+flasher/firmware/
+
 # Node
 node_modules/
 npm-debug.log*

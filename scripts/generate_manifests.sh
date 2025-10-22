@@ -67,8 +67,8 @@ for firmware_bin in "$ARTIFACTS_DIR"/*-v*.bin; do
     continue
   fi
   
-  # Generate URLs
-  base_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}"
+  # Generate URLs pointing to GitHub Pages (to avoid CORS issues)
+  base_url="https://jantielens.github.io/inkplate-dashboard/firmware/${TAG}"
   bootloader_url="${base_url}/${bootloader_file}"
   partitions_url="${base_url}/${partitions_file}"
   firmware_url="${base_url}/${firmware_file}"

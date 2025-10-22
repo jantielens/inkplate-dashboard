@@ -27,12 +27,13 @@ The Inkplate Dashboard includes a web-based firmware flasher that allows users t
          │ 2. Fetches manifest
          ▼
 ┌──────────────────────┐
-│  manifest_*.json     │ Points to GitHub Release URLs
+│  manifest_*.json     │ Points to GitHub Pages URLs
 └──────────┬───────────┘
-           │ 3. Downloads binaries
+           │ 3. Downloads binaries (same origin - no CORS)
            ▼
 ┌─────────────────────────────────────┐
-│  GitHub Releases                     │
+│  GitHub Pages (main-flasher)         │
+│  flasher/firmware/v0.14.0/           │
 │  - bootloader.bin (offset 0x1000)    │
 │  - partitions.bin (offset 0x8000)    │
 │  - firmware.bin   (offset 0x10000)   │
@@ -48,18 +49,24 @@ The Inkplate Dashboard includes a web-based firmware flasher that allows users t
 ## Project Structure
 
 ```
-flasher/
+flasher/                          # On main-flasher branch
 ├── index.html                    # Web flasher UI
-├── manifest_inkplate2.json       # Production manifest (committed)
-├── manifest_inkplate5v2.json     # Production manifest (committed)
-├── manifest_inkplate6flick.json  # Production manifest (committed)
-├── manifest_inkplate10.json      # Production manifest (committed)
+├── manifest_inkplate2.json       # Production manifest (auto-generated)
+├── manifest_inkplate5v2.json     # Production manifest (auto-generated)
+├── manifest_inkplate6flick.json  # Production manifest (auto-generated)
+├── manifest_inkplate10.json      # Production manifest (auto-generated)
+├── latest.json                   # Metadata (auto-generated)
+├── firmware/                     # Binary storage (main-flasher only)
+│   └── v0.14.0/                  # Versioned directory
+│       ├── inkplate2-v0.14.0.bin
+│       ├── inkplate2-v0.14.0.bootloader.bin
+│       ├── inkplate2-v0.14.0.partitions.bin
+│       └── ... (all 4 boards × 3 files)
 ├── manifest_*_local.json         # Local testing manifests (gitignored)
 ├── builds/                       # Local binary copies (gitignored)
-├── latest.json                   # Metadata (generated, gitignored)
-└── README.md                     # Flasher documentation
+└── README.md                     # User documentation
 
-scripts/
+scripts/                          # On main branch
 ├── generate_manifests.sh         # Generates ESP Web Tools manifests
 ├── generate_latest_json.sh       # Generates metadata
 ├── prepare_release.sh            # Manual release preparation
@@ -116,7 +123,7 @@ ESP Web Tools uses JSON manifest files to describe what to flash and where.
 ```json
 {
   "name": "Inkplate Dashboard for Inkplate 6 Flick",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "home_assistant_domain": "inkplate_dashboard",
   "new_install_prompt_erase": true,
   "builds": [
@@ -124,15 +131,15 @@ ESP Web Tools uses JSON manifest files to describe what to flash and where.
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.13.0/inkplate6flick-v0.13.0.bootloader.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v0.14.0/inkplate6flick-v0.14.0.bootloader.bin",
           "offset": 4096
         },
         {
-          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.13.0/inkplate6flick-v0.13.0.partitions.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v0.14.0/inkplate6flick-v0.14.0.partitions.bin",
           "offset": 32768
         },
         {
-          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.13.0/inkplate6flick-v0.13.0.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v0.14.0/inkplate6flick-v0.14.0.bin",
           "offset": 65536
         }
       ]
@@ -140,6 +147,8 @@ ESP Web Tools uses JSON manifest files to describe what to flash and where.
   ]
 }
 ```
+
+**Note:** URLs point to GitHub Pages (same origin as flasher) to avoid CORS restrictions.
 
 **Manifest Fields:**
 - `name` - Display name shown to users
@@ -446,16 +455,26 @@ flasher/
 
 **Production flow:**
 1. Browser loads `index.html` from GitHub Pages (HTTPS)
-2. Manifest loaded from same origin
-3. Binaries fetched from GitHub Releases (HTTPS)
-4. GitHub serves with appropriate CORS headers
-5. ESP Web Tools downloads and flashes
+2. Manifest loaded from same origin (GitHub Pages)
+3. Binaries fetched from GitHub Pages `/firmware/<version>/` (same origin)
+4. ESP Web Tools downloads and flashes
 
-**Why GitHub Releases work:**
+**Why GitHub Pages instead of GitHub Releases:**
+
+GitHub Releases don't set proper CORS headers for cross-origin requests. When the flasher
+(hosted at `jantielens.github.io`) tries to fetch binaries from `github.com/releases/download/`,
+the browser blocks the request:
+
 ```
-Access-Control-Allow-Origin: *
+Access to fetch at 'https://github.com/jantielens/inkplate-dashboard/releases/download/...'
+from origin 'https://jantielens.github.io' has been blocked by CORS policy
 ```
-GitHub's CDN allows cross-origin requests, enabling the flasher to download binaries.
+
+**Solution:** Host binaries on GitHub Pages in the `main-flasher` branch:
+- Same origin as flasher (`jantielens.github.io`)
+- No CORS restrictions
+- Reliable, fast delivery via GitHub's CDN
+- Binaries stored in `flasher/firmware/<version>/`
 
 **Local testing CORS:**
 - All files served from same Python HTTP server

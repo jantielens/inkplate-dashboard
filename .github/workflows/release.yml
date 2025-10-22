@@ -172,7 +172,7 @@ jobs:
           echo "Generated latest.json:"
           ls -l flasher/latest.json
 
-      - name: Commit manifests to main-flasher branch
+      - name: Commit binaries and manifests to main-flasher branch
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
@@ -182,23 +182,33 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Action"
           
-          # Save the generated manifests (they're in the working directory)
-          mkdir -p /tmp/manifests
-          cp flasher/manifest_*.json flasher/latest.json /tmp/manifests/
+          # Save the generated manifests and binaries
+          mkdir -p /tmp/flasher-release
+          cp flasher/manifest_*.json flasher/latest.json /tmp/flasher-release/
+          cp artifacts/*.bin /tmp/flasher-release/
           
           # Fetch and checkout main-flasher branch (clean checkout)
           git fetch origin main-flasher
           git checkout -f main-flasher
           
-          # Copy the saved manifests to the flasher directory
-          cp /tmp/manifests/* flasher/
+          # Create firmware directory if it doesn't exist
+          mkdir -p flasher/firmware/${TAG}
+          
+          # Copy binaries to versioned directory
+          cp /tmp/flasher-release/*.bin flasher/firmware/${TAG}/
+          
+          # Copy manifests to flasher root
+          cp /tmp/flasher-release/manifest_*.json /tmp/flasher-release/latest.json flasher/
           
           # Commit and push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
-            git add flasher/manifest_*.json flasher/latest.json
-            git commit -m "Update flasher manifests for ${TAG} [skip ci]"
+            git add flasher/
+            git commit -m "Update flasher for ${TAG} [skip ci]
+
+- Add firmware binaries for ${TAG}
+- Update manifests for ${TAG}"
             git push origin main-flasher
-            echo "✅ Manifests committed to main-flasher branch"
+            echo "✅ Binaries and manifests committed to main-flasher branch"
           else
             echo "No changes to flasher files"
           fi

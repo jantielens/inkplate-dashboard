@@ -247,9 +247,9 @@ Creates `flasher/latest.json`:
 
 **Purpose:** Provides API for flasher site to discover available firmware
 
-#### Step 5: Commit Manifests to main-flasher
+#### Step 5: Commit Binaries and Manifests to main-flasher
 
-**Critical step:** Manifests must be on `main-flasher` branch for GitHub Pages
+**Critical step:** Binaries and manifests must be on `main-flasher` branch for GitHub Pages
 
 **Actions:**
 ```bash
@@ -257,23 +257,40 @@ Creates `flasher/latest.json`:
 git config user.email "actions@github.com"
 git config user.name "GitHub Action"
 
-# Fetch and checkout main-flasher branch
-git fetch origin main-flasher
-git checkout main-flasher
+# Save the generated manifests and binaries
+mkdir -p /tmp/flasher-release
+cp flasher/manifest_*.json flasher/latest.json /tmp/flasher-release/
+cp artifacts/*.bin /tmp/flasher-release/
 
-# Copy generated manifests from release branch
-git checkout ${{ github.ref_name }} -- flasher/manifest_*.json flasher/latest.json
+# Fetch and checkout main-flasher branch (clean)
+git fetch origin main-flasher
+git checkout -f main-flasher
+
+# Create firmware directory for this version
+mkdir -p flasher/firmware/v0.14.0
+
+# Copy binaries to versioned directory
+cp /tmp/flasher-release/*.bin flasher/firmware/v0.14.0/
+
+# Copy manifests to flasher root
+cp /tmp/flasher-release/manifest_*.json /tmp/flasher-release/latest.json flasher/
 
 # Commit and push
-git add flasher/manifest_*.json flasher/latest.json
-git commit -m "Update flasher manifests for v0.14.0 [skip ci]"
+git add flasher/
+git commit -m "Update flasher for v0.14.0 [skip ci]"
 git push origin main-flasher
 ```
 
-**Why main-flasher?**
+**Why host binaries on main-flasher?**
+- GitHub Releases don't support CORS for cross-origin requests
+- Hosting on GitHub Pages (same origin as flasher) avoids CORS issues
+- Binaries served from `jantielens.github.io/inkplate-dashboard/firmware/<version>/`
+- Reliable delivery via GitHub's CDN
+
+**Why main-flasher branch?**
 - GitHub Pages is configured to deploy from `main-flasher` branch
-- Keeps flasher site separate from main codebase
-- Manifests are where the deployment workflow expects them
+- Keeps flasher site and binaries separate from main codebase
+- All web assets (HTML, manifests, binaries) in one place
 
 **Note:** `[skip ci]` prevents infinite workflow loops
 
@@ -306,6 +323,7 @@ on:
   - `index.html` - Web flasher UI
   - `manifest_*.json` - Board-specific manifests (just updated)
   - `latest.json` - Metadata (just updated)
+  - `firmware/v0.14.0/` - All binary files (bootloader, partitions, firmware)
   - `README.md` - Documentation
 
 **Result:** Users can visit the site and flash firmware directly from browser
@@ -321,7 +339,7 @@ on:
 4. User clicks "Install Inkplate Dashboard"
 5. Browser prompts for serial port selection
 6. ESP Web Tools:
-   - Downloads 3 binaries from GitHub Releases
+   - Downloads 3 binaries from GitHub Pages `/firmware/v0.14.0/`
    - Flashes bootloader → partitions → firmware
    - Verifies flash
 7. Device restarts with new firmware
@@ -459,11 +477,16 @@ feature/* (development branches)
 - Workflows (`.github/workflows/`)
 - Base flasher (`flasher/index.html`, `flasher/README.md`)
 - ❌ NO manifests (generated during release)
+- ❌ NO binaries (hosted on main-flasher)
 
 **main-flasher branch:**
 - Flasher site (`flasher/`)
+- ✅ Web UI (`flasher/index.html`, `flasher/README.md`)
 - ✅ Manifests (`flasher/manifest_*.json`)
 - ✅ Metadata (`flasher/latest.json`)
+- ✅ Firmware binaries (`flasher/firmware/<version>/`)
+  - Bootloader, partitions, and firmware for all boards
+  - Organized by version (e.g., `flasher/firmware/v0.14.0/`)
 - Deployed to GitHub Pages
 
 ## GitHub Actions Workflows Summary
@@ -473,7 +496,7 @@ feature/* (development branches)
 | `version-check.yml` | PR to main | Validate version is new | PR check ✓/✗ |
 | `build.yml` | PR/push to main | Validate builds | Build artifacts |
 | `create-tag.yml` | Manual dispatch | Create release tag | Git tag |
-| `release.yml` | Tag push `v*.*.*` | Build & release | GitHub Release + Manifests |
+| `release.yml` | Tag push `v*.*.*` | Build & release | GitHub Release + Binaries/Manifests on main-flasher |
 | `flasher-static-site.yml` | Push to main-flasher<br>Release completion | Deploy flasher | GitHub Pages site |
 | `update-latest-json.yml` | Legacy/unused | Old manifest update | N/A |
 
