@@ -39,7 +39,7 @@ for f in "$ARTIFACTS_DIR"/*.bin; do
     filename=$(printf "%s" "$filename" | tr -d '\r\n')
     TAG=$(printf "%s" "$TAG" | tr -d '\r\n')
   board=$(echo "$filename" | sed -E 's/-v.*//')
-  url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${filename}"
+  url="releases/${TAG}/${filename}"
   # remove any stray CR/LF that may exist in variables
   url=$(printf "%s" "$url" | tr -d '\r\n')
   display_name="${NAMES[$board]:-$board}"
