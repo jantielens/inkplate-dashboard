@@ -68,11 +68,14 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ matrix.board }}
       
-      - name: Upload firmware artifact
+      - name: Upload firmware artifacts (all binaries)
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.board }}-${{ steps.get_version.outputs.version }}
-          path: build/${{ matrix.board }}/${{ matrix.board }}-v${{ steps.get_version.outputs.version }}.bin
+          path: |
+            build/${{ matrix.board }}/${{ matrix.board }}-v${{ steps.get_version.outputs.version }}.bin
+            build/${{ matrix.board }}/${{ matrix.board }}-v${{ steps.get_version.outputs.version }}.bootloader.bin
+            build/${{ matrix.board }}/${{ matrix.board }}-v${{ steps.get_version.outputs.version }}.partitions.bin
           retention-days: 90
           if-no-files-found: error
 
@@ -139,34 +142,60 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout flasher repo
-        uses: actions/checkout@v4
-        with:
-          repository: jantielens/inkplate-dashboard-flasher
-          token: ${{ secrets.FLASHER_REPO_TOKEN }}
-          path: flasher
-
       - name: Ensure jq is installed
         run: |
           sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Build and publish latest.json
+      - name: Generate web flasher manifests
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
           set -euo pipefail
+          
+          # Generate ESP Web Tools manifests for each board
+          chmod +x scripts/generate_manifests.sh
+          scripts/generate_manifests.sh "${TAG}" artifacts flasher
+          
+          echo "Generated manifests:"
+          ls -l flasher/manifest_*.json
 
+      - name: Generate latest.json metadata
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          
           # Use helper script to generate the manifest with friendly names
           chmod +x scripts/generate_latest_json.sh
           scripts/generate_latest_json.sh "${TAG}" artifacts flasher/latest.json
+          
+          echo "Generated latest.json:"
+          ls -l flasher/latest.json
 
-          cd flasher
+      - name: Commit manifests to main-flasher branch
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          
+          # Configure git
           git config user.email "actions@github.com"
           git config user.name "GitHub Action"
+          
+          # Fetch and checkout main-flasher branch
+          git fetch origin main-flasher
+          git checkout main-flasher
+          
+          # Copy generated manifests to flasher directory
+          # (they were generated in the current branch, now copy to main-flasher)
+          git checkout ${{ github.ref_name }} -- flasher/manifest_*.json flasher/latest.json
+          
+          # Commit and push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
-            git add latest.json
-            git commit -m "Update latest.json for ${TAG} [skip ci]"
-            git push
+            git add flasher/manifest_*.json flasher/latest.json
+            git commit -m "Update flasher manifests for ${TAG} [skip ci]"
+            git push origin main-flasher
+            echo "✅ Manifests committed to main-flasher branch"
           else
-            echo "No changes to latest.json"
+            echo "No changes to flasher files"
           fi

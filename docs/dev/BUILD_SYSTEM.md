@@ -201,13 +201,42 @@ foreach ($file in $commonSrcFiles) {
 - Prevents confusion (single source of truth in `common/`)
 - Only temporary files for build process
 
-#### 6. **Output Build Artifacts**
+#### 6. **Copy Versioned Binaries**
+
+For web flasher support, the build script creates versioned copies of all binaries:
+
+```bash
+# Copy and rename all binaries to include version
+VERSIONED_BIN="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
+VERSIONED_BOOTLOADER="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.bootloader.bin"
+VERSIONED_PARTITIONS="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.partitions.bin"
+
+cp "$ORIGINAL_BIN" "$VERSIONED_BIN"
+cp "$ORIGINAL_BOOTLOADER" "$VERSIONED_BOOTLOADER"
+cp "$ORIGINAL_PARTITIONS" "$VERSIONED_PARTITIONS"
+```
+
+**Why three binaries?**
+- **Bootloader** - ESP32 first-stage bootloader (flashed at 0x1000)
+- **Partitions** - Partition table defining memory layout (flashed at 0x8000)
+- **Firmware** - Main application code (flashed at 0x10000)
+
+This matches standard ESP32 flashing with `arduino-cli upload` or `esptool.py` and enables web-based flashing through ESP Web Tools.
+
+See [WEB_FLASHER.md](WEB_FLASHER.md) for details on the web flasher implementation.
+
+#### 7. **Output Build Artifacts**
 ```
 build/inkplate5v2/
-├── inkplate5v2.ino.bin       # Main firmware binary
-├── inkplate5v2.ino.elf       # Debugging symbols
-├── inkplate5v2.ino.map       # Memory map
-└── partitions.csv            # Partition table
+├── inkplate5v2.ino.bin                    # Main firmware binary
+├── inkplate5v2.ino.bootloader.bin         # Bootloader
+├── inkplate5v2.ino.partitions.bin         # Partition table
+├── inkplate5v2-v0.13.0.bin                # Versioned firmware (for releases)
+├── inkplate5v2-v0.13.0.bootloader.bin     # Versioned bootloader (for releases)
+├── inkplate5v2-v0.13.0.partitions.bin     # Versioned partitions (for releases)
+├── inkplate5v2.ino.elf                    # Debugging symbols
+├── inkplate5v2.ino.map                    # Memory map
+└── partitions.csv                         # Partition table source
 ```
 
 ## How Code Sharing Works

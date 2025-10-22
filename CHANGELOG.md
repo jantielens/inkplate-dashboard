@@ -3,6 +3,21 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2025-10-22
+
+### Added
+- Web-based firmware flasher using ESP Web Tools
+  - Flash firmware directly from browser (Chrome/Edge) without installing software
+  - Support for all 4 Inkplate boards (2, 5 V2, 6 Flick, 10)
+  - Complete 3-part flashing: bootloader, partition table, and firmware
+  - Automated manifest generation via GitHub Actions on release
+  - Local testing environment for development
+  - Responsive UI with dark mode support and comprehensive troubleshooting guide
+
+### Changed
+- Build system now generates versioned bootloader and partition binaries for web flasher support
+- Release workflow updated to automatically generate and publish ESP Web Tools manifests
+
 ## [0.13.0] - 2025-10-21
 
 ### Added
