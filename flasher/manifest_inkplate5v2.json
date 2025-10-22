@@ -1,0 +1,25 @@
+{
+  "name": "Inkplate Dashboard for Inkplate 5 V2",
+  "version": "0.14.0",
+  "home_assistant_domain": "inkplate_dashboard",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.14.0/inkplate5v2-v0.14.0.bootloader.bin",
+          "offset": 4096
+        },
+        {
+          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.14.0/inkplate5v2-v0.14.0.partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "https://github.com/jantielens/inkplate-dashboard/releases/download/v0.14.0/inkplate5v2-v0.14.0.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}
