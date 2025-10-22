@@ -82,13 +82,14 @@
         position: relative;
       }
       
-      .board-option input[type="radio"] {
-        position: absolute;
-        opacity: 0;
+      .board-option esp-web-install-button {
+        display: block;
+        width: 100%;
       }
       
-      .board-option label {
+      .board-option button {
         display: block;
+        width: 100%;
         padding: 1.5rem 1rem;
         border: 2px solid #ddd;
         border-radius: 8px;
@@ -97,20 +98,15 @@
         transition: all 0.3s ease;
         background: white;
         font-weight: 500;
+        font-size: inherit;
+        font-family: inherit;
       }
       
-      .board-option label:hover {
+      .board-option button:hover {
         border-color: #667eea;
         background: #f8f9ff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
-      }
-      
-      .board-option input[type="radio"]:checked + label {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
       }
       
       .board-icon {
@@ -130,6 +126,138 @@
       
       esp-web-install-button.hidden {
         display: none;
+      }
+      
+      .serial-log-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+      }
+      
+      .serial-log-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+      }
+      
+      .serial-log-btn:active {
+        transform: translateY(0);
+      }
+      
+      /* Serial Log Dialog Styles */
+      .serial-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      
+      .serial-dialog-content {
+        background: #1a1a1a;
+        color: #00ff00;
+        border-radius: 8px;
+        padding: 0;
+        width: 80%;
+        max-width: 800px;
+        height: 70%;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+      
+      .serial-dialog-header {
+        background: #333;
+        color: white;
+        padding: 1rem;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #444;
+      }
+      
+      .serial-dialog-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      
+      .serial-close-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      
+      .serial-close-btn:hover {
+        background: #c82333;
+      }
+      
+      .serial-controls {
+        padding: 0.75rem 1rem;
+        background: #2d2d2d;
+        border-bottom: 1px solid #444;
+        display: flex;
+        gap: 0.5rem;
+      }
+      
+      .serial-controls button {
+        background: #495057;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      
+      .serial-controls button:hover {
+        background: #5a6268;
+      }
+      
+      .serial-output {
+        flex: 1;
+        padding: 1rem;
+        font-family: 'Courier New', Consolas, Monaco, monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        overflow-y: auto;
+        background: #1a1a1a;
+        color: #00ff00;
+        margin: 0;
+      }
+      
+      .serial-status {
+        padding: 0.5rem 1rem;
+        background: #2d2d2d;
+        color: #aaa;
+        font-size: 0.9rem;
+        border-top: 1px solid #444;
+        border-radius: 0 0 8px 8px;
+      }
+      
+      .status-connected {
+        color: #28a745;
+      }
+      
+      .status-disconnected {
+        color: #dc3545;
       }
       
       .alert {
@@ -246,13 +374,13 @@
           color: #c0c0c0;
         }
         
-        .board-option label {
+        .board-option button {
           background: #2d2d2d;
           border-color: #444;
           color: #e0e0e0;
         }
         
-        .board-option label:hover {
+        .board-option button:hover {
           background: #3a3a4f;
           border-color: #667eea;
         }
@@ -327,44 +455,46 @@
 
         <div class="board-selection">
           <div class="board-option">
-            <input type="radio" name="board" id="inkplate2" value="inkplate2" />
-            <label for="inkplate2">
-              <span class="board-icon">📟</span>
-              Inkplate 2
-            </label>
+            <esp-web-install-button id="install-inkplate2" manifest="">
+              <button slot="activate">
+                <span class="board-icon">📱</span>
+                Inkplate 2
+              </button>
+            </esp-web-install-button>
           </div>
           
           <div class="board-option">
-            <input type="radio" name="board" id="inkplate5v2" value="inkplate5v2" />
-            <label for="inkplate5v2">
-              <span class="board-icon">📱</span>
-              Inkplate 5 V2
-            </label>
+            <esp-web-install-button id="install-inkplate5v2" manifest="">
+              <button slot="activate">
+                <span class="board-icon">📱</span>
+                Inkplate 5 V2
+              </button>
+            </esp-web-install-button>
           </div>
           
           <div class="board-option">
-            <input type="radio" name="board" id="inkplate6flick" value="inkplate6flick" />
-            <label for="inkplate6flick">
-              <span class="board-icon">📲</span>
-              Inkplate 6 Flick
-            </label>
+            <esp-web-install-button id="install-inkplate6flick" manifest="">
+              <button slot="activate">
+                <span class="board-icon">📱</span>
+                Inkplate 6 Flick
+              </button>
+            </esp-web-install-button>
           </div>
           
           <div class="board-option">
-            <input type="radio" name="board" id="inkplate10" value="inkplate10" />
-            <label for="inkplate10">
-              <span class="board-icon">🖥️</span>
-              Inkplate 10
-            </label>
+            <esp-web-install-button id="install-inkplate10" manifest="">
+              <button slot="activate">
+                <span class="board-icon">📱</span>
+                Inkplate 10
+              </button>
+            </esp-web-install-button>
           </div>
         </div>
 
         <div class="install-button-container">
-          <esp-web-install-button class="hidden" manifest="">
-            <button slot="activate" class="install-btn">
-              Install Inkplate Dashboard
-            </button>
-          </esp-web-install-button>
+          <button id="serial-log-button" class="serial-log-btn">
+            📊 Open Serial Log
+          </button>
         </div>
 
         <div class="alert alert-warning" id="no-support-warning" style="display: none;">
@@ -376,32 +506,6 @@
             <li>Opera (version 75+)</li>
           </ul>
           Safari and Firefox are not currently supported.
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>📋 Features</h2>
-        <div class="features">
-          <div class="feature">
-            <div class="feature-icon">🔄</div>
-            <strong>MQTT Dashboard</strong>
-            <p>Real-time data display</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">🌐</div>
-            <strong>WiFi Portal</strong>
-            <p>Easy network setup</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">🔋</div>
-            <strong>Battery Optimized</strong>
-            <p>Deep sleep support</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⚙️</div>
-            <strong>Configurable</strong>
-            <p>Web-based config</p>
-          </div>
         </div>
       </div>
 
@@ -452,15 +556,14 @@
           <li>📖 <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank">GitHub Repository</a></li>
           <li>📄 <a href="https://github.com/jantielens/inkplate-dashboard/blob/main/docs/user/README.md" target="_blank">Documentation</a></li>
           <li>🐛 <a href="https://github.com/jantielens/inkplate-dashboard/issues" target="_blank">Report Issues</a></li>
-          <li>💬 <a href="https://github.com/jantielens/inkplate-dashboard/discussions" target="_blank">Discussions</a></li>
         </ul>
       </div>
     </div>
 
     <div class="footer">
       <p>
-        <strong>Inkplate Dashboard</strong> by 
-        <a href="https://github.com/jantielens" target="_blank">Jan Tielens</a>
+        <strong>Inkplate Dashboard</strong> - 
+        <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank">https://github.com/jantielens/inkplate-dashboard</a>
       </p>
       <p>
         Powered by 
@@ -469,6 +572,29 @@
         Inkplate devices by 
         <a href="https://soldered.com/product-category/inkplate/" target="_blank">Soldered Electronics</a>
       </p>
+    </div>
+
+    <!-- Serial Log Dialog -->
+    <div id="serial-dialog" class="serial-dialog">
+      <div class="serial-dialog-content">
+        <div class="serial-dialog-header">
+          <h3>📊 Serial Monitor</h3>
+          <button id="serial-close-btn" class="serial-close-btn">✕ Close</button>
+        </div>
+        <div class="serial-controls">
+          <button id="serial-clear-btn">🗑️ Clear</button>
+          <button id="serial-disconnect-btn">🔌 Disconnect</button>
+          <select id="serial-baud-rate">
+            <option value="9600">9600</option>
+            <option value="115200" selected>115200</option>
+            <option value="230400">230400</option>
+          </select>
+        </div>
+        <pre id="serial-output" class="serial-output">Click "📊 Open Serial Log" to connect to a device...</pre>
+        <div id="serial-status" class="serial-status">
+          Status: <span id="serial-status-text" class="status-disconnected">Disconnected</span>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -487,26 +613,157 @@
         console.log('🧪 Running in local testing mode - using local binaries');
       }
 
-      // Handle board selection
-      const installButton = document.querySelector('esp-web-install-button');
-      const boardRadios = document.querySelectorAll('input[name="board"]');
+      // Initialize board install buttons
+      const boards = ['inkplate2', 'inkplate5v2', 'inkplate6flick', 'inkplate10'];
       
-      boardRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          const boardId = e.target.value;
-          
-          // For local testing, use the _local manifest which points to ../build/ files
-          const manifestSuffix = isLocal ? '_local' : '';
-          installButton.manifest = `./manifest_${boardId}${manifestSuffix}.json`;
-          installButton.classList.remove('hidden');
-          
-          console.log(`Selected board: ${boardId}, Using manifest: manifest_${boardId}${manifestSuffix}.json`);
+      boards.forEach(boardId => {
+        const installButton = document.getElementById(`install-${boardId}`);
+        
+        // For local testing, use the _local manifest which points to ../build/ files
+        const manifestSuffix = isLocal ? '_local' : '';
+        installButton.manifest = `./manifest_${boardId}${manifestSuffix}.json`;
+        
+        console.log(`Initialized ${boardId} with manifest: manifest_${boardId}${manifestSuffix}.json`);
+        
+        // Add event listener for install button
+        installButton.addEventListener('state-changed', (e) => {
+          console.log(`${boardId} state changed:`, e.detail);
         });
       });
 
-      // Add event listeners for install button
-      installButton.addEventListener('state-changed', (e) => {
-        console.log('State changed:', e.detail);
+      // Serial Monitor Variables
+      let serialPort = null;
+      let serialReader = null;
+      let isSerialConnected = false;
+
+      // Get dialog elements
+      const serialDialog = document.getElementById('serial-dialog');
+      const serialOutput = document.getElementById('serial-output');
+      const serialStatus = document.getElementById('serial-status-text');
+      const serialLogButton = document.getElementById('serial-log-button');
+      const serialCloseBtn = document.getElementById('serial-close-btn');
+      const serialClearBtn = document.getElementById('serial-clear-btn');
+      const serialDisconnectBtn = document.getElementById('serial-disconnect-btn');
+      const serialBaudRate = document.getElementById('serial-baud-rate');
+
+      // Update status display
+      function updateSerialStatus(status, isConnected) {
+        serialStatus.textContent = status;
+        serialStatus.className = isConnected ? 'status-connected' : 'status-disconnected';
+      }
+
+      // Close serial connection
+      async function closeSerialConnection() {
+        if (serialReader) {
+          try {
+            await serialReader.cancel();
+            serialReader.releaseLock();
+          } catch (error) {
+            console.warn('Error closing reader:', error);
+          }
+          serialReader = null;
+        }
+        
+        if (serialPort) {
+          try {
+            await serialPort.close();
+          } catch (error) {
+            console.warn('Error closing port:', error);
+          }
+          serialPort = null;
+        }
+        
+        isSerialConnected = false;
+        updateSerialStatus('Disconnected', false);
+      }
+
+      // Handle serial log button click
+      serialLogButton.addEventListener('click', async () => {
+        if (!('serial' in navigator)) {
+          alert('Web Serial API not supported in this browser. Please use Chrome, Edge, or Opera.');
+          return;
+        }
+
+        try {
+          // Show dialog first
+          serialDialog.style.display = 'flex';
+          
+          // Request and open serial port
+          updateSerialStatus('Connecting...', false);
+          serialPort = await navigator.serial.requestPort();
+          
+          const baudRate = parseInt(serialBaudRate.value);
+          await serialPort.open({ baudRate: baudRate });
+          
+          isSerialConnected = true;
+          updateSerialStatus(`Connected (${baudRate} baud)`, true);
+          serialOutput.textContent = `Connected to serial port at ${baudRate} baud rate.\nSerial output will appear below:\n\n`;
+          
+          // Start reading serial data
+          serialReader = serialPort.readable.getReader();
+          const decoder = new TextDecoder();
+          
+          while (isSerialConnected && serialPort.readable) {
+            try {
+              const { value, done } = await serialReader.read();
+              if (done) break;
+              
+              const text = decoder.decode(value);
+              serialOutput.textContent += text;
+              
+              // Auto-scroll to bottom
+              serialOutput.scrollTop = serialOutput.scrollHeight;
+              
+            } catch (error) {
+              if (isSerialConnected) {
+                console.error('Serial read error:', error);
+                serialOutput.textContent += `\n[ERROR: ${error.message}]\n`;
+                break;
+              }
+            }
+          }
+          
+          await closeSerialConnection();
+          
+        } catch (error) {
+          updateSerialStatus('Connection failed', false);
+          serialOutput.textContent += `\n[CONNECTION ERROR: ${error.message}]\n`;
+          console.error('Failed to open serial port:', error);
+        }
+      });
+
+      // Close dialog and disconnect
+      function closeSerialDialog() {
+        serialDialog.style.display = 'none';
+        closeSerialConnection();
+      }
+
+      // Event listeners for dialog controls
+      serialCloseBtn.addEventListener('click', closeSerialDialog);
+      
+      serialClearBtn.addEventListener('click', () => {
+        serialOutput.textContent = isSerialConnected ? 
+          `Connected to serial port at ${serialBaudRate.value} baud rate.\nSerial output will appear below:\n\n` :
+          'Click "📊 Open Serial Log" to connect to a device...';
+      });
+      
+      serialDisconnectBtn.addEventListener('click', async () => {
+        await closeSerialConnection();
+        serialOutput.textContent += '\n[DISCONNECTED]\n';
+      });
+
+      // Close dialog when clicking outside
+      serialDialog.addEventListener('click', (e) => {
+        if (e.target === serialDialog) {
+          closeSerialDialog();
+        }
+      });
+
+      // Close dialog on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && serialDialog.style.display === 'flex') {
+          closeSerialDialog();
+        }
       });
     </script>
   </body>
