@@ -182,13 +182,16 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Action"
           
-          # Fetch and checkout main-flasher branch
-          git fetch origin main-flasher
-          git checkout main-flasher
+          # Save the generated manifests (they're in the working directory)
+          mkdir -p /tmp/manifests
+          cp flasher/manifest_*.json flasher/latest.json /tmp/manifests/
           
-          # Copy generated manifests to flasher directory
-          # (they were generated in the current branch, now copy to main-flasher)
-          git checkout ${{ github.ref_name }} -- flasher/manifest_*.json flasher/latest.json
+          # Fetch and checkout main-flasher branch (clean checkout)
+          git fetch origin main-flasher
+          git checkout -f main-flasher
+          
+          # Copy the saved manifests to the flasher directory
+          cp /tmp/manifests/* flasher/
           
           # Commit and push if there are changes
           if [ -n "$(git status --porcelain)" ]; then
