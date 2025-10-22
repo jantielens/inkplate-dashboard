@@ -32,19 +32,49 @@ trap 'rm -f "$TMP"' EXIT
 
 jq -n --arg tag "$TAG" --arg published_at "$PUBLISHED_AT" '{tag_name: $tag, published_at: $published_at, assets: []}' > "$TMP"
 
-for f in "$ARTIFACTS_DIR"/*.bin; do
+for f in "$ARTIFACTS_DIR"/*-v*.bin; do
   [ -f "$f" ] || continue
   filename=$(basename "$f")
-    # sanitize inputs (remove CR and LF)
-    filename=$(printf "%s" "$filename" | tr -d '\r\n')
-    TAG=$(printf "%s" "$TAG" | tr -d '\r\n')
+  
+  # Skip bootloader and partition files for the main assets list
+  if [[ "$filename" == *".bootloader.bin" ]] || [[ "$filename" == *".partitions.bin" ]]; then
+    continue
+  fi
+  
+  # sanitize inputs (remove CR and LF)
+  filename=$(printf "%s" "$filename" | tr -d '\r\n')
+  TAG=$(printf "%s" "$TAG" | tr -d '\r\n')
   board=$(echo "$filename" | sed -E 's/-v.*//')
-  url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${filename}"
+  
+  # Construct URLs for all files
+  firmware_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${filename}"
+  bootloader_file="${board}-v${TAG#v}.bootloader.bin"
+  bootloader_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${bootloader_file}"
+  partitions_file="${board}-v${TAG#v}.partitions.bin"
+  partitions_url="https://github.com/jantielens/inkplate-dashboard/releases/download/${TAG}/${partitions_file}"
+  
   # remove any stray CR/LF that may exist in variables
-  url=$(printf "%s" "$url" | tr -d '\r\n')
+  firmware_url=$(printf "%s" "$firmware_url" | tr -d '\r\n')
+  bootloader_url=$(printf "%s" "$bootloader_url" | tr -d '\r\n')
+  partitions_url=$(printf "%s" "$partitions_url" | tr -d '\r\n')
+  
   display_name="${NAMES[$board]:-$board}"
-  # append asset
-  jq --arg board "$board" --arg filename "$filename" --arg url "$url" --arg display_name "$display_name" '.assets += [{board: $board, filename: $filename, url: $url, display_name: $display_name}]' "$TMP" > "$TMP.tmp" && mv "$TMP.tmp" "$TMP"
+  
+  # append asset with all binary URLs
+  jq --arg board "$board" \
+     --arg filename "$filename" \
+     --arg url "$firmware_url" \
+     --arg bootloader_url "$bootloader_url" \
+     --arg partitions_url "$partitions_url" \
+     --arg display_name "$display_name" \
+     '.assets += [{
+       board: $board,
+       filename: $filename,
+       url: $url,
+       bootloader_url: $bootloader_url,
+       partitions_url: $partitions_url,
+       display_name: $display_name
+     }]' "$TMP" > "$TMP.tmp" && mv "$TMP.tmp" "$TMP"
 done
 
 # sort assets by board for determinism

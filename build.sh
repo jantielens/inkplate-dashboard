@@ -129,19 +129,32 @@ build_board() {
     fi
     
     if [ $BUILD_RESULT -eq 0 ]; then
-        # Rename binary to include version
+        # Copy and rename all binaries to include version (for web flasher)
         ORIGINAL_BIN="$BUILD_DIR/${BOARD_KEY}.ino.bin"
+        ORIGINAL_BOOTLOADER="$BUILD_DIR/${BOARD_KEY}.ino.bootloader.bin"
+        ORIGINAL_PARTITIONS="$BUILD_DIR/${BOARD_KEY}.ino.partitions.bin"
+        
         VERSIONED_BIN="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
+        VERSIONED_BOOTLOADER="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.bootloader.bin"
+        VERSIONED_PARTITIONS="$BUILD_DIR/${BOARD_KEY}-v${FIRMWARE_VERSION}.partitions.bin"
         
         if [ -f "$ORIGINAL_BIN" ]; then
             cp "$ORIGINAL_BIN" "$VERSIONED_BIN"
-            echo "✅ Build successful!"
-            echo "Build artifacts: $BUILD_DIR"
-            echo "Firmware binary: ${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
-        else
-            echo "✅ Build successful (binary not found for renaming)!"
-            echo "Build artifacts: $BUILD_DIR"
+            echo "✅ Copied firmware: ${BOARD_KEY}-v${FIRMWARE_VERSION}.bin"
         fi
+        
+        if [ -f "$ORIGINAL_BOOTLOADER" ]; then
+            cp "$ORIGINAL_BOOTLOADER" "$VERSIONED_BOOTLOADER"
+            echo "✅ Copied bootloader: ${BOARD_KEY}-v${FIRMWARE_VERSION}.bootloader.bin"
+        fi
+        
+        if [ -f "$ORIGINAL_PARTITIONS" ]; then
+            cp "$ORIGINAL_PARTITIONS" "$VERSIONED_PARTITIONS"
+            echo "✅ Copied partitions: ${BOARD_KEY}-v${FIRMWARE_VERSION}.partitions.bin"
+        fi
+        
+        echo "✅ Build successful!"
+        echo "Build artifacts: $BUILD_DIR"
         return 0
     else
         echo "❌ Build failed!"
