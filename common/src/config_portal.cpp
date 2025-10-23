@@ -4,6 +4,7 @@
 #include "config.h"
 #include <src/logo_bitmap.h>
 #include "logger.h"
+#include "github_ota.h"
 
 ConfigPortal::ConfigPortal(ConfigManager* configManager, WiFiManager* wifiManager, DisplayManager* displayManager)
     : _configManager(configManager), _wifiManager(wifiManager), _displayManager(displayManager),
@@ -38,6 +39,10 @@ bool ConfigPortal::begin(PortalMode mode) {
     // OTA routes - only available in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         _server->on("/ota", HTTP_GET, [this]() { this->handleOTA(); });
+        _server->on("/ota/check", HTTP_GET, [this]() { this->handleOTACheck(); });
+        _server->on("/ota/install", HTTP_POST, [this]() { this->handleOTAInstall(); });
+        _server->on("/ota/status", HTTP_GET, [this]() { this->handleOTAStatus(); });
+        _server->on("/ota/progress", HTTP_GET, [this]() { this->handleOTAProgress(); });
         _server->on("/ota", HTTP_POST, 
             [this]() { this->handleOTAUpload(); },
             [this]() { 
@@ -811,18 +816,50 @@ String ConfigPortal::generateOTAPage() {
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>⬆️ Firmware Update</h1>";
-    html += "<p class='subtitle'>Upload new firmware to your device</p>";
+    html += "<p class='subtitle'>Update your device firmware</p>";
     
     html += "<div class='device-info'>";
     html += "<strong>Current Version:</strong> " + String(FIRMWARE_VERSION) + "<br>";
+    html += "<strong>Board:</strong> " + String(BOARD_NAME) + "<br>";
     html += "<strong>Device:</strong> " + _wifiManager->getAPName();
     html += "</div>";
     
     // Warning banner
     html += "<div class='warning-banner'>";
-    html += "<strong>⚠️ Important:</strong> Only upload firmware files (.bin) built for your specific Inkplate model. ";
-    html += "The device will restart after a successful update. Do not power off during the update process.";
+    html += "<strong>⚠️ Important:</strong> Do not power off the device during the update process. ";
+    html += "The device will restart automatically after a successful update.";
     html += "</div>";
+    
+    // ========== Option 1: GitHub Releases ==========
+    html += "<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>";
+    html += "<h2 style='margin-top: 0;'>📦 Option 1: Update from GitHub Releases</h2>";
+    html += "<p style='color: #666; margin-bottom: 20px;'>Check for and install the latest firmware directly from GitHub.</p>";
+    
+    // Loading indicator (show by default since we auto-check)
+    html += "<div id='checkLoading' style='text-align: center; margin-top: 15px; color: #666;'>";
+    html += "<div style='display: inline-block; margin-right: 10px;'>⏳</div> Checking GitHub...";
+    html += "</div>";
+    
+    // Check button (shown only if auto-check fails)
+    html += "<button type='button' id='checkUpdateBtn' class='btn-primary' style='display: none; width: 100%; margin-top: 15px;' onclick='checkForUpdates()'>Retry Check</button>";
+    
+    // Results section
+    html += "<div id='updateResults' style='display: none; margin-top: 20px;'>";
+    html += "<div id='updateInfo' style='padding: 15px; background: #f5f5f5; border-radius: 6px; margin-bottom: 15px;'></div>";
+    html += "<button type='button' id='installUpdateBtn' style='display: none; width: 100%;' class='btn-primary' onclick='installUpdate()'>Install Update</button>";
+    html += "</div>";
+    
+    // Error display for GitHub check
+    html += "<div id='checkError' style='display: none; margin-top: 15px; padding: 12px; background: #ffe6e6; border-left: 4px solid #cc0000; border-radius: 4px;'>";
+    html += "<strong>Error:</strong> <span id='checkErrorText'></span>";
+    html += "</div>";
+    
+    html += "</div>";
+    
+    // ========== Option 2: Manual Upload ==========
+    html += "<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>";
+    html += "<h2 style='margin-top: 0;'>📁 Option 2: Upload Local Firmware File</h2>";
+    html += "<p style='color: #666; margin-bottom: 20px;'>Upload a firmware file (.bin) from your computer.</p>";
     
     // Upload form
     html += "<form id='otaForm' method='POST' action='/ota' enctype='multipart/form-data'>";
@@ -832,7 +869,7 @@ String ConfigPortal::generateOTAPage() {
     html += "<div class='help-text'>Choose a .bin firmware file for your device</div>";
     html += "</div>";
     
-    // Progress bar
+    // Progress bar for file upload
     html += "<div id='progressSection' style='display: none;'>";
     html += "<div class='progress-container'>";
     html += "<div class='progress-bar' id='progressBar'>0%</div>";
@@ -842,20 +879,37 @@ String ConfigPortal::generateOTAPage() {
     
     // Buttons
     html += "<div style='display: flex; gap: 10px; margin-top: 25px;'>";
-    html += "<button type='button' class='btn-cancel' onclick='window.location.href=\"/\"'>Cancel</button>";
-    html += "<button type='submit' id='uploadBtn' class='btn-primary' style='flex: 1;'>Upload Firmware</button>";
+    html += "<button type='submit' id='uploadBtn' class='btn-primary' style='flex: 1;'>Upload & Install</button>";
     html += "</div>";
     html += "</form>";
     
-    // Success/Error messages
+    html += "</div>";
+    
+    // ========== Global Status Messages ==========
+    html += "<div id='installProgress' style='display: none; margin-top: 20px; padding: 20px; background: #e8f4f8; border-radius: 8px; text-align: center;'>";
+    html += "<h3 style='margin-top: 0;'>Installing Firmware...</h3>";
+    html += "<p id='installStatus'>Downloading from GitHub...</p>";
+    html += "<div class='progress-container' style='margin-top: 15px;'>";
+    html += "<div class='progress-bar' id='installProgressBar'>0%</div>";
+    html += "</div>";
+    html += "<p style='margin-top: 15px; color: #cc0000;'><strong>⚠️ Do not power off the device!</strong></p>";
+    html += "</div>";
+    
+    // Success message
     html += "<div id='successMessage' class='success' style='display: none; margin-top: 20px;'>";
-    html += "<h2>✅ Upload Successful!</h2>";
+    html += "<h2>✅ Update Successful!</h2>";
     html += "<p>Firmware updated successfully. Device is restarting...</p>";
     html += "</div>";
     
+    // Error message
     html += "<div id='errorMessage' class='error' style='display: none; margin-top: 20px;'>";
-    html += "<h2>❌ Upload Failed</h2>";
+    html += "<h2>❌ Update Failed</h2>";
     html += "<p id='errorText'></p>";
+    html += "</div>";
+    
+    // Back button
+    html += "<div style='margin-top: 30px;'>";
+    html += "<button type='button' class='btn-secondary' style='width: 100%;' onclick='window.location.href=\"/\"'>← Back to Configuration</button>";
     html += "</div>";
     
     // Footer
@@ -865,8 +919,66 @@ String ConfigPortal::generateOTAPage() {
     
     html += "</div>"; // Close container
     
-    // JavaScript for upload handling
+    // ========== JavaScript ==========
     html += "<script>";
+    
+    // Global variables
+    html += "var updateAssetUrl = '';";
+    
+    // Check for updates function
+    html += "function checkForUpdates() {";
+    html += "  document.getElementById('checkUpdateBtn').disabled = true;";
+    html += "  document.getElementById('checkLoading').style.display = 'block';";
+    html += "  document.getElementById('updateResults').style.display = 'none';";
+    html += "  document.getElementById('checkError').style.display = 'none';";
+    html += "  fetch('/ota/check')";
+    html += "    .then(function(response) { return response.json(); })";
+    html += "    .then(function(data) {";
+    html += "      document.getElementById('checkLoading').style.display = 'none';";
+    html += "      document.getElementById('checkUpdateBtn').disabled = false;";
+    html += "      if (data.success && data.found) {";
+    html += "        var infoHtml = '<strong>Current Version:</strong> ' + data.current_version + '<br>';";
+    html += "        infoHtml += '<strong>Latest Version:</strong> ' + data.latest_version + '<br>';";
+    html += "        infoHtml += '<strong>Asset:</strong> ' + data.asset_name + '<br>';";
+    html += "        infoHtml += '<strong>Size:</strong> ' + Math.round(data.asset_size / 1024) + ' KB<br>';";
+    html += "        if (data.is_newer) {";
+    html += "          infoHtml += '<div style=\"margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; color: #155724;\"><strong>✓ Update Available</strong></div>';";
+    html += "          document.getElementById('installUpdateBtn').style.display = 'block';";
+    html += "          updateAssetUrl = data.asset_url;";
+    html += "        } else {";
+    html += "          infoHtml += '<div style=\"margin-top: 10px; padding: 8px; background: #d1ecf1; border-radius: 4px; color: #0c5460;\"><strong>✓ You are up to date</strong></div>';";
+    html += "          document.getElementById('installUpdateBtn').style.display = 'none';";
+    html += "        }";
+    html += "        document.getElementById('updateInfo').innerHTML = infoHtml;";
+    html += "        document.getElementById('updateResults').style.display = 'block';";
+    html += "      } else {";
+    html += "        document.getElementById('checkErrorText').innerText = data.error || 'Unknown error';";
+    html += "        document.getElementById('checkError').style.display = 'block';";
+    html += "      }";
+    html += "    })";
+    html += "    .catch(function(error) {";
+    html += "      document.getElementById('checkLoading').style.display = 'none';";
+    html += "      document.getElementById('checkUpdateBtn').style.display = 'block';";
+    html += "      document.getElementById('checkErrorText').innerText = 'Network error: ' + error.message;";
+    html += "      document.getElementById('checkError').style.display = 'block';";
+    html += "    });";
+    html += "}";
+    
+    // Auto-check on page load
+    html += "window.addEventListener('DOMContentLoaded', function() {";
+    html += "  checkForUpdates();";
+    html += "});";
+    
+    // Install update function
+    html += "function installUpdate() {";
+    html += "  if (!updateAssetUrl) {";
+    html += "    alert('No update URL available');";
+    html += "    return;";
+    html += "  }";
+    html += "  window.location.href = '/ota/status?asset_url=' + encodeURIComponent(updateAssetUrl);";
+    html += "}";
+    
+    // Manual file upload handler
     html += "document.getElementById('otaForm').addEventListener('submit', function(e) {";
     html += "  e.preventDefault();";
     html += "  var fileInput = document.getElementById('update');";
@@ -936,6 +1048,172 @@ void ConfigPortal::handleOTAUpload() {
         delay(1000);
         ESP.restart();
     }
+}
+
+void ConfigPortal::handleOTACheck() {
+    LogBox::begin("OTA Check");
+    LogBox::line("Checking GitHub for updates...");
+    LogBox::end();
+    
+    GitHubOTA ota;
+    GitHubOTA::ReleaseInfo info;
+    
+    String boardName = String(BOARD_NAME);
+    bool success = ota.checkLatestRelease(boardName, info);
+    
+    // Build JSON response
+    String json = "{";
+    json += "\"success\":" + String(success ? "true" : "false") + ",";
+    
+    if (success) {
+        json += "\"current_version\":\"" + String(FIRMWARE_VERSION) + "\",";
+        json += "\"latest_version\":\"" + info.version + "\",";
+        json += "\"tag_name\":\"" + info.tagName + "\",";
+        json += "\"asset_name\":\"" + info.assetName + "\",";
+        json += "\"asset_url\":\"" + info.assetUrl + "\",";
+        json += "\"asset_size\":" + String(info.assetSize) + ",";
+        json += "\"published_at\":\"" + info.publishedAt + "\",";
+        json += "\"found\":" + String(info.found ? "true" : "false") + ",";
+        json += "\"is_newer\":" + String(GitHubOTA::isNewerVersion(String(FIRMWARE_VERSION), info.version) ? "true" : "false");
+    } else {
+        json += "\"error\":\"" + ota.getLastError() + "\"";
+    }
+    
+    json += "}";
+    
+    _server->send(success ? 200 : 500, "application/json", json);
+}
+
+// Task data structure for OTA updates
+struct OTATaskData {
+    String assetUrl;
+    DisplayManager* displayManager;
+    volatile bool* taskComplete;
+    volatile bool* taskSuccess;
+    String* errorMessage;
+};
+
+// Task function that runs OTA update with larger stack
+void otaUpdateTask(void* parameter) {
+    OTATaskData* data = (OTATaskData*)parameter;
+    
+    LogBox::begin("OTA Task");
+    LogBox::line("Running OTA update in separate task");
+    LogBox::line("URL: " + data->assetUrl);
+    LogBox::end();
+    
+    // Perform the download and installation
+    GitHubOTA ota;
+    bool success = ota.downloadAndInstall(data->assetUrl, nullptr);
+    
+    if (success) {
+        // Show success message on display
+        if (data->displayManager != nullptr) {
+            data->displayManager->clear();
+            int y = MARGIN;
+            data->displayManager->showMessage("Update Complete!", MARGIN, y, FONT_HEADING1);
+            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            data->displayManager->showMessage("Device will reboot now...", MARGIN, y, FONT_NORMAL);
+            data->displayManager->refresh();
+        }
+        
+        LogBox::begin("OTA Success");
+        LogBox::line("Rebooting in 3 seconds...");
+        LogBox::end();
+        
+        delay(3000);
+        
+        // Clean up before reboot
+        delete data;
+        
+        ESP.restart();
+    } else {
+        // Show error message on display
+        if (data->displayManager != nullptr) {
+            data->displayManager->clear();
+            int y = MARGIN;
+            data->displayManager->showMessage("Update Failed", MARGIN, y, FONT_HEADING1);
+            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+            data->displayManager->showMessage(ota.getLastError().c_str(), MARGIN, y, FONT_NORMAL);
+            data->displayManager->refresh();
+        }
+        
+        LogBox::begin("OTA Error");
+        LogBox::line(ota.getLastError());
+        LogBox::end();
+        
+        // Clean up
+        delete data;
+    }
+    
+    // Task will delete itself
+    vTaskDelete(NULL);
+}
+
+void ConfigPortal::handleOTAInstall() {
+    String assetUrl = _server->arg("asset_url");
+    
+    if (assetUrl.length() == 0) {
+        _server->send(400, "application/json", "{\"success\":false,\"error\":\"Missing asset_url parameter\"}");
+        return;
+    }
+    
+    LogBox::begin("OTA Install");
+    LogBox::line("Starting GitHub OTA update...");
+    LogBox::line("URL: " + assetUrl);
+    LogBox::end();
+    
+    // Show visual feedback on screen (same pattern as manual OTA upload)
+    if (_displayManager != nullptr) {
+        _displayManager->clear();
+        // Draw logo at top area for visual branding
+        int screenWidth = _displayManager->getWidth();
+        int minLogoX = MARGIN;
+        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+        int logoX;
+        if (maxLogoX <= minLogoX) {
+            logoX = minLogoX;
+        } else {
+            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+        }
+        int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+        int y = logoY + LOGO_HEIGHT + MARGIN;
+        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
+        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+        _displayManager->showMessage("Downloading from GitHub...", MARGIN, y, FONT_NORMAL);
+        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
+        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
+        _displayManager->refresh();
+    }
+    
+    // Allocate task data on heap (will be freed by task)
+    OTATaskData* taskData = new OTATaskData();
+    taskData->assetUrl = assetUrl;
+    taskData->displayManager = _displayManager;
+    taskData->taskComplete = nullptr;  // Not needed anymore
+    taskData->taskSuccess = nullptr;   // Not needed anymore
+    taskData->errorMessage = nullptr;  // Not needed anymore
+    
+    // Create task with 16KB stack (much larger than default 4KB)
+    TaskHandle_t otaTask;
+    xTaskCreate(
+        otaUpdateTask,      // Task function
+        "OTA_Update",       // Task name
+        16384,              // Stack size in bytes (16KB)
+        taskData,           // Parameters
+        1,                  // Priority
+        &otaTask            // Task handle
+    );
+    
+    // Send immediate response and return (don't block)
+    _server->send(200, "application/json", "{\"success\":true,\"message\":\"Download started...\"}");
+    
+    // The task will handle the rest (display updates, reboot, etc.)
 }
 
 #ifndef DISPLAY_MODE_INKPLATE2
@@ -1032,3 +1310,149 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
 }
 
 #endif // DISPLAY_MODE_INKPLATE2
+
+String ConfigPortal::generateOTAStatusPage() {
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='UTF-8'>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    html += "<title>Updating Firmware</title>";
+    html += getCSS();
+    html += "<style>";
+    html += ".spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }";
+    html += "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
+    html += ".status-box { padding: 30px; background: #e8f4f8; border-radius: 8px; text-align: center; margin: 20px 0; }";
+    html += ".warning-box { padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin: 20px 0; }";
+    html += "</style>";
+    html += "</head><body>";
+    html += "<div class='container'>";
+    html += "<h1>🔄 Firmware Update</h1>";
+    
+    html += "<div class='status-box'>";
+    html += "<div class='spinner'></div>";
+    html += "<h2 id='statusTitle'>Downloading Firmware...</h2>";
+    html += "<p id='statusMessage'>Please wait while the firmware is being downloaded and installed.</p>";
+    html += "</div>";
+    
+    html += "<div class='warning-box'>";
+    html += "<strong>⚠️ Important:</strong> Do not power off the device or close this page. ";
+    html += "The device will restart automatically when the update is complete.";
+    html += "</div>";
+    
+    html += "<div id='progressSection' style='margin-top: 20px;'>";
+    html += "<div class='progress-container'>";
+    html += "<div class='progress-bar' id='progressBar'>0%</div>";
+    html += "</div>";
+    html += "<p style='text-align: center; margin-top: 10px; color: #666;' id='progressText'>Initializing...</p>";
+    html += "</div>";
+    
+    html += "<div id='errorSection' style='display: none;'>";
+    html += "<div class='error'>";
+    html += "<h2>❌ Update Failed</h2>";
+    html += "<p id='errorMessage'></p>";
+    html += "<button type='button' class='btn-primary' style='margin-top: 20px;' onclick='window.location.href=\"/ota\"'>← Back to Firmware Update</button>";
+    html += "</div>";
+    html += "</div>";
+    
+    // Footer
+    String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
+    footer.replace("%VERSION%", String(FIRMWARE_VERSION));
+    html += footer;
+    
+    html += "</div>"; // Close container
+    
+    // JavaScript to trigger the update and poll progress
+    html += "<script>";
+    html += "var updateStarted = false;";
+    html += "var progressInterval = null;";
+    html += "var failedPolls = 0;";
+    html += "function updateProgress() {";
+    html += "  fetch('/ota/progress')";
+    html += "    .then(function(response) { return response.json(); })";
+    html += "    .then(function(data) {";
+    html += "      failedPolls = 0;";
+    html += "      if (data.inProgress) {";
+    html += "        var percent = data.percentComplete;";
+    html += "        var kb = Math.round(data.bytesDownloaded / 1024);";
+    html += "        var totalKb = Math.round(data.totalBytes / 1024);";
+    html += "        document.getElementById('progressBar').style.width = percent + '%';";
+    html += "        document.getElementById('progressBar').innerText = percent + '%';";
+    html += "        if (totalKb > 0) {";
+    html += "          document.getElementById('progressText').innerText = kb + ' KB / ' + totalKb + ' KB';";
+    html += "        }";
+    html += "      } else if (data.percentComplete === 100) {";
+    html += "        clearInterval(progressInterval);";
+    html += "        document.getElementById('statusTitle').innerText = 'Installing...';";
+    html += "        document.getElementById('statusMessage').innerText = 'Firmware downloaded. Installing and rebooting...';";
+    html += "        document.getElementById('progressBar').style.width = '100%';";
+    html += "        document.getElementById('progressBar').innerText = '100%';";
+    html += "      }";
+    html += "    })";
+    html += "    .catch(function(error) {";
+    html += "      failedPolls++;";
+    html += "      if (failedPolls >= 3) {";
+    html += "        clearInterval(progressInterval);";
+    html += "        document.querySelector('.spinner').style.display = 'none';";
+    html += "        document.getElementById('statusTitle').innerText = 'Device is Rebooting';";
+    html += "        document.getElementById('statusMessage').innerText = 'The firmware has been installed successfully. The device is now rebooting...';";
+    html += "        document.getElementById('progressBar').style.width = '100%';";
+    html += "        document.getElementById('progressBar').innerText = '100%';";
+    html += "        document.getElementById('progressText').innerText = 'Complete';";
+    html += "      }";
+    html += "    });";
+    html += "}";
+    html += "window.addEventListener('DOMContentLoaded', function() {";
+    html += "  var urlParams = new URLSearchParams(window.location.search);";
+    html += "  var assetUrl = urlParams.get('asset_url');";
+    html += "  if (!assetUrl) {";
+    html += "    document.getElementById('statusTitle').innerText = 'Error';";
+    html += "    document.getElementById('statusMessage').innerText = 'Missing update URL';";
+    html += "    document.querySelector('.spinner').style.display = 'none';";
+    html += "    return;";
+    html += "  }";
+    html += "  if (updateStarted) return;";
+    html += "  updateStarted = true;";
+    html += "  progressInterval = setInterval(updateProgress, 500);";
+    html += "  var formData = new FormData();";
+    html += "  formData.append('asset_url', assetUrl);";
+    html += "  fetch('/ota/install', { method: 'POST', body: formData })";
+    html += "    .then(function(response) { return response.json(); })";
+    html += "    .then(function(data) {";
+    html += "      if (data.success) {";
+    html += "        document.getElementById('statusTitle').innerText = 'Downloading...';";
+    html += "        document.getElementById('statusMessage').innerText = 'Firmware is being downloaded and installed. The device will reboot automatically when complete.';";
+    html += "      } else {";
+    html += "        clearInterval(progressInterval);";
+    html += "        document.querySelector('.status-box').style.display = 'none';";
+    html += "        document.getElementById('errorMessage').innerText = data.error || 'Unknown error';";
+    html += "        document.getElementById('errorSection').style.display = 'block';";
+    html += "      }";
+    html += "    })";
+    html += "    .catch(function(error) {";
+    html += "      clearInterval(progressInterval);";
+    html += "      document.querySelector('.status-box').style.display = 'none';";
+    html += "      document.getElementById('errorMessage').innerText = 'Network error: ' + error.message;";
+    html += "      document.getElementById('errorSection').style.display = 'block';";
+    html += "    });";
+    html += "});";
+    html += "</script>";
+    
+    html += "</body></html>";
+    
+    return html;
+}
+
+void ConfigPortal::handleOTAStatus() {
+    _server->send(200, "text/html", generateOTAStatusPage());
+}
+
+void ConfigPortal::handleOTAProgress() {
+    // Return JSON with current progress
+    String json = "{";
+    json += "\"inProgress\":" + String(g_otaProgress.inProgress ? "true" : "false") + ",";
+    json += "\"bytesDownloaded\":" + String(g_otaProgress.bytesDownloaded) + ",";
+    json += "\"totalBytes\":" + String(g_otaProgress.totalBytes) + ",";
+    json += "\"percentComplete\":" + String(g_otaProgress.percentComplete);
+    json += "}";
+    
+    _server->send(200, "application/json", json);
+}
