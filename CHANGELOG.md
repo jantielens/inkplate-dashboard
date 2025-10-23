@@ -3,24 +3,6 @@
 
 ## [Unreleased]
 
-## [0.15.0] - 2025-10-23
-
-### Added
-- Manual OTA firmware updates from GitHub Releases (issue #35)
-  - Check for latest firmware version directly from config portal
-  - Download and install updates from GitHub with one click
-  - Progress indicators on both web UI and e-ink display
-  - Uses unauthenticated GitHub API (60 requests/hour limit)
-  - Error handling for network failures, rate limits, and invalid firmware
-
-### Technical
-- New `GitHubOTA` class for GitHub Releases API integration
-- New endpoints: `/ota/check` (GET) and `/ota/install` (POST)
-- Semantic versioning comparison for update detection
-- Board name to asset prefix mapping (e.g., "Inkplate 2" → "inkplate2")
-- Streaming download with progress callbacks
-- Enhanced OTA page with dual update options
-
 ## [0.14.0] - 2025-10-22
 
 ### Added

@@ -133,33 +133,18 @@ The configuration portal features a modern, responsive design:
    - Device reboots automatically
 
 5. **OTA Update Page** (`/ota` - GET)
-   - **Option 1: GitHub Releases Update**
-     - Check for latest firmware from GitHub
-     - Automatic board-specific asset matching
-     - Version comparison (current vs. latest)
-     - One-click installation
-     - Progress display on both web and e-ink screen
-   - **Option 2: Manual File Upload**
-     - File upload interface for `.bin` firmware files
-     - Real-time progress bar during upload
-     - Visual feedback on e-ink display
+   - File upload interface for `.bin` firmware files
+   - Real-time progress bar during upload in web browser
+   - Visual feedback on e-ink display during installation
    - Warning banner with safety instructions
    - Only accessible in CONFIG_MODE
 
-6. **OTA Update Handlers**
-   - `/ota/check` (GET) - Query GitHub Releases API
-     - Returns JSON with version info and download URL
-     - Compares current version with latest release
-     - Finds matching asset for board type
-   - `/ota/install` (POST) - Download and install from GitHub
-     - Streams firmware from GitHub
-     - Shows progress on display
-     - Automatic reboot after success
-   - `/ota` (POST) - Manual file upload handler
-     - Receives and flashes firmware binary
-     - Shows progress on device display
-     - Success: device reboots with new firmware
-     - Error: displays error message
+6. **OTA Upload Handler** (`/ota` - POST)
+   - Receives and flashes firmware binary
+   - Disables watchdog timer to prevent interruption
+   - Shows progress on device display
+   - Success: device reboots with new firmware
+   - Error: re-enables watchdog and displays error message
 
 ## Technical Details
 
@@ -198,8 +183,6 @@ configPortal.stop();
 - `POST /reboot` - Device reboot handler (CONFIG_MODE only)
 - `GET /ota` - OTA firmware update page (CONFIG_MODE only)
 - `POST /ota` - OTA firmware upload handler (CONFIG_MODE only)
-- `GET /ota/check` - Check GitHub Releases for updates (CONFIG_MODE only)
-- `POST /ota/install` - Install firmware from GitHub (CONFIG_MODE only)
 - `404` - Not found (redirects to home)
 
 ### Access Point Configuration
@@ -225,107 +208,6 @@ Once configured:
 3. Device restarts
 4. On next boot, device skips AP mode
 5. Device enters normal operation mode (connects to WiFi, downloads image)
-
-## Firmware Updates (OTA)
-
-The configuration portal includes two methods for updating device firmware:
-
-### Option 1: Update from GitHub Releases (Recommended)
-
-Automatically download and install the latest firmware directly from GitHub:
-
-1. **Access OTA Page**:
-   - Enter config mode (button press for 2.5+ seconds)
-   - Navigate to `http://[device-ip]/ota`
-   - Or click "⬆️ Firmware Update" button from main config page
-
-2. **Automatic Update Check**:
-   - Page automatically checks GitHub Releases API on load
-   - Displays current version vs. latest available version
-   - Shows matching firmware asset for your board type
-   - "Install Update" button appears if new version is available
-
-3. **Install Update** (if available):
-   - Click "Install Update" button
-   - Redirected to dedicated update status page
-   - Device downloads firmware from GitHub in background
-   - Real-time progress displayed (percentage and KB downloaded)
-   - Progress shown on both web UI and e-ink screen
-   - Device automatically reboots after successful installation
-
-**Features**:
-- Automatic update check on page load (no button click needed)
-- Automatic board detection (finds correct firmware for your device)
-- Version comparison (only shows install button if update available)
-- No manual file download needed
-- Real-time progress tracking with percentage and data transfer
-- Connection loss detection (shows "Device is Rebooting" when device restarts)
-- Safe: keeps current firmware if download fails
-
-**Technical Details**:
-- Uses unauthenticated GitHub API (60 requests/hour limit)
-- Repository: `jantielens/inkplate-dashboard`
-- Asset naming: `{board}-v{version}.bin` (e.g., `inkplate2-v0.15.0.bin`)
-- Semantic version comparison (e.g., v0.15.0 > v0.14.0)
-- Streaming download (no buffering entire file in memory)
-
-### Option 2: Manual File Upload
-
-Upload a firmware file from your computer:
-
-1. **Download Firmware**:
-   - Get `.bin` file from [GitHub Releases](https://github.com/jantielens/inkplate-dashboard/releases)
-   - Ensure you download the correct file for your board type
-
-2. **Upload**:
-   - Access OTA page (`/ota`)
-   - Scroll to "Option 2: Upload Local Firmware File"
-   - Click "Choose File" and select the `.bin` file
-   - Click "Upload & Install"
-   - Wait for upload and installation to complete
-
-3. **Reboot**:
-   - Device automatically reboots after successful update
-
-**When to use manual upload**:
-- Testing custom builds
-- No internet connection on device
-- GitHub API rate limit reached
-- Installing beta/development versions
-
-### Safety Notes
-
-⚠️ **Important**:
-- Do not power off the device during firmware update
-- Ensure stable WiFi connection for GitHub updates
-- Only upload firmware built for your specific board type
-- Device will automatically reboot after successful update
-- If update fails, device keeps current firmware (safe)
-
-### Troubleshooting Updates
-
-**"GitHub API rate limit exceeded"**
-- Wait 1 hour or use manual file upload
-- Rate limit: 60 requests per hour per IP address
-
-**"No firmware asset found for board"**
-- Contact developer - asset missing from release
-- Use manual upload as workaround
-
-**"Network error" during GitHub check**
-- Verify device has internet access
-- Check if GitHub is accessible from your network
-- Try again or use manual upload
-
-**"Download incomplete" or "Update failed"**
-- Check WiFi signal strength
-- Ensure stable connection
-- Retry the update
-- Use manual upload if persistent issues
-
-**"Already up to date"**
-- You're running the latest version
-- No action needed
 
 ## Factory Reset
 
