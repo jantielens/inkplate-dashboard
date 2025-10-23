@@ -341,6 +341,8 @@ The estimator uses these assumptions (clearly disclosed in the portal):
 4. **Balance your needs** between update frequency and battery life
 5. **Consider CRC32** - it's the single biggest battery life improvement you can make
 
+**New in v0.16.0:** A floating badge appears as you scroll down, showing your estimated battery life (e.g., "~150 days"). Click the badge to instantly scroll back to the battery estimator for detailed metrics.
+
 The estimator helps you make informed decisions without trial and error, setting realistic expectations for your battery-powered deployment.
 
 #### MQTT Broker (Home Assistant Integration)
