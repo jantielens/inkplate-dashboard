@@ -422,26 +422,53 @@ You can update your device's firmware wirelessly using the built-in OTA (Over-Th
 
 4. **Click "⬆️ Firmware Update"** at the bottom of the configuration page
 
-### Uploading New Firmware
+### Update Methods
 
-**Option A: Use the Web Flasher (Recommended)**
+**Option A: GitHub OTA Update (Recommended)**
 
-For the easiest update experience, use the [web flasher](https://jantielens.github.io/inkplate-dashboard/) while your device is in config mode. This automatically downloads and installs the latest firmware.
+The easiest way to update - no file downloads needed:
 
-**Option B: Manual OTA Update**
+1. **Access the OTA page** as described above
+
+2. **Automatic check runs** - the page automatically checks GitHub for the latest firmware
+   - Shows your current version vs. latest available
+   - Finds the correct firmware file for your board automatically
+
+3. **Click "Install Update"** if a new version is available
+   - Redirected to a status page showing real-time progress
+   - Progress bar updates as firmware downloads (e.g., "45% - 540 KB / 1211 KB")
+   - **On the device screen**, you'll see "Firmware Update" with installation progress
+   - Do NOT power off or disconnect the device during download
+
+4. **Automatic reboot**
+   - Device installs firmware and reboots automatically
+   - Status page detects reboot and shows "Device is Rebooting" message
+   - Takes about 2-3 minutes total
+
+**Features:**
+- ✅ No manual file download
+- ✅ Automatic board detection
+- ✅ Real-time progress tracking
+- ✅ Safe: current firmware kept if download fails
+
+**Option B: Manual File Upload**
+
+For custom builds or when device has no internet access:
 
 1. **Download the latest firmware** from the [releases page](https://github.com/jantielens/inkplate-dashboard/releases)
    - Make sure to download the correct `.bin` file for your device model
-   - Example: `inkplate5v2-v0.4.0.bin` for Inkplate 5 V2
+   - Example: `inkplate5v2-v0.15.0.bin` for Inkplate 5 V2
 
-2. **On the OTA Update page**, click "Choose File" and select the `.bin` firmware file
+2. **On the OTA Update page**, scroll to "Option 2: Upload Local Firmware File"
 
-3. **Click "Upload Firmware"**
+3. **Click "Choose File"** and select the `.bin` firmware file
+
+4. **Click "Upload & Install"**
    - A progress bar will show the upload status
    - **On the device screen**, you'll see "Firmware Update" with installation progress
    - Do NOT power off or disconnect the device during upload
 
-4. **Wait for completion**
+5. **Wait for completion**
    - The upload typically takes 1-2 minutes
    - The device will automatically restart with the new firmware
    - You'll see a success message before the reboot
@@ -449,10 +476,11 @@ For the easiest update experience, use the [web flasher](https://jantielens.gith
 ### Important Notes
 
 ⚠️ **Safety Warnings:**
-- Only upload firmware files built specifically for your Inkplate model
 - Do not power off the device during the update process
+- Ensure stable WiFi connection for GitHub OTA updates
 - Make sure your device has sufficient power (USB or battery above 50%)
-- The update process takes about 1-2 minutes
+- The update process takes about 2-3 minutes for GitHub OTA
+- Only upload firmware files built specifically for your Inkplate model (for manual uploads)
 
 ✅ **After Update:**
 - Your configuration settings are preserved (WiFi, image URL, etc.)
@@ -460,6 +488,9 @@ For the easiest update experience, use the [web flasher](https://jantielens.gith
 - Check the version number in the config portal footer to confirm the update
 
 💡 **Troubleshooting:**
+- **"Already up to date"**: You're running the latest version
+- **"Network error"**: Check device internet access, try manual upload
+- **GitHub API rate limit**: Wait 1 hour or use manual upload
 - If the upload fails, simply try again
 - If the device doesn't restart, press the reset button manually
 - If the new firmware doesn't work, you can always re-flash via USB cable
