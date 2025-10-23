@@ -34,20 +34,23 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 
 - **Inkplate 5 V2**
 - **Inkplate 2**
-- **Inkplate 6 Flick** *(not tested on hardware)*
+- **Inkplate 6 Flick**
 - **Inkplate 10** *(not tested on hardware)*
 
-> **Note:** Inkplate 10 and Inkplate 6 Flick are not tested on real hardware, as I do not own these boards. If you have one of these devices and want to help test or ensure support, please [create an issue](https://github.com/jantielens/inkplate-dashboard/issues) or open a discussion!
+> **Note:** Inkplate 10 is not tested on real hardware, as I do not own all Inkplate boards. If you have an untested or unsupported device and want to help test or ensure support: please [create an issue](https://github.com/jantielens/inkplate-dashboard/issues) or open a discussion!
 
 ## Getting started
-1. Go to the [GitHub Releases](https://github.com/jantielens/inkplate-dashboard/releases) page and download the latest firmware for your Inkplate model.
-2. Connect your Inkplate device to your computer via USB.
-3. Flash the firmware using one of these tools:
-	- [ESPHome Flasher](https://github.com/esphome/esphome-flasher) (easy graphical tool)
-	- [esptool.py](https://github.com/espressif/esptool) (advanced command-line utility)
-	- Any compatible serial flashing utility
-	Refer to your tool's documentation for instructions on uploading `.bin` files to ESP32-based boards.
-4. Power on your device. The onboarding flow has two steps:
+1. Connect your Inkplate device to your computer via USB.
+2. Flash the firmware using one of these methods:
+	
+	**Option A: Web-based flasher (recommended)**
+	- Visit [https://jantielens.github.io/inkplate-dashboard/](https://jantielens.github.io/inkplate-dashboard/)
+	- Select your Inkplate model and click "Connect" to flash directly from your browser
+	- No downloads or additional software required!
+	
+	**Option B: Manual flashing**
+	- Download firmware from [GitHub Releases](https://github.com/jantielens/inkplate-dashboard/releases) and flash using [ESPHome Flasher](https://github.com/esphome/esphome-flasher) or similar tools
+3. Power on your device. The onboarding flow has two steps:
 	- **Step 1: WiFi Setup (AP Mode)** – On first boot, the device creates a WiFi access point. Connect to it and enter your WiFi credentials in the browser.
 	- **Step 2: Dashboard Configuration (Config Mode)** – After joining your WiFi, the device automatically enters config mode. Access the device’s IP in your browser to set your image URL and refresh rate.
 	The device will guide you through each step directly on the screen.

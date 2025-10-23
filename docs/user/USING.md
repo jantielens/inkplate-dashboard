@@ -27,71 +27,46 @@ A complete guide for using your Inkplate Dashboard to display images on your e-i
 - **Computer** with USB port for flashing firmware
 - **Image URL** - A web URL hosting your PNG image (can be on your local network or public internet)
 
-### Downloading the Firmware
-
-1. **Visit the releases page**: [https://github.com/jantielens/inkplate-dashboard/releases](https://github.com/jantielens/inkplate-dashboard/releases)
-
-2. **Download the firmware** for your device:
-   - `inkplate2-vX.X.X.bin` - For Inkplate 2
-   - `inkplate5v2-vX.X.X.bin` - For Inkplate 5 V2
-   - `inkplate10-vX.X.X.bin` - For Inkplate 10
-   - `inkplate6flick-vX.X.X.bin` - For Inkplate 6 Flick
-
-3. **Choose the latest version** (highest version number) unless you have a specific reason to use an older version.
-
 ### Flashing the Firmware
 
-#### Windows
+#### Option A: Web-based Flasher (Recommended)
 
-1. **Download esptool**: Get the latest release from [https://github.com/espressif/esptool/releases](https://github.com/espressif/esptool/releases)
-   - Download `esptool-vX.X.X-win64.zip`
-   - Extract to a folder
+The easiest way to flash firmware to your Inkplate device is using the web-based flasher:
 
-2. **Connect your Inkplate** via USB cable
+1. **Connect your Inkplate** to your computer via USB cable
 
-3. **Find your COM port**:
-   - Open Device Manager (Windows key + X, then select Device Manager)
-   - Expand "Ports (COM & LPT)"
-   - Look for "USB-SERIAL CH340" or similar - note the COM port (e.g., COM7)
+2. **Visit the web flasher**: [https://jantielens.github.io/inkplate-dashboard/](https://jantielens.github.io/inkplate-dashboard/)
 
-4. **Flash the firmware**:
-   ```cmd
-   esptool.exe --port COM7 --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
-   ```
-   Replace `COM7` with your actual port and use the correct filename for your device.
+3. **Select your device model** from the dropdown menu
 
-5. **Wait for completion** - you'll see progress bars and "Hash of data verified" when done.
+4. **Click "Connect"** and select your device's serial port when prompted
 
-6. **Press the reset button** on your Inkplate or unplug/replug the USB cable.
+5. **Click "Install"** - the latest firmware will be downloaded and flashed automatically
 
-#### macOS / Linux
+6. **Wait for completion** - you'll see progress indicators and a success message
 
-1. **Install esptool**:
-   ```bash
-   pip install esptool
-   ```
+7. **Press the reset button** on your Inkplate or unplug/replug the USB cable
 
-2. **Connect your Inkplate** via USB cable
+**Advantages of the web flasher:**
+- No software installation required
+- Always uses the latest firmware
+- Automatic device detection
+- Built-in progress tracking
+- Works on Windows, macOS, and Linux with Chrome/Edge browsers
 
-3. **Find your port**:
-   ```bash
-   # macOS
-   ls /dev/cu.usb*
-   
-   # Linux
-   ls /dev/ttyUSB*
-   ```
+#### Option B: Manual Flashing
 
-4. **Flash the firmware**:
-   ```bash
-   # macOS
-   esptool.py --port /dev/cu.usbserial-XXXX --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
-   
-   # Linux
-   esptool.py --port /dev/ttyUSB0 --baud 115200 write_flash 0x0 inkplate5v2-v0.1.0.bin
-   ```
+If you prefer to download firmware files manually or the web flasher doesn't work in your environment:
 
-5. **Press the reset button** on your Inkplate or unplug/replug the USB cable.
+1. **Download firmware**: Visit [GitHub Releases](https://github.com/jantielens/inkplate-dashboard/releases) and download the `.bin` file for your device
+
+   - Use [ESPHome Flasher](https://github.com/esphome/esphome-flasher) (graphical tool)
+   - Use [esptool.py](https://github.com/espressif/esptool) (command-line utility)
+   - Or any compatible serial flashing utility
+
+3. **Follow the tool's instructions** for uploading `.bin` files to ESP32-based boards
+
+**Note**: Manual flashing requires more technical knowledge and additional software installation. The web flasher is recommended for most users.
 
 ---
 
@@ -448,6 +423,12 @@ You can update your device's firmware wirelessly using the built-in OTA (Over-Th
 4. **Click "⬆️ Firmware Update"** at the bottom of the configuration page
 
 ### Uploading New Firmware
+
+**Option A: Use the Web Flasher (Recommended)**
+
+For the easiest update experience, use the [web flasher](https://jantielens.github.io/inkplate-dashboard/) while your device is in config mode. This automatically downloads and installs the latest firmware.
+
+**Option B: Manual OTA Update**
 
 1. **Download the latest firmware** from the [releases page](https://github.com/jantielens/inkplate-dashboard/releases)
    - Make sure to download the correct `.bin` file for your device model
