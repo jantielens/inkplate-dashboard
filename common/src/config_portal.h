@@ -50,6 +50,10 @@ private:
     void handleReboot();
     void handleOTA();
     void handleOTAUpload();
+    void handleOTACheck();
+    void handleOTAInstall();
+    void handleOTAStatus();
+    void handleOTAProgress();
     void handleNotFound();
     #ifndef DISPLAY_MODE_INKPLATE2
     void handleVcom();
@@ -63,6 +67,7 @@ private:
     String generateFactoryResetPage();
     String generateRebootPage();
     String generateOTAPage();
+    String generateOTAStatusPage();
     #ifndef DISPLAY_MODE_INKPLATE2
     String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
     #endif
