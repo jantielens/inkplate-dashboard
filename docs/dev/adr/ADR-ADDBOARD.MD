@@ -43,12 +43,12 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 
 // Board identification
 #define BOARD_NAME "Inkplate NewBoard"
-#define BOARD_TYPE INKPLATE_NEWBOARD
+#define BOARD_TYPE INKPLATE_NEWBOARD  // Use appropriate constant from Inkplate library
 
 // Display specifications
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
-#define BOARD_ROTATION 0  // Default rotation (not used - rotation is user-configurable)
+#define BOARD_ROTATION 0  // 0, 1, 2, or 3 (rotation is user-configurable via web portal)
 
 // Display mode
 // For standard Inkplate boards (5, 6, 10): Use INKPLATE_1BIT or INKPLATE_3BIT
@@ -89,7 +89,8 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 
 **Important Notes:**
 - Adjust `SCREEN_WIDTH` and `SCREEN_HEIGHT` to match your board's display resolution in landscape orientation
-- `BOARD_ROTATION` is defined but not used - rotation is user-configurable via web portal
+- `BOARD_ROTATION` default value (0-3) is defined but rotation is user-configurable via web portal
+- `BOARD_TYPE` should match the constant from the Inkplate library (e.g., `INKPLATE_2`, `INKPLATE_5V2`, `INKPLATE_10`, `INKPLATE_6FLICK`)
 - For Inkplate 2, use `DISPLAY_MODE_INKPLATE2` instead of `DISPLAY_MODE`
 - Scale `FONT_HEADING1`, `FONT_HEADING2`, and `FONT_NORMAL` appropriately for the screen size
 - Smaller screens should use smaller fonts and tighter `LINE_SPACING`
@@ -108,18 +109,19 @@ Create `boards/inkplate-newboard/inkplate-newboard.ino`:
 // Board-specific sketch for Inkplate NewBoard
 // This file serves as the entry point and includes board validation
 
-#include "board_config.h"
-
-// Validate board type at compile time
-#if !defined(BOARD_TYPE) || BOARD_TYPE != INKPLATE_NEWBOARD
-#error "This sketch is for Inkplate NewBoard only! Check board selection in Arduino IDE."
+// Board validation - check Arduino board definition
+#ifndef ARDUINO_INKPLATENEWBOARD
+#error "Wrong board selection for this sketch, please select Soldered InkplateNewBoard in the boards menu."
 #endif
 
-// Include the common main sketch implementation
+// Include board configuration first (required by shared code)
+#include "board_config.h"
+
+// Include shared implementation
 #include <src/main_sketch.ino.inc>
 ```
 
-**Note:** Replace `INKPLATE_NEWBOARD` with the appropriate board type constant. Check the Inkplate library for the correct constant name.
+**Note:** Replace `ARDUINO_INKPLATENEWBOARD` with the appropriate Arduino board constant. These follow the pattern `ARDUINO_INKPLATE<NAME>` (e.g., `ARDUINO_INKPLATE2`, `ARDUINO_INKPLATE5V2`, `ARDUINO_INKPLATE10`, `ARDUINO_INKPLATE6FLICK`).
 
 ### 4. Update Build Scripts
 
@@ -133,6 +135,7 @@ declare -A BOARDS=(
     [inkplate2]="Inkplate 2|Inkplate_Boards:esp32:Inkplate2|boards/inkplate2"
     [inkplate5v2]="Inkplate 5 V2|Inkplate_Boards:esp32:Inkplate5V2|boards/inkplate5v2"
     [inkplate10]="Inkplate 10|Inkplate_Boards:esp32:Inkplate10|boards/inkplate10"
+    [inkplate6flick]="Inkplate 6 Flick|Inkplate_Boards:esp32:Inkplate6Flick|boards/inkplate6flick"
     [inkplate-newboard]="Inkplate NewBoard|Inkplate_Boards:esp32:InkplateNewBoard|boards/inkplate-newboard"
 )
 ```
@@ -165,6 +168,11 @@ $boards = @{
         FQBN = "Inkplate_Boards:esp32:Inkplate10"
         Path = "boards/inkplate10"
     }
+    'inkplate6flick' = @{
+        Name = "Inkplate 6 Flick"
+        FQBN = "Inkplate_Boards:esp32:Inkplate6Flick"
+        Path = "boards/inkplate6flick"
+    }
     'inkplate-newboard' = @{
         Name = "Inkplate NewBoard"
         FQBN = "Inkplate_Boards:esp32:InkplateNewBoard"
@@ -178,7 +186,7 @@ And update the `ValidateSet` parameter:
 ```powershell
 param(
     [Parameter(Mandatory=$false)]
-    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'inkplate-newboard', 'all')]
+    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'inkplate6flick', 'inkplate-newboard', 'all')]
     [string]$Board = "inkplate5v2"
 )
 ```
@@ -190,7 +198,7 @@ Add your board to the `ValidateSet` parameter:
 ```powershell
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'inkplate-newboard')]
+    [ValidateSet('inkplate2', 'inkplate5v2', 'inkplate10', 'inkplate6flick', 'inkplate-newboard')]
     [string]$Board,
     
     [Parameter(Mandatory=$false)]
@@ -203,7 +211,7 @@ param(
 Add your board to the required boards list:
 
 ```powershell
-$REQUIRED_BOARDS = @("Inkplate2", "Inkplate5V2", "Inkplate10", "InkplateNewBoard")
+$REQUIRED_BOARDS = @("Inkplate2", "Inkplate5V2", "Inkplate10", "Inkplate6Flick", "InkplateNewBoard")
 ```
 
 ### 5. Update GitHub Actions Workflows
@@ -216,7 +224,7 @@ Add your board to the workflow dispatch options:
 workflow_dispatch:
   inputs:
     board:
-      description: 'Board to build (inkplate2, inkplate5v2, inkplate10, inkplate-newboard, or all)'
+      description: 'Board to build (inkplate2, inkplate5v2, inkplate10, inkplate6flick, inkplate-newboard, or all)'
       required: false
       default: 'all'
       type: choice
@@ -225,6 +233,7 @@ workflow_dispatch:
         - inkplate2
         - inkplate5v2
         - inkplate10
+        - inkplate6flick
         - inkplate-newboard
 ```
 
@@ -236,12 +245,12 @@ And update the build matrix in the `prepare` job:
   run: |
     if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
       if [ "${{ github.event.inputs.board }}" = "all" ]; then
-        echo 'matrix=["inkplate2","inkplate5v2","inkplate10","inkplate-newboard"]' >> $GITHUB_OUTPUT
+        echo 'matrix=["inkplate2","inkplate5v2","inkplate10","inkplate6flick","inkplate-newboard"]' >> $GITHUB_OUTPUT
       else
         echo 'matrix=["${{ github.event.inputs.board }}"]' >> $GITHUB_OUTPUT
       fi
     else
-      echo 'matrix=["inkplate2","inkplate5v2","inkplate10","inkplate-newboard"]' >> $GITHUB_OUTPUT
+      echo 'matrix=["inkplate2","inkplate5v2","inkplate10","inkplate6flick","inkplate-newboard"]' >> $GITHUB_OUTPUT
     fi
 ```
 
@@ -252,22 +261,63 @@ Add your board to the build matrix:
 ```yaml
 strategy:
   matrix:
-    board: [inkplate2, inkplate5v2, inkplate10, inkplate-newboard]
+    board: [inkplate2, inkplate5v2, inkplate10, inkplate6flick, inkplate-newboard]
 ```
 
-### 6. Update Documentation
+### 6. Update Web Flasher
 
-#### 6.1 Update `README.md`
+#### 6.1 Update `scripts/generate_manifests.sh`
+
+Add your board's display name to the script (used for manifest generation):
+
+```bash
+# Friendly display names for boards
+declare -A NAMES
+NAMES[inkplate2]="Inkplate 2"
+NAMES[inkplate5v2]="Inkplate 5 V2"
+NAMES[inkplate10]="Inkplate 10"
+NAMES[inkplate6flick]="Inkplate 6 Flick"
+NAMES[inkplate-newboard]="Inkplate NewBoard"
+```
+
+**Note:** The script automatically processes all board binaries in the artifacts directory during release builds, so this is the only change needed for manifest generation.
+
+#### 6.2 Update `flasher/index.html`
+
+Add your board as an option in the HTML form. Find the board selection section and add:
+
+```html
+<div class="board-option">
+  <input type="radio" name="board" id="inkplate-newboard" value="inkplate-newboard" />
+  <label for="inkplate-newboard">
+    <div class="board-icon">📱</div>
+    <div class="board-name">Inkplate NewBoard</div>
+    <div class="board-specs">1280×720, grayscale</div>
+  </label>
+</div>
+```
+
+Replace the icon, name, and specs as appropriate. Common icons used:
+- 📱 for medium/small boards
+- 🖥️ for large boards
+- 📟 for very small boards
+
+**Important:** The `value` attribute must match the board key used in build scripts (e.g., `inkplate-newboard`).
+
+### 7. Update Documentation
+
+#### 7.1 Update `README.md`
 
 Add your board to the supported boards list:
 
 ```markdown
-## Supported Boards
+## Supported Devices
 
-- ✅ Inkplate 2 (212x104, monochrome)
-- ✅ Inkplate 5 V2 (1280x720, grayscale)
-- ✅ Inkplate 10 (1200x825, grayscale)
-- ✅ Inkplate 6 Flick (1024x758, grayscale)
+- **Inkplate 2**
+- **Inkplate 5 V2**
+- **Inkplate 6 Flick**
+- **Inkplate 10**
+- **Inkplate NewBoard** *(example - your new board)*
 ```
 
 Add build and upload examples for your board:
@@ -280,7 +330,7 @@ Add build and upload examples for your board:
 ./upload.ps1 inkplate-newboard -port COM7
 ```
 
-#### 6.2 Update `CHANGELOG.md`
+#### 7.2 Update `CHANGELOG.md`
 
 Document the addition of the new board in the `[Unreleased]` section:
 
@@ -290,6 +340,29 @@ Document the addition of the new board in the `[Unreleased]` section:
 ### Added
 - Inkplate NewBoard support with dedicated configuration
 ```
+
+## Web Flasher Integration
+
+The web flasher automatically supports any board that's included in the release workflow. Here's how it works:
+
+1. **During Release Build**: When you create a release tag (e.g., `v1.2.3`), the GitHub Actions release workflow:
+   - Builds firmware for all boards in the matrix
+   - Generates bootloader and partition binaries for each board
+   - Runs `scripts/generate_manifests.sh` to create ESP Web Tools manifest files
+   - Publishes all files to the `gh-pages` branch
+
+2. **Manifest Files**: The script creates `manifest_<board>.json` files (e.g., `manifest_inkplate-newboard.json`) with:
+   - Board-specific firmware URLs
+   - Bootloader and partition table URLs
+   - ESP32 memory offsets (0x1000, 0x8000, 0x10000)
+   - Board name and version information
+
+3. **Web UI**: The `flasher/index.html` page:
+   - Displays available board options
+   - Loads the appropriate manifest when a user selects a board
+   - Uses ESP Web Tools to flash all three parts to the device
+
+**No additional configuration is needed** beyond the steps in sections 6.1 and 6.2 above. The build and release automation handles everything else.
 
 ## Testing Your Board
 
@@ -386,12 +459,15 @@ Before submitting your board addition:
 - [ ] Updated `setup.ps1` with board requirement
 - [ ] Updated `.github/workflows/build.yml` workflow
 - [ ] Updated `.github/workflows/release.yml` workflow
+- [ ] Updated `scripts/generate_manifests.sh` with board display name
+- [ ] Updated `flasher/index.html` with board option (icon, name, specs)
 - [ ] Updated `README.md` with board information
 - [ ] Updated `CHANGELOG.md` with addition
 - [ ] Tested build process locally
 - [ ] Tested firmware on actual hardware
 - [ ] Verified all display modes work correctly
 - [ ] Confirmed text layout is readable and properly spaced
+- [ ] Verified web flasher shows new board option (after release)
 
 ## Questions?
 
