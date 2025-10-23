@@ -3,6 +3,16 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2025-10-24
+
+### Changed
+- **Config Portal UI Redesign** - Complete overhaul for better visual hierarchy and user experience
+  - Card-based section layout with white backgrounds and shadows
+  - Blue gradient section headers for clear visual separation
+  - Floating battery life estimator badge that follows scroll position
+  - Improved mobile responsiveness and touch-friendly controls
+  - Enhanced visual styling for warnings, errors, and success messages
+  
 ## [0.15.0] - 2025-10-23
 
 ### Added

@@ -8,9 +8,9 @@
 // - PATCH: Bug fixes (backward compatible fixes)
 
 #define FIRMWARE_VERSION_MAJOR 0
-#define FIRMWARE_VERSION_MINOR 15
+#define FIRMWARE_VERSION_MINOR 16
 #define FIRMWARE_VERSION_PATCH 0
 
-#define FIRMWARE_VERSION "0.15.0"
+#define FIRMWARE_VERSION "0.16.0"
 
 #endif // VERSION_H

@@ -99,24 +99,44 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 
 ## Web Interface
 
-The configuration portal features a modern, responsive design:
+The configuration portal features a modern, card-based design optimized for mobile and desktop:
 
+### Visual Design (v0.16.0+)
 - **Gradient background** (purple theme)
-- **Mobile-friendly** layout
-- **Real-time validation**
-- **Success/Error feedback**
+- **Card-based sections** with white backgrounds, shadows, and rounded corners
+- **Blue gradient section headers** for clear visual hierarchy
+- **Floating battery life estimator badge** that follows scroll position
+- **Mobile-friendly** responsive layout
+- **Real-time validation** and feedback
+- **Success/Error feedback** with color-coded messages
 - **Auto-redirect** after submission
+
+### Layout Organization
+
+Configuration options are organized into clearly separated sections:
+
+1. **📶 WiFi Network** - Network credentials
+2. **🖼️ Dashboard Image** - Display settings (timezone, rotation, debug mode)
+3. **📡 MQTT / Home Assistant** - Optional MQTT integration
+4. **🕐 Scheduling** - Refresh rate, update hours, battery estimator
+
+Each section features:
+- Clear icon-based headers
+- Grouped related settings
+- Contextual help text
+- Visual hierarchy with proper spacing
 
 ### Pages
 
 1. **Main Configuration Page** (`/`)
-   - Shows device information (AP name, IP)
-   - Configuration form
-   - Field validation
+   - Device information card (device name, board type, IP address)
+   - Collapsible configuration sections
+   - Floating battery life estimator (shows estimated days of operation)
+   - Field validation with inline error messages
    - Success/Error feedback
    - OTA firmware update button (full-width secondary button, only shown in CONFIG_MODE)
    - Reboot device button (full-width secondary button, only shown in CONFIG_MODE)
-   - Factory reset option (only shown on configured devices)
+   - Factory reset option (danger zone, only shown on configured devices)
    - VCOM management button (advanced, only shown on devices with TPS65186 PMIC)
 
 2. **Success Page** (`/submit` - POST success)
