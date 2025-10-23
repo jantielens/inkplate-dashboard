@@ -366,6 +366,9 @@ String ConfigPortal::generateConfigPage() {
     
     html += "<form action='/submit' method='POST'>";
     
+    // WiFi Network Section
+    html += SECTION_START("📶", "WiFi Network");
+    
     // WiFi SSID - always shown
     html += "<div class='form-group'>";
     html += "<label for='ssid'>WiFi Network Name (SSID) *</label>";
@@ -386,9 +389,13 @@ String ConfigPortal::generateConfigPage() {
         html += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)'>";
     }
     html += "</div>";
+    html += SECTION_END();
     
-    // Image URL - only shown in CONFIG_MODE
+    // Dashboard Image Section - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
+        html += SECTION_START("🖼️", "Dashboard Image");
+        
+        // Image URL
         html += "<div class='form-group'>";
         html += "<label for='imageurl'>Image URL *</label>";
         if (hasConfig) {
@@ -434,12 +441,11 @@ String ConfigPortal::generateConfigPage() {
         html += "</label>";
         html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         html += "</div>";
+        html += SECTION_END();
         
-        // MQTT Configuration - optional section
-        html += "<div class='form-group' style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;'>";
-        html += "<label style='font-size: 18px; margin-bottom: 5px;'>📡 MQTT / Home Assistant (Optional)</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure MQTT to send battery voltage to Home Assistant</div>";
-        html += "</div>";
+        // MQTT Section
+        html += SECTION_START("📡", "MQTT / Home Assistant");
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure MQTT to send battery voltage to Home Assistant (optional)</div>";
         
         // MQTT Broker URL
         html += "<div class='form-group'>";
@@ -472,12 +478,10 @@ String ConfigPortal::generateConfigPage() {
             html += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password'>";
         }
         html += "</div>";
+        html += SECTION_END();
         
-        // Power & Update Schedule Section
-        html += "<div class='form-group' style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;'>";
-        html += "<label style='font-size: 18px; margin-bottom: 5px;'>⚡ Power & Update Schedule</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure update frequency and schedule to optimize battery life</div>";
-        html += "</div>";
+        // Scheduling Section
+        html += SECTION_START("🕐", "Scheduling");
         
         // Refresh Rate
         html += "<div class='form-group'>";
@@ -531,6 +535,7 @@ String ConfigPortal::generateConfigPage() {
         
         // Battery Life Estimator - placed after all power-impacting settings
         html += CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML;
+        html += SECTION_END();
     }
     
     // Submit button - text varies by mode
@@ -580,13 +585,7 @@ String ConfigPortal::generateConfigPage() {
     // Modal dialog for factory reset confirmation (only in CONFIG_MODE)
     if (_mode == CONFIG_MODE && hasConfig) {
         html += CONFIG_PORTAL_RESET_MODAL_HTML;
-        
-        // JavaScript for modal
-        html += "<script>";
-        html += "function showResetModal() { document.getElementById('resetModal').style.display = 'block'; }";
-        html += "function hideResetModal() { document.getElementById('resetModal').style.display = 'none'; }";
-        html += "window.onclick = function(event) { var modal = document.getElementById('resetModal'); if (event.target == modal) { modal.style.display = 'none'; } }";
-        html += "</script>";
+        html += CONFIG_PORTAL_MODAL_SCRIPT;
     }
     
     // Footer with version
@@ -596,109 +595,13 @@ String ConfigPortal::generateConfigPage() {
     
     // Battery Life Estimator JavaScript - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += "<script>";
-        
-        // Power consumption constants - well commented for future refinement
-        html += "const POWER_CONSTANTS = {";
-        html += "  ACTIVE_MA: 100,";  // WiFi active (downloading, connecting) in milliamps
-        html += "  DISPLAY_MA: 50,";  // E-paper display update power consumption in mA
-        html += "  SLEEP_MA: 0.02,";  // Deep sleep mode: ~20 microamps = 0.02 milliamps
-        html += "  IMAGE_UPDATE_SEC: 7,";  // Time for full image update: WiFi + download + display
-        html += "  CRC32_CHECK_SEC: 1";  // Time for quick CRC32 check: only checksum download
-        html += "};";
-        
-        // Main calculation function
-        html += "function calculateBatteryLife() {";
-        html += "  const refreshRate = parseInt(document.getElementById('refresh').value) || 5;";
-        html += "  const useCRC32 = document.getElementById('crc32check').checked;";
-        html += "  const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;";
-        html += "  const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;";
-        html += "  ";
-        html += "  let activeHours = 0;";
-        html += "  for (let hour = 0; hour < 24; hour++) {";
-        html += "    const checkbox = document.getElementById('hour_' + hour);";
-        html += "    if (checkbox && checkbox.checked) activeHours++;";
-        html += "  }";
-        html += "  if (activeHours === 0) activeHours = 24;";
-        html += "  ";
-        html += "  const wakeupsPerDay = activeHours * (60 / refreshRate);";
-        html += "  let dailyPower = 0;";
-        html += "  let activeTimeMinutes = 0;";
-        html += "  ";
-        html += "  if (useCRC32) {";
-        html += "    const fullUpdates = Math.min(dailyChanges, wakeupsPerDay);";  // Can't have more updates than wake-ups
-        html += "    const crc32Checks = wakeupsPerDay - fullUpdates;";
-        html += "    const activeSecondsPerUpdate = 5;";
-        html += "    const displaySecondsPerUpdate = 2;";
-        html += "    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);";
-        html += "    dailyPower += fullUpdates * powerPerFullUpdate;";
-        html += "    const powerPerCRC32Check = (POWER_CONSTANTS.CRC32_CHECK_SEC * POWER_CONSTANTS.ACTIVE_MA / 3600);";
-        html += "    dailyPower += crc32Checks * powerPerCRC32Check;";
-        html += "    activeTimeMinutes = (fullUpdates * POWER_CONSTANTS.IMAGE_UPDATE_SEC + crc32Checks * POWER_CONSTANTS.CRC32_CHECK_SEC) / 60;";
-        html += "  } else {";
-        html += "    const activeSecondsPerUpdate = 5;";
-        html += "    const displaySecondsPerUpdate = 2;";
-        html += "    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);";
-        html += "    dailyPower += wakeupsPerDay * powerPerFullUpdate;";
-        html += "    activeTimeMinutes = (wakeupsPerDay * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;";
-        html += "  }";
-        html += "  ";
-        html += "  const sleepHours = 24 - (activeTimeMinutes / 60);";
-        html += "  dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;";
-        html += "  ";
-        html += "  const batteryLifeDays = Math.round(batteryCapacity / dailyPower);";
-        html += "  const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);";
-        html += "  ";
-        html += "  let status = 'poor', statusText = 'SHORT';";
-        html += "  if (batteryLifeDays >= 180) { status = 'excellent'; statusText = 'EXCELLENT'; }";
-        html += "  else if (batteryLifeDays >= 90) { status = 'good'; statusText = 'GOOD'; }";
-        html += "  else if (batteryLifeDays >= 45) { status = 'moderate'; statusText = 'MODERATE'; }";
-        html += "  ";
-        html += "  document.getElementById('battery-days').textContent = batteryLifeDays + ' days';";
-        html += "  document.getElementById('battery-months').textContent = 'Approximately ' + batteryLifeMonths + ' months';";
-        html += "  document.getElementById('daily-power').textContent = dailyPower.toFixed(1) + ' mAh';";
-        html += "  document.getElementById('wakeups').textContent = wakeupsPerDay;";
-        html += "  document.getElementById('active-time').textContent = activeTimeMinutes.toFixed(1) + ' min/day';";
-        html += "  document.getElementById('sleep-time').textContent = sleepHours.toFixed(1) + ' hrs/day';";
-        html += "  ";
-        html += "  document.getElementById('status-badge').textContent = statusText;";
-        html += "  document.getElementById('status-badge').className = 'status-badge status-' + status;";
-        html += "  document.getElementById('battery-result').className = 'battery-result ' + status;";
-        html += "  ";
-        html += "  const progressBar = document.getElementById('progress-bar');";
-        html += "  const progressPercent = Math.min(100, (batteryLifeDays / 300) * 100);";
-        html += "  progressBar.style.width = progressPercent + '%';";
-        html += "  progressBar.className = 'battery-progress-bar ' + status;";
-        html += "  ";
-        html += "  const tipsDiv = document.getElementById('battery-tips');";
-        html += "  const tipText = document.getElementById('tip-text');";
-        html += "  if (!useCRC32) {";
-        html += "    tipsDiv.style.display = 'block';";
-        html += "    tipText.textContent = 'Enable CRC32 change detection to extend battery life by 5-8×!';";
-        html += "  } else if (refreshRate <= 2) {";
-        html += "    tipsDiv.style.display = 'block';";
-        html += "    tipText.textContent = 'Consider increasing refresh rate to 5-10 minutes to extend battery life.';";
-        html += "  } else if (batteryLifeDays < 60) {";
-        html += "    tipsDiv.style.display = 'block';";
-        html += "    tipText.textContent = 'Consider using a larger battery or reducing refresh frequency.';";
-        html += "  } else {";
-        html += "    tipsDiv.style.display = 'none';";
-        html += "  }";
-        html += "}";
-        
-        // Event listeners setup
-        html += "document.addEventListener('DOMContentLoaded', function() {";
-        html += "  document.getElementById('refresh').addEventListener('input', calculateBatteryLife);";
-        html += "  document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);";
-        html += "  document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);";
-        html += "  document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);";
-        html += "  for (let hour = 0; hour < 24; hour++) {";
-        html += "    const checkbox = document.getElementById('hour_' + hour);";
-        html += "    if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);";
-        html += "  }";
-        html += "  calculateBatteryLife();";
-        html += "});";
-        html += "</script>";
+        html += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
+        html += CONFIG_PORTAL_BADGE_SCRIPT;
+    }
+    
+    // Add floating badge HTML before closing body - only in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        html += CONFIG_PORTAL_BADGE_HTML;
     }
     
     html += "</body></html>";
@@ -824,93 +727,8 @@ String ConfigPortal::generateOTAPage() {
     html += "<strong>Device:</strong> " + _wifiManager->getAPName();
     html += "</div>";
     
-    // Warning banner
-    html += "<div class='warning-banner'>";
-    html += "<strong>⚠️ Important:</strong> Do not power off the device during the update process. ";
-    html += "The device will restart automatically after a successful update.";
-    html += "</div>";
-    
-    // ========== Option 1: GitHub Releases ==========
-    html += "<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>";
-    html += "<h2 style='margin-top: 0;'>📦 Option 1: Update from GitHub Releases</h2>";
-    html += "<p style='color: #666; margin-bottom: 20px;'>Check for and install the latest firmware directly from GitHub.</p>";
-    
-    // Loading indicator (show by default since we auto-check)
-    html += "<div id='checkLoading' style='text-align: center; margin-top: 15px; color: #666;'>";
-    html += "<div style='display: inline-block; margin-right: 10px;'>⏳</div> Checking GitHub...";
-    html += "</div>";
-    
-    // Check button (shown only if auto-check fails)
-    html += "<button type='button' id='checkUpdateBtn' class='btn-primary' style='display: none; width: 100%; margin-top: 15px;' onclick='checkForUpdates()'>Retry Check</button>";
-    
-    // Results section
-    html += "<div id='updateResults' style='display: none; margin-top: 20px;'>";
-    html += "<div id='updateInfo' style='padding: 15px; background: #f5f5f5; border-radius: 6px; margin-bottom: 15px;'></div>";
-    html += "<button type='button' id='installUpdateBtn' style='display: none; width: 100%;' class='btn-primary' onclick='installUpdate()'>Install Update</button>";
-    html += "</div>";
-    
-    // Error display for GitHub check
-    html += "<div id='checkError' style='display: none; margin-top: 15px; padding: 12px; background: #ffe6e6; border-left: 4px solid #cc0000; border-radius: 4px;'>";
-    html += "<strong>Error:</strong> <span id='checkErrorText'></span>";
-    html += "</div>";
-    
-    html += "</div>";
-    
-    // ========== Option 2: Manual Upload ==========
-    html += "<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>";
-    html += "<h2 style='margin-top: 0;'>📁 Option 2: Upload Local Firmware File</h2>";
-    html += "<p style='color: #666; margin-bottom: 20px;'>Upload a firmware file (.bin) from your computer.</p>";
-    
-    // Upload form
-    html += "<form id='otaForm' method='POST' action='/ota' enctype='multipart/form-data'>";
-    html += "<div class='form-group'>";
-    html += "<label for='update'>Select Firmware File (.bin)</label>";
-    html += "<input type='file' id='update' name='update' accept='.bin' required>";
-    html += "<div class='help-text'>Choose a .bin firmware file for your device</div>";
-    html += "</div>";
-    
-    // Progress bar for file upload
-    html += "<div id='progressSection' style='display: none;'>";
-    html += "<div class='progress-container'>";
-    html += "<div class='progress-bar' id='progressBar'>0%</div>";
-    html += "</div>";
-    html += "<div id='statusText' class='help-text' style='text-align: center; margin-top: 10px;'></div>";
-    html += "</div>";
-    
-    // Buttons
-    html += "<div style='display: flex; gap: 10px; margin-top: 25px;'>";
-    html += "<button type='submit' id='uploadBtn' class='btn-primary' style='flex: 1;'>Upload & Install</button>";
-    html += "</div>";
-    html += "</form>";
-    
-    html += "</div>";
-    
-    // ========== Global Status Messages ==========
-    html += "<div id='installProgress' style='display: none; margin-top: 20px; padding: 20px; background: #e8f4f8; border-radius: 8px; text-align: center;'>";
-    html += "<h3 style='margin-top: 0;'>Installing Firmware...</h3>";
-    html += "<p id='installStatus'>Downloading from GitHub...</p>";
-    html += "<div class='progress-container' style='margin-top: 15px;'>";
-    html += "<div class='progress-bar' id='installProgressBar'>0%</div>";
-    html += "</div>";
-    html += "<p style='margin-top: 15px; color: #cc0000;'><strong>⚠️ Do not power off the device!</strong></p>";
-    html += "</div>";
-    
-    // Success message
-    html += "<div id='successMessage' class='success' style='display: none; margin-top: 20px;'>";
-    html += "<h2>✅ Update Successful!</h2>";
-    html += "<p>Firmware updated successfully. Device is restarting...</p>";
-    html += "</div>";
-    
-    // Error message
-    html += "<div id='errorMessage' class='error' style='display: none; margin-top: 20px;'>";
-    html += "<h2>❌ Update Failed</h2>";
-    html += "<p id='errorText'></p>";
-    html += "</div>";
-    
-    // Back button
-    html += "<div style='margin-top: 30px;'>";
-    html += "<button type='button' class='btn-secondary' style='width: 100%;' onclick='window.location.href=\"/\"'>← Back to Configuration</button>";
-    html += "</div>";
+    // Static OTA content (warning, options, status messages)
+    html += CONFIG_PORTAL_OTA_CONTENT_HTML;
     
     // Footer
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
@@ -919,114 +737,8 @@ String ConfigPortal::generateOTAPage() {
     
     html += "</div>"; // Close container
     
-    // ========== JavaScript ==========
-    html += "<script>";
-    
-    // Global variables
-    html += "var updateAssetUrl = '';";
-    
-    // Check for updates function
-    html += "function checkForUpdates() {";
-    html += "  document.getElementById('checkUpdateBtn').disabled = true;";
-    html += "  document.getElementById('checkLoading').style.display = 'block';";
-    html += "  document.getElementById('updateResults').style.display = 'none';";
-    html += "  document.getElementById('checkError').style.display = 'none';";
-    html += "  fetch('/ota/check')";
-    html += "    .then(function(response) { return response.json(); })";
-    html += "    .then(function(data) {";
-    html += "      document.getElementById('checkLoading').style.display = 'none';";
-    html += "      document.getElementById('checkUpdateBtn').disabled = false;";
-    html += "      if (data.success && data.found) {";
-    html += "        var infoHtml = '<strong>Current Version:</strong> ' + data.current_version + '<br>';";
-    html += "        infoHtml += '<strong>Latest Version:</strong> ' + data.latest_version + '<br>';";
-    html += "        infoHtml += '<strong>Asset:</strong> ' + data.asset_name + '<br>';";
-    html += "        infoHtml += '<strong>Size:</strong> ' + Math.round(data.asset_size / 1024) + ' KB<br>';";
-    html += "        if (data.is_newer) {";
-    html += "          infoHtml += '<div style=\"margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; color: #155724;\"><strong>✓ Update Available</strong></div>';";
-    html += "          document.getElementById('installUpdateBtn').style.display = 'block';";
-    html += "          updateAssetUrl = data.asset_url;";
-    html += "        } else {";
-    html += "          infoHtml += '<div style=\"margin-top: 10px; padding: 8px; background: #d1ecf1; border-radius: 4px; color: #0c5460;\"><strong>✓ You are up to date</strong></div>';";
-    html += "          document.getElementById('installUpdateBtn').style.display = 'none';";
-    html += "        }";
-    html += "        document.getElementById('updateInfo').innerHTML = infoHtml;";
-    html += "        document.getElementById('updateResults').style.display = 'block';";
-    html += "      } else {";
-    html += "        document.getElementById('checkErrorText').innerText = data.error || 'Unknown error';";
-    html += "        document.getElementById('checkError').style.display = 'block';";
-    html += "      }";
-    html += "    })";
-    html += "    .catch(function(error) {";
-    html += "      document.getElementById('checkLoading').style.display = 'none';";
-    html += "      document.getElementById('checkUpdateBtn').style.display = 'block';";
-    html += "      document.getElementById('checkErrorText').innerText = 'Network error: ' + error.message;";
-    html += "      document.getElementById('checkError').style.display = 'block';";
-    html += "    });";
-    html += "}";
-    
-    // Auto-check on page load
-    html += "window.addEventListener('DOMContentLoaded', function() {";
-    html += "  checkForUpdates();";
-    html += "});";
-    
-    // Install update function
-    html += "function installUpdate() {";
-    html += "  if (!updateAssetUrl) {";
-    html += "    alert('No update URL available');";
-    html += "    return;";
-    html += "  }";
-    html += "  window.location.href = '/ota/status?asset_url=' + encodeURIComponent(updateAssetUrl);";
-    html += "}";
-    
-    // Manual file upload handler
-    html += "document.getElementById('otaForm').addEventListener('submit', function(e) {";
-    html += "  e.preventDefault();";
-    html += "  var fileInput = document.getElementById('update');";
-    html += "  var file = fileInput.files[0];";
-    html += "  if (!file) {";
-    html += "    alert('Please select a firmware file.');";
-    html += "    return;";
-    html += "  }";
-    html += "  if (!file.name.endsWith('.bin')) {";
-    html += "    alert('Please select a valid .bin firmware file.');";
-    html += "    return;";
-    html += "  }";
-    html += "  var formData = new FormData();";
-    html += "  formData.append('update', file);";
-    html += "  var xhr = new XMLHttpRequest();";
-    html += "  document.getElementById('uploadBtn').disabled = true;";
-    html += "  document.getElementById('progressSection').style.display = 'block';";
-    html += "  document.getElementById('statusText').innerText = 'Uploading...';";
-    html += "  xhr.upload.addEventListener('progress', function(e) {";
-    html += "    if (e.lengthComputable) {";
-    html += "      var percentComplete = Math.round((e.loaded / e.total) * 100);";
-    html += "      document.getElementById('progressBar').style.width = percentComplete + '%';";
-    html += "      document.getElementById('progressBar').innerText = percentComplete + '%';";
-    html += "    }";
-    html += "  });";
-    html += "  xhr.addEventListener('load', function() {";
-    html += "    if (xhr.status === 200) {";
-    html += "      document.getElementById('statusText').innerText = 'Upload complete! Flashing...';";
-    html += "      document.getElementById('otaForm').style.display = 'none';";
-    html += "      document.getElementById('successMessage').style.display = 'block';";
-    html += "      setTimeout(function() { window.location.href = '/'; }, 10000);";
-    html += "    } else {";
-    html += "      document.getElementById('errorText').innerText = 'Server returned error: ' + xhr.status;";
-    html += "      document.getElementById('errorMessage').style.display = 'block';";
-    html += "      document.getElementById('uploadBtn').disabled = false;";
-    html += "      document.getElementById('progressSection').style.display = 'none';";
-    html += "    }";
-    html += "  });";
-    html += "  xhr.addEventListener('error', function() {";
-    html += "    document.getElementById('errorText').innerText = 'Upload failed. Please try again.';";
-    html += "    document.getElementById('errorMessage').style.display = 'block';";
-    html += "    document.getElementById('uploadBtn').disabled = false;";
-    html += "    document.getElementById('progressSection').style.display = 'none';";
-    html += "  });";
-    html += "  xhr.open('POST', '/ota');";
-    html += "  xhr.send(formData);";
-    html += "});";
-    html += "</script>";
+    // OTA JavaScript (GitHub updates and manual upload)
+    html += CONFIG_PORTAL_OTA_SCRIPT;
     
     html += "</body></html>";
     
@@ -1272,39 +984,82 @@ void ConfigPortal::handleVcomSubmit() {
 
 // VCOM management HTML page
 String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
-    String html = "<html><head><meta charset='UTF-8'><title>VCOM Management</title><style>" + getCSS() + "</style></head><body>";
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='UTF-8'>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    html += "<title>VCOM Management</title>";
+    html += getCSS();
+    html += "</head><body>";
     html += "<div class='container'>";
-    html += "<h2>VCOM Management</h2>";
-    html += "<p style='color:red;'><b>Warning:</b> Changing the VCOM value can permanently damage your e-ink display if set incorrectly. Only proceed if you know what you are doing!<br>Programming VCOM writes to the PMIC EEPROM.</p>";
+    html += "<h1>⚙️ VCOM Management</h1>";
+    html += "<p class='subtitle'>Advanced display voltage calibration</p>";
     
-    // Test pattern info box
-    html += "<div style='margin: 15px 0; padding: 12px; background: #e8f4f8; border-left: 4px solid #0066cc; border-radius: 4px;'>";
-    html += "<strong>📊 Test Pattern:</strong> Your device is now displaying a test pattern with 8 grayscale bars. ";
+    // Warning Section
+    html += SECTION_START("⚠️", "Important Warning");
+    html += "<div style='background: #fef2f2; border: 2px solid #fee2e2; border-radius: 8px; padding: 15px; color: #991b1b;'>";
+    html += "<strong style='font-size: 16px;'>⚠️ Caution:</strong><br>";
+    html += "Changing the VCOM value can permanently damage your e-ink display if set incorrectly. ";
+    html += "Only proceed if you know what you are doing!<br><br>";
+    html += "<strong>Note:</strong> Programming VCOM writes to the PMIC EEPROM.";
+    html += "</div>";
+    html += "</div>";
+    html += SECTION_END();
+    
+    // Test Pattern Section
+    html += SECTION_START("📊", "Test Pattern Display");
+    html += "<div class='help-text'>";
+    html += "Your device is now displaying a test pattern with 8 grayscale bars. ";
     html += "Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.";
     html += "</div>";
+    html += SECTION_END();
     
+    // Current VCOM Section
+    html += SECTION_START("🔋", "VCOM Programming");
+    
+    html += "<div class='device-info'>";
     if (!isnan(currentVcom)) {
-        html += "<p>Current VCOM value: <b>" + String(currentVcom, 3) + " V</b></p>";
+        html += "<strong>Current VCOM:</strong> " + String(currentVcom, 3) + " V";
     } else {
-        html += "<p>Current VCOM value: <b>Unavailable</b></p>";
+        html += "<strong>Current VCOM:</strong> Unavailable";
     }
+    html += "</div>";
+    
     if (!message.isEmpty()) {
-        html += "<div>" + message + "</div>";
+        html += "<div style='margin-bottom: 20px;'>" + message + "</div>";
     }
+    
     html += "<form method='POST' action='/vcom'>";
-    html += "<label for='vcom'>New VCOM value (V, -3.3 to 0): </label>";
-    html += "<input type='number' id='vcom' name='vcom' step='0.001' min='-3.3' max='0' required>";
-    html += "<br><input type='checkbox' id='confirm' name='confirm'> <label for='confirm'><b>I understand the risks and want to program VCOM</b></label><br>";
-    html += "<button type='submit' class='btn-primary' style='width:100%;'>Program VCOM</button>";
+    html += "<div class='form-group'>";
+    html += "<label for='vcom'>New VCOM Value (Volts)</label>";
+    html += "<input type='number' id='vcom' name='vcom' step='0.001' min='-3.3' max='0' placeholder='-2.500' required>";
+    html += "<div class='help-text'>Valid range: -3.3V to 0V (typical values: -2.3V to -2.7V)</div>";
+    html += "</div>";
+    
+    html += "<div class='form-group'>";
+    html += "<label style='display: flex; align-items: center; gap: 10px; cursor: pointer;'>";
+    html += "<input type='checkbox' id='confirm' name='confirm'>";
+    html += "<strong>I understand the risks and want to program VCOM</strong>";
+    html += "</label>";
+    html += "</div>";
+    
+    html += "<button type='submit' class='btn-primary' style='width:100%; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);'>⚡ Program VCOM</button>";
     html += "</form>";
     
-    
     if (!diagnostics.isEmpty()) {
-        html += "<div style='margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-family: monospace; font-size: 12px;'>";
-        html += "<strong>Diagnostics:</strong><br>" + diagnostics;
+        html += "<div style='margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; border: 1px solid #d1d5db;'>";
+        html += "<strong style='color: #374151;'>Diagnostics:</strong>";
+        html += "<pre style='margin-top: 10px; font-family: monospace; font-size: 12px; color: #1f2937; white-space: pre-wrap; word-wrap: break-word;'>" + diagnostics + "</pre>";
         html += "</div>";
     }
-    html += "<div style='margin-top:20px;'><a href='/' style='text-decoration:none;display:block;'><button type='button' class='btn-secondary' style='width:100%;'>Back to main config</button></a></div>";
+    
+    html += SECTION_END();
+    
+    html += "<div style='margin-top: 20px;'>";
+    html += "<a href='/' style='text-decoration:none;display:block;'>";
+    html += "<button type='button' class='btn-secondary' style='width:100%;'>← Back to Configuration</button>";
+    html += "</a>";
+    html += "</div>";
+    
     html += "</div></body></html>";
     return html;
 }

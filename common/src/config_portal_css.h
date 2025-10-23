@@ -23,11 +23,11 @@ const char* CONFIG_PORTAL_CSS = R"(
     
     /* Container */
     .container {
-        background: white;
+        background: #f8f9fa;
         border-radius: 12px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         padding: 40px;
-        max-width: 500px;
+        max-width: 640px;
         width: 100%;
         margin: 0 auto;
     }
@@ -61,7 +61,8 @@ const char* CONFIG_PORTAL_CSS = R"(
     input[type="text"],
     input[type="password"],
     input[type="number"],
-    input[type="url"] {
+    input[type="url"],
+    select {
         width: 100%;
         padding: 12px;
         border: 2px solid #e0e0e0;
@@ -70,9 +71,19 @@ const char* CONFIG_PORTAL_CSS = R"(
         transition: border-color 0.3s;
         -webkit-appearance: none;
         touch-action: manipulation;
+        background: white;
     }
     
-    input:focus {
+    select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 40px;
+        cursor: pointer;
+    }
+    
+    input:focus,
+    select:focus {
         outline: none;
         border-color: #667eea;
     }
@@ -89,6 +100,40 @@ const char* CONFIG_PORTAL_CSS = R"(
         font-size: 12px;
         color: #666;
         margin-top: 5px;
+    }
+    
+    /* Section card styling */
+    .section {
+        background: white;
+        margin-bottom: 16px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .section-header {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        color: #212529;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-bottom: 3px solid #2196f3;
+    }
+    
+    .section-icon {
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .section-content {
+        padding: 20px;
+        background: white;
     }
     
     /* Buttons */
@@ -527,6 +572,59 @@ const char* CONFIG_PORTAL_CSS = R"(
         margin-bottom: 4px;
     }
     
+    /* Floating Battery Badge */
+    .floating-battery-badge {
+        position: fixed;
+        bottom: 20px;
+        right: calc((100vw - 640px) / 2 + 20px);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 100;
+        min-width: 100px;
+        text-align: center;
+    }
+    
+    .floating-battery-badge.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px);
+    }
+    
+    .floating-battery-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .floating-battery-badge:active {
+        transform: translateY(0);
+    }
+    
+    .badge-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.9;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .badge-value {
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    
+    .badge-icon {
+        font-size: 10px;
+        opacity: 0.8;
+        margin-top: 4px;
+    }
+    
     /* Mobile responsive adjustments */
     @media (max-width: 600px) {
         body {
@@ -548,6 +646,26 @@ const char* CONFIG_PORTAL_CSS = R"(
         
         .battery-life-display {
             font-size: 28px;
+        }
+        
+        .floating-battery-badge {
+            right: 20px;
+            bottom: 20px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .section-content {
+            padding: 15px;
+        }
+        
+        .section-header {
+            padding: 12px 15px;
+            font-size: 15px;
+        }
+        
+        .section-icon {
+            font-size: 20px;
         }
     }
 </style>
@@ -651,5 +769,342 @@ const char* CONFIG_PORTAL_FOOTER_TEMPLATE = R"(
   Inkplate Dashboard v%VERSION%
 </div>
 )";
+
+// Battery Life Calculator JavaScript
+// Calculates and displays battery life estimates based on configuration
+const char* CONFIG_PORTAL_BATTERY_CALC_SCRIPT = R"(
+<script>
+const POWER_CONSTANTS = {
+  ACTIVE_MA: 100,
+  DISPLAY_MA: 50,
+  SLEEP_MA: 0.02,
+  IMAGE_UPDATE_SEC: 7,
+  CRC32_CHECK_SEC: 1
+};
+
+function calculateBatteryLife() {
+  const refreshRate = parseInt(document.getElementById('refresh').value) || 5;
+  const useCRC32 = document.getElementById('crc32check').checked;
+  const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
+  const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
+  
+  let activeHours = 0;
+  for (let hour = 0; hour < 24; hour++) {
+    const checkbox = document.getElementById('hour_' + hour);
+    if (checkbox && checkbox.checked) activeHours++;
+  }
+  if (activeHours === 0) activeHours = 24;
+  
+  const wakeupsPerDay = activeHours * (60 / refreshRate);
+  let dailyPower = 0;
+  let activeTimeMinutes = 0;
+  
+  if (useCRC32) {
+    const fullUpdates = Math.min(dailyChanges, wakeupsPerDay);
+    const crc32Checks = wakeupsPerDay - fullUpdates;
+    const activeSecondsPerUpdate = 5;
+    const displaySecondsPerUpdate = 2;
+    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
+    dailyPower += fullUpdates * powerPerFullUpdate;
+    const powerPerCRC32Check = (POWER_CONSTANTS.CRC32_CHECK_SEC * POWER_CONSTANTS.ACTIVE_MA / 3600);
+    dailyPower += crc32Checks * powerPerCRC32Check;
+    activeTimeMinutes = (fullUpdates * POWER_CONSTANTS.IMAGE_UPDATE_SEC + crc32Checks * POWER_CONSTANTS.CRC32_CHECK_SEC) / 60;
+  } else {
+    const activeSecondsPerUpdate = 5;
+    const displaySecondsPerUpdate = 2;
+    const powerPerFullUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
+    dailyPower += wakeupsPerDay * powerPerFullUpdate;
+    activeTimeMinutes = (wakeupsPerDay * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;
+  }
+  
+  const sleepHours = 24 - (activeTimeMinutes / 60);
+  dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;
+  
+  const batteryLifeDays = Math.round(batteryCapacity / dailyPower);
+  const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);
+  
+  let status = 'poor', statusText = 'SHORT';
+  if (batteryLifeDays >= 180) { status = 'excellent'; statusText = 'EXCELLENT'; }
+  else if (batteryLifeDays >= 90) { status = 'good'; statusText = 'GOOD'; }
+  else if (batteryLifeDays >= 45) { status = 'moderate'; statusText = 'MODERATE'; }
+  
+  document.getElementById('battery-days').textContent = batteryLifeDays + ' days';
+  document.getElementById('battery-months').textContent = 'Approximately ' + batteryLifeMonths + ' months';
+  document.getElementById('daily-power').textContent = dailyPower.toFixed(1) + ' mAh';
+  document.getElementById('wakeups').textContent = wakeupsPerDay;
+  document.getElementById('active-time').textContent = activeTimeMinutes.toFixed(1) + ' min/day';
+  document.getElementById('sleep-time').textContent = sleepHours.toFixed(1) + ' hrs/day';
+  
+  document.getElementById('status-badge').textContent = statusText;
+  document.getElementById('status-badge').className = 'status-badge status-' + status;
+  document.getElementById('battery-result').className = 'battery-result ' + status;
+  
+  const progressBar = document.getElementById('progress-bar');
+  const progressPercent = Math.min(100, (batteryLifeDays / 300) * 100);
+  progressBar.style.width = progressPercent + '%';
+  progressBar.className = 'battery-progress-bar ' + status;
+  
+  const tipsDiv = document.getElementById('battery-tips');
+  const tipText = document.getElementById('tip-text');
+  if (!useCRC32) {
+    tipsDiv.style.display = 'block';
+    tipText.textContent = 'Enable CRC32 change detection to extend battery life by 5-8×!';
+  } else if (refreshRate <= 2) {
+    tipsDiv.style.display = 'block';
+    tipText.textContent = 'Consider increasing refresh rate to 5-10 minutes to extend battery life.';
+  } else if (batteryLifeDays < 60) {
+    tipsDiv.style.display = 'block';
+    tipText.textContent = 'Consider using a larger battery or reducing refresh frequency.';
+  } else {
+    tipsDiv.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('refresh').addEventListener('input', calculateBatteryLife);
+  document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);
+  document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);
+  document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);
+  for (let hour = 0; hour < 24; hour++) {
+    const checkbox = document.getElementById('hour_' + hour);
+    if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);
+  }
+  calculateBatteryLife();
+});
+</script>
+)";
+
+// Floating Battery Badge JavaScript
+// Handles visibility logic and interactions for the floating badge
+const char* CONFIG_PORTAL_BADGE_SCRIPT = R"(
+<script>
+function isBatteryDaysVisible() {
+  const daysElement = document.getElementById('battery-days');
+  if (!daysElement) return true;
+  const rect = daysElement.getBoundingClientRect();
+  return rect.top < window.innerHeight && rect.bottom > 0;
+}
+function isScrolledPastBatteryDays() {
+  const daysElement = document.getElementById('battery-days');
+  if (!daysElement) return false;
+  const rect = daysElement.getBoundingClientRect();
+  return rect.bottom < 0;
+}
+function updateBadgeVisibility() {
+  const badge = document.querySelector('.floating-battery-badge');
+  if (!badge) return;
+  const isVisible = isBatteryDaysVisible();
+  const isPast = isScrolledPastBatteryDays();
+  if (!isVisible && !isPast) { badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
+}
+function scrollToBattery() {
+  const daysElement = document.getElementById('battery-days');
+  if (daysElement) { daysElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+function updateBadgeValue() {
+  const badge = document.querySelector('.badge-value');
+  const days = document.getElementById('battery-days');
+  if (badge && days) { badge.textContent = days.textContent; }
+}
+window.addEventListener('scroll', updateBadgeVisibility);
+window.addEventListener('resize', updateBadgeVisibility);
+document.addEventListener('DOMContentLoaded', function() {
+  updateBadgeVisibility();
+  const observer = new MutationObserver(updateBadgeValue);
+  const target = document.getElementById('battery-days');
+  if (target) { observer.observe(target, { characterData: true, childList: true, subtree: true }); }
+  updateBadgeValue();
+});
+</script>
+)";
+
+// Floating Battery Badge HTML
+const char* CONFIG_PORTAL_BADGE_HTML = R"(
+<div class='floating-battery-badge hidden' onclick='scrollToBattery()'>
+  <div class='badge-label'>Battery Life</div>
+  <div class='badge-value'>-- days</div>
+  <div class='badge-icon'>👆 Click to see details</div>
+</div>
+)";
+
+// Factory Reset Modal JavaScript
+const char* CONFIG_PORTAL_MODAL_SCRIPT = R"(
+<script>
+function showResetModal() { document.getElementById('resetModal').style.display = 'block'; }
+function hideResetModal() { document.getElementById('resetModal').style.display = 'none'; }
+window.onclick = function(event) { var modal = document.getElementById('resetModal'); if (event.target == modal) { modal.style.display = 'none'; } }
+</script>
+)";
+
+// OTA Page - Static HTML Content
+const char* CONFIG_PORTAL_OTA_CONTENT_HTML = R"(
+<div class='warning-banner'>
+<strong>⚠️ Important:</strong> Do not power off the device during the update process. The device will restart automatically after a successful update.
+</div>
+<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>
+<h2 style='margin-top: 0;'>📦 Option 1: Update from GitHub Releases</h2>
+<p style='color: #666; margin-bottom: 20px;'>Check for and install the latest firmware directly from GitHub.</p>
+<div id='checkLoading' style='text-align: center; margin-top: 15px; color: #666;'>
+<div style='display: inline-block; margin-right: 10px;'>⏳</div> Checking GitHub...
+</div>
+<button type='button' id='checkUpdateBtn' class='btn-primary' style='display: none; width: 100%; margin-top: 15px;' onclick='checkForUpdates()'>Retry Check</button>
+<div id='updateResults' style='display: none; margin-top: 20px;'>
+<div id='updateInfo' style='padding: 15px; background: #f5f5f5; border-radius: 6px; margin-bottom: 15px;'></div>
+<button type='button' id='installUpdateBtn' style='display: none; width: 100%;' class='btn-primary' onclick='installUpdate()'>Install Update</button>
+</div>
+<div id='checkError' style='display: none; margin-top: 15px; padding: 12px; background: #ffe6e6; border-left: 4px solid #cc0000; border-radius: 4px;'>
+<strong>Error:</strong> <span id='checkErrorText'></span>
+</div>
+</div>
+<div style='margin-top: 30px; padding: 20px; border: 2px solid #e0e0e0; border-radius: 8px;'>
+<h2 style='margin-top: 0;'>📁 Option 2: Upload Local Firmware File</h2>
+<p style='color: #666; margin-bottom: 20px;'>Upload a firmware file (.bin) from your computer.</p>
+<form id='otaForm' method='POST' action='/ota' enctype='multipart/form-data'>
+<div class='form-group'>
+<label for='update'>Select Firmware File (.bin)</label>
+<input type='file' id='update' name='update' accept='.bin' required>
+<div class='help-text'>Choose a .bin firmware file for your device</div>
+</div>
+<div id='progressSection' style='display: none;'>
+<div class='progress-container'>
+<div class='progress-bar' id='progressBar'>0%</div>
+</div>
+<div id='statusText' class='help-text' style='text-align: center; margin-top: 10px;'></div>
+</div>
+<div style='display: flex; gap: 10px; margin-top: 25px;'>
+<button type='submit' id='uploadBtn' class='btn-primary' style='flex: 1;'>Upload & Install</button>
+</div>
+</form>
+</div>
+<div id='installProgress' style='display: none; margin-top: 20px; padding: 20px; background: #e8f4f8; border-radius: 8px; text-align: center;'>
+<h3 style='margin-top: 0;'>Installing Firmware...</h3>
+<p id='installStatus'>Downloading from GitHub...</p>
+<div class='progress-container' style='margin-top: 15px;'>
+<div class='progress-bar' id='installProgressBar'>0%</div>
+</div>
+<p style='margin-top: 15px; color: #cc0000;'><strong>⚠️ Do not power off the device!</strong></p>
+</div>
+<div id='successMessage' class='success' style='display: none; margin-top: 20px;'>
+<h2>✅ Update Successful!</h2>
+<p>Firmware updated successfully. Device is restarting...</p>
+</div>
+<div id='errorMessage' class='error' style='display: none; margin-top: 20px;'>
+<h2>❌ Update Failed</h2>
+<p id='errorText'></p>
+</div>
+<div style='margin-top: 30px;'>
+<button type='button' class='btn-secondary' style='width: 100%;' onclick='window.location.href="/"'>← Back to Configuration</button>
+</div>
+)";
+
+// OTA Page - JavaScript for GitHub updates and manual upload
+const char* CONFIG_PORTAL_OTA_SCRIPT = R"(
+<script>
+var updateAssetUrl = '';
+function checkForUpdates() {
+  document.getElementById('checkUpdateBtn').disabled = true;
+  document.getElementById('checkLoading').style.display = 'block';
+  document.getElementById('updateResults').style.display = 'none';
+  document.getElementById('checkError').style.display = 'none';
+  fetch('/ota/check')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      document.getElementById('checkLoading').style.display = 'none';
+      document.getElementById('checkUpdateBtn').disabled = false;
+      if (data.success && data.found) {
+        var infoHtml = '<strong>Current Version:</strong> ' + data.current_version + '<br>';
+        infoHtml += '<strong>Latest Version:</strong> ' + data.latest_version + '<br>';
+        infoHtml += '<strong>Asset:</strong> ' + data.asset_name + '<br>';
+        infoHtml += '<strong>Size:</strong> ' + Math.round(data.asset_size / 1024) + ' KB<br>';
+        if (data.is_newer) {
+          infoHtml += '<div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; color: #155724;"><strong>✓ Update Available</strong></div>';
+          document.getElementById('installUpdateBtn').style.display = 'block';
+          updateAssetUrl = data.asset_url;
+        } else {
+          infoHtml += '<div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border-radius: 4px; color: #0c5460;"><strong>✓ You are up to date</strong></div>';
+          document.getElementById('installUpdateBtn').style.display = 'none';
+        }
+        document.getElementById('updateInfo').innerHTML = infoHtml;
+        document.getElementById('updateResults').style.display = 'block';
+      } else {
+        document.getElementById('checkErrorText').innerText = data.error || 'Unknown error';
+        document.getElementById('checkError').style.display = 'block';
+      }
+    })
+    .catch(function(error) {
+      document.getElementById('checkLoading').style.display = 'none';
+      document.getElementById('checkUpdateBtn').style.display = 'block';
+      document.getElementById('checkErrorText').innerText = 'Network error: ' + error.message;
+      document.getElementById('checkError').style.display = 'block';
+    });
+}
+window.addEventListener('DOMContentLoaded', function() {
+  checkForUpdates();
+});
+function installUpdate() {
+  if (!updateAssetUrl) {
+    alert('No update URL available');
+    return;
+  }
+  window.location.href = '/ota/status?asset_url=' + encodeURIComponent(updateAssetUrl);
+}
+document.getElementById('otaForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var fileInput = document.getElementById('update');
+  var file = fileInput.files[0];
+  if (!file) {
+    alert('Please select a firmware file.');
+    return;
+  }
+  if (!file.name.endsWith('.bin')) {
+    alert('Please select a valid .bin firmware file.');
+    return;
+  }
+  var formData = new FormData();
+  formData.append('update', file);
+  var xhr = new XMLHttpRequest();
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('progressSection').style.display = 'block';
+  document.getElementById('statusText').innerText = 'Uploading...';
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      var percentComplete = Math.round((e.loaded / e.total) * 100);
+      document.getElementById('progressBar').style.width = percentComplete + '%';
+      document.getElementById('progressBar').innerText = percentComplete + '%';
+    }
+  });
+  xhr.addEventListener('load', function() {
+    if (xhr.status === 200) {
+      document.getElementById('statusText').innerText = 'Upload complete! Flashing...';
+      document.getElementById('otaForm').style.display = 'none';
+      document.getElementById('successMessage').style.display = 'block';
+      setTimeout(function() { window.location.href = '/'; }, 10000);
+    } else {
+      document.getElementById('errorText').innerText = 'Server returned error: ' + xhr.status;
+      document.getElementById('errorMessage').style.display = 'block';
+      document.getElementById('uploadBtn').disabled = false;
+      document.getElementById('progressSection').style.display = 'none';
+    }
+  });
+  xhr.addEventListener('error', function() {
+    document.getElementById('errorText').innerText = 'Upload failed. Please try again.';
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('uploadBtn').disabled = false;
+    document.getElementById('progressSection').style.display = 'none';
+  });
+  xhr.open('POST', '/ota');
+  xhr.send(formData);
+});
+</script>
+)";
+
+// Helper macros for generating section HTML
+// Usage: SECTION_START("icon", "Title") + content + SECTION_END()
+#define SECTION_START(icon, title) \
+    "<div class='section'><div class='section-header'><div class='section-icon'>" icon "</div>" title "</div><div class='section-content'>"
+
+#define SECTION_END() \
+    "</div></div>"
 
 #endif // CONFIG_PORTAL_CSS_H
