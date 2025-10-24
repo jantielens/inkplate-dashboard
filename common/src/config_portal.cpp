@@ -1,5 +1,7 @@
 #include "config_portal.h"
 #include "config_portal_css.h"
+#include "config_portal_html.h"
+#include "config_portal_js.h"
 #include "version.h"
 #include "config.h"
 #include <src/logo_bitmap.h>
@@ -580,34 +582,18 @@ String ConfigPortal::generateConfigPage() {
     
     // OTA Update button - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += "<div style='margin-top: 20px;'>";
-        html += "<a href='/ota' style='display: block; text-decoration: none;'>";
-        html += "<button type='button' class='btn-secondary'>⬆️ Firmware Update</button>";
-        html += "</a>";
-        html += "</div>";
-        
-        // Reboot button - only shown in CONFIG_MODE
-        html += "<div style='margin-top: 10px;'>";
-        html += "<form method='POST' action='/reboot' style='display: block;'>";
-        html += "<button type='submit' class='btn-secondary' style='width: 100%;'>🔄 Reboot Device</button>";
-        html += "</form>";
-        html += "</div>";
+        html += CONFIG_PORTAL_FIRMWARE_UPDATE_BUTTON;
+        html += CONFIG_PORTAL_REBOOT_BUTTON;
     }
     
     // Factory Reset & VCOM Section - only show in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += "<div class='factory-reset-section'>";
-        html += "<div class='danger-zone'>";
-        html += "<h2>⚠️ Danger Zone</h2>";
-        html += "<p>Factory reset will erase all settings including WiFi credentials and configuration. The device will reboot and start fresh.</p>";
-        html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
+        html += CONFIG_PORTAL_DANGER_ZONE_START;
         #ifndef DISPLAY_MODE_INKPLATE2
         // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
-        html += "<p style='margin-top:20px;'>VCOM management allows you to view and adjust the display panel's VCOM voltage. This is an advanced feature for correcting image artifacts or ghosting. Use with caution.</p>";
-        html += "<button class='btn-danger' style='width:100%; margin-top:10px;' onclick=\"window.location.href='/vcom'\">⚠️ VCOM Management</button>";
+        html += CONFIG_PORTAL_VCOM_BUTTON;
         #endif
-        html += "</div>";
-        html += "</div>";
+        html += CONFIG_PORTAL_DANGER_ZONE_END;
     }
     
     html += "</div>";
@@ -646,12 +632,12 @@ String ConfigPortal::generateSuccessPage() {
     html += "<meta http-equiv='refresh' content='5;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>✅ Success!</h1>";
-    html += "<p style='margin-top: 15px;'>Configuration saved successfully.</p>";
-    html += "<p style='margin-top: 10px;'>The device will restart and connect to your WiFi network.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>";
-    html += "</div>";
+    
+    String successContent = CONFIG_PORTAL_SUCCESS_PAGE_TEMPLATE;
+    successContent.replace("%MESSAGE%", "Configuration saved successfully.");
+    successContent.replace("%SUBMESSAGE%", "The device will restart and connect to your WiFi network.");
+    successContent.replace("%REDIRECT_INFO%", "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>");
+    html += successContent;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -670,11 +656,11 @@ String ConfigPortal::generateErrorPage(const String& error) {
     html += "<meta http-equiv='refresh' content='3;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='error'>";
-    html += "<h1>❌ Error</h1>";
-    html += "<p style='margin-top: 15px;'>" + error + "</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>";
-    html += "</div>";
+    
+    String errorContent = CONFIG_PORTAL_ERROR_PAGE_TEMPLATE;
+    errorContent.replace("%ERROR%", error);
+    errorContent.replace("%REDIRECT_INFO%", "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>");
+    html += errorContent;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -692,12 +678,8 @@ String ConfigPortal::generateFactoryResetPage() {
     html += getCSS();
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>🔄 Factory Reset Complete</h1>";
-    html += "<p style='margin-top: 15px;'>All configuration has been erased.</p>";
-    html += "<p style='margin-top: 10px;'>The device will reboot now and start in setup mode.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
-    html += "</div>";
+    
+    html += CONFIG_PORTAL_FACTORY_RESET_SUCCESS;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -715,12 +697,8 @@ String ConfigPortal::generateRebootPage() {
     html += getCSS();
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>🔄 Rebooting</h1>";
-    html += "<p style='margin-top: 15px;'>The device is restarting now.</p>";
-    html += "<p style='margin-top: 10px;'>Configuration has been preserved.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
-    html += "</div>";
+    
+    html += CONFIG_PORTAL_REBOOT_SUCCESS;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -1080,31 +1058,8 @@ String ConfigPortal::generateOTAStatusPage() {
     html += "<div class='container'>";
     html += "<h1>🔄 Firmware Update</h1>";
     
-    html += "<div class='status-box'>";
-    html += "<div class='spinner'></div>";
-    html += "<h2 id='statusTitle'>Downloading Firmware...</h2>";
-    html += "<p id='statusMessage'>Please wait while the firmware is being downloaded and installed.</p>";
-    html += "</div>";
-    
-    html += "<div class='warning-box'>";
-    html += "<strong>⚠️ Important:</strong> Do not power off the device or close this page. ";
-    html += "The device will restart automatically when the update is complete.";
-    html += "</div>";
-    
-    html += "<div id='progressSection' style='margin-top: 20px;'>";
-    html += "<div class='progress-container'>";
-    html += "<div class='progress-bar' id='progressBar'>0%</div>";
-    html += "</div>";
-    html += "<p style='text-align: center; margin-top: 10px; color: #666;' id='progressText'>Initializing...</p>";
-    html += "</div>";
-    
-    html += "<div id='errorSection' style='display: none;'>";
-    html += "<div class='error'>";
-    html += "<h2>❌ Update Failed</h2>";
-    html += "<p id='errorMessage'></p>";
-    html += "<button type='button' class='btn-primary' style='margin-top: 20px;' onclick='window.location.href=\"/ota\"'>← Back to Firmware Update</button>";
-    html += "</div>";
-    html += "</div>";
+    // OTA Status Content (spinner, progress, error sections)
+    html += CONFIG_PORTAL_OTA_STATUS_CONTENT_HTML;
     
     // Footer
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
