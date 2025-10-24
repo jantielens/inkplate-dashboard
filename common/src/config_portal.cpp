@@ -438,30 +438,33 @@ String ConfigPortal::generateConfigPage() {
         // Get existing image configuration if available
         uint8_t existingCount = hasConfig ? currentConfig.imageCount : 0;
         
-        // Always show first 2 image slots
-        for (uint8_t i = 0; i < 2; i++) {
+        // Always show first image slot
+        for (uint8_t i = 0; i < 1; i++) {
             String imageNum = String(i + 1);
             bool hasExisting = (i < existingCount);
             String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
             int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
             
             html += "<div class='image-slot' id='slot_" + String(i) + "'>";
-            html += "<label>Image " + imageNum + " URL" + (i == 0 ? " *" : "") + "</label>";
-            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "'" + (i == 0 ? " required" : "") + ">";
-            html += String("<label>Display for (minutes)") + (i == 0 ? " *" : "") + "</label>";
-            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'" + (i == 0 ? " required" : "") + ">";
+            html += "<label>Image " + imageNum + " URL *</label>";
+            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "' required>";
+            html += "<label>Display for (minutes) *</label>";
+            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "' required>";
             html += "</div>";
         }
         
-        // Add remaining slots (3-10) if they have data
-        for (uint8_t i = 2; i < MAX_IMAGE_SLOTS; i++) {
+        // Add remaining slots (2-10) if they have data
+        for (uint8_t i = 1; i < MAX_IMAGE_SLOTS; i++) {
             bool hasExisting = (i < existingCount);
             String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
             int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
             String displayStyle = hasExisting ? "" : " style='display:none;'";
             
             html += "<div class='image-slot' id='slot_" + String(i) + "'" + displayStyle + ">";
+            html += "<div style='display: flex; justify-content: space-between; align-items: center;'>";
             html += "<label>Image " + String(i + 1) + " URL</label>";
+            html += "<button type='button' class='btn-remove' id='remove_" + String(i) + "' onclick='removeLastImageSlot()'>❌ Remove</button>";
+            html += "</div>";
             html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + String(i + 1) + ".png' value='" + existingUrl + "'>";
             html += "<label>Display for (minutes)</label>";
             html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'>";
@@ -469,7 +472,7 @@ String ConfigPortal::generateConfigPage() {
         }
         
         // Add button to show more slots (hidden when all 10 are visible)
-        String visibleSlots = String(existingCount > 2 ? existingCount : 2);
+        String visibleSlots = String(existingCount > 1 ? existingCount : 1);
         String buttonDisplay = existingCount >= MAX_IMAGE_SLOTS ? " style='display:none;'" : "";
         html += "<button type='button' id='addImageBtn' onclick='addImageSlot()'" + buttonDisplay + ">➕ Add Another Image (up to 10 total)</button>";
         
@@ -560,6 +563,7 @@ String ConfigPortal::generateConfigPage() {
         html += "> Enable CRC32-based change detection";
         html += "</label>";
         html += "<div class='help-text'>Skips image download & refresh when unchanged. Only works in single image mode (disabled in carousel). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
+        html += "<div class='help-text' id='crc32-carousel-warning' style='display:none; color: #e74c3c; font-weight: bold; margin-top: 5px;'>⚠️ CRC32 change detection is disabled because carousel mode (multiple images) is active. This feature only works with a single image.</div>";
         html += "</div>";
         
         // Hourly Schedule - Update Hours

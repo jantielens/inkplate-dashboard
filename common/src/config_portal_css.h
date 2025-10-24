@@ -187,6 +187,26 @@ const char* CONFIG_PORTAL_CSS = R"(
         width: 100%;
     }
     
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        width: auto;
+        touch-action: manipulation;
+    }
+    
+    @media (hover: hover) {
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+    }
+    
     /* Desktop hover effect */
     @media (hover: hover) {
         button:hover {
@@ -899,7 +919,52 @@ function calculateBatteryLife() {
   }
 }
 
-let visibleSlots = 2;
+let visibleSlots = 1;
+
+function updateCRC32CheckboxState() {
+  const crc32Checkbox = document.getElementById('crc32check');
+  const crc32Warning = document.getElementById('crc32-carousel-warning');
+  
+  if (!crc32Checkbox) return;
+  
+  // Count how many image URLs are filled in visible slots
+  let filledImageCount = 0;
+  for (let i = 0; i < visibleSlots; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    if (urlInput && urlInput.value.trim().length > 0) {
+      filledImageCount++;
+    }
+  }
+  
+  // Disable CRC32 if more than 1 image is configured
+  if (filledImageCount > 1) {
+    crc32Checkbox.disabled = true;
+    crc32Checkbox.checked = false;
+    if (crc32Warning) crc32Warning.style.display = 'block';
+  } else {
+    crc32Checkbox.disabled = false;
+    if (crc32Warning) crc32Warning.style.display = 'none';
+  }
+}
+
+function updateRemoveButtons() {
+  // Hide all remove buttons first
+  for (let i = 1; i < 10; i++) {
+    const removeBtn = document.getElementById('remove_' + i);
+    if (removeBtn) {
+      removeBtn.style.display = 'none';
+    }
+  }
+  
+  // Show only the remove button for the last visible slot (if > 1)
+  if (visibleSlots > 1) {
+    const lastVisibleIndex = visibleSlots - 1;
+    const lastRemoveBtn = document.getElementById('remove_' + lastVisibleIndex);
+    if (lastRemoveBtn) {
+      lastRemoveBtn.style.display = 'inline-block';
+    }
+  }
+}
 
 function addImageSlot() {
   if (visibleSlots >= 10) return;
@@ -920,9 +985,50 @@ function addImageSlot() {
       document.getElementById('addImageBtn').style.display = 'none';
     }
     
+    // Update remove button visibility
+    updateRemoveButtons();
+    
+    // Update CRC32 checkbox state
+    updateCRC32CheckboxState();
+    
     // Recalculate battery life with new slot
     calculateBatteryLife();
   }
+}
+
+function removeLastImageSlot() {
+  if (visibleSlots <= 1) return; // Can't remove if only 1 slot visible
+  
+  const lastVisibleIndex = visibleSlots - 1;
+  const slot = document.getElementById('slot_' + lastVisibleIndex);
+  if (!slot) return;
+  
+  // Clear the inputs
+  const urlInput = slot.querySelector(`input[name="img_url_${lastVisibleIndex}"]`);
+  const intInput = slot.querySelector(`input[name="img_int_${lastVisibleIndex}"]`);
+  if (urlInput) urlInput.value = '';
+  if (intInput) intInput.value = '';
+  
+  // Hide the slot
+  slot.style.display = 'none';
+  
+  // Decrease visible slots count
+  visibleSlots--;
+  
+  // Show add button again if not all slots are visible
+  if (visibleSlots < 10) {
+    const addBtn = document.getElementById('addImageBtn');
+    if (addBtn) addBtn.style.display = 'block';
+  }
+  
+  // Update remove button visibility
+  updateRemoveButtons();
+  
+  // Update CRC32 checkbox state
+  updateCRC32CheckboxState();
+  
+  // Recalculate battery life
+  calculateBatteryLife();
 }
 
 // Auto-fill interval when URL is entered
@@ -936,6 +1042,7 @@ function setupImageSlotListeners() {
         if (this.value.trim().length > 0 && !intInput.value) {
           intInput.value = '5';
         }
+        updateCRC32CheckboxState();
         calculateBatteryLife();
       });
       
@@ -946,7 +1053,7 @@ function setupImageSlotListeners() {
 
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize visible slots count based on existing data
-  for (let i = 2; i < 10; i++) {
+  for (let i = 1; i < 10; i++) {
     const slot = document.getElementById('slot_' + i);
     if (slot && slot.style.display !== 'none') {
       visibleSlots = i + 1;
@@ -960,9 +1067,22 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   setupImageSlotListeners();
-  document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);
-  document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);
-  document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);
+  
+  // Update remove button visibility on initial load
+  updateRemoveButtons();
+  
+  // Update CRC32 checkbox state on initial load
+  updateCRC32CheckboxState();
+  
+  const crc32Check = document.getElementById('crc32check');
+  if (crc32Check) crc32Check.addEventListener('change', calculateBatteryLife);
+  
+  const batteryCapacity = document.getElementById('battery-capacity');
+  if (batteryCapacity) batteryCapacity.addEventListener('change', calculateBatteryLife);
+  
+  const dailyChanges = document.getElementById('daily-changes');
+  if (dailyChanges) dailyChanges.addEventListener('input', calculateBatteryLife);
+  
   for (let hour = 0; hour < 24; hour++) {
     const checkbox = document.getElementById('hour_' + hour);
     if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);
