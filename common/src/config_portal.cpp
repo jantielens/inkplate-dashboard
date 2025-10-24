@@ -448,7 +448,7 @@ String ConfigPortal::generateConfigPage() {
             html += "<div class='image-slot' id='slot_" + String(i) + "'>";
             html += "<label>Image " + imageNum + " URL" + (i == 0 ? " *" : "") + "</label>";
             html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "'" + (i == 0 ? " required" : "") + ">";
-            html += "<label>Display for (minutes)" + (i == 0 ? " *" : "") + "</label>";
+            html += String("<label>Display for (minutes)") + (i == 0 ? " *" : "") + "</label>";
             html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'" + (i == 0 ? " required" : "") + ">";
             html += "</div>";
         }
