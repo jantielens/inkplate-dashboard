@@ -85,7 +85,7 @@ void NormalModeController::execute() {
             LogBox::line("Updates disabled for this hour");
             
             float sleepMinutes = calculateSleepMinutesToNextEnabledHour(now, config.timezoneOffset, config.updateHours);
-            LogBox::line(String("Sleeping ") + String(sleepMinutes, 1) + String(" minutes until next enabled hour"));
+            LogBox::linef("Sleeping %.1f minutes until next enabled hour", sleepMinutes);
             LogBox::end();
             
             powerManager->disableWatchdog();
