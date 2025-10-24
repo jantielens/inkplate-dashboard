@@ -58,3 +58,27 @@ void LogBox::end(const String& message) {
         end("");
     }
 }
+
+// Convenience methods for single-line messages
+void LogBox::message(const char* title, const char* msg) {
+    begin(title);
+    line(msg);
+    end();
+}
+
+void LogBox::message(const String& title, const String& msg) {
+    message(title.c_str(), msg.c_str());
+}
+
+void LogBox::messagef(const char* title, const char* format, ...) {
+    begin(title);
+    
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    
+    line(buffer);
+    end();
+}

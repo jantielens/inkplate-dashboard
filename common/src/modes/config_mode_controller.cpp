@@ -17,9 +17,7 @@ bool ConfigModeController::begin() {
     
     // For partial config, we may not have a full config to load
     if (!hasPartialConfig && !configManager->loadConfig(config)) {
-        LogBox::begin("Config Mode Error");
-        LogBox::line("Failed to load config");
-        LogBox::end();
+        LogBox::message("Config Mode Error", "Failed to load config");
         uiError->showConfigLoadError();
         delay(3000);
         
@@ -84,9 +82,7 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
         LogBox::end();
         return true;
     } else {
-        LogBox::begin("Portal Error");
-        LogBox::line("Failed to start configuration portal");
-        LogBox::end();
+        LogBox::message("Portal Error", "Failed to start configuration portal");
         uiError->showPortalError();
         delay(3000);
         
@@ -123,9 +119,7 @@ bool ConfigModeController::startConfigPortalWithAP() {
             LogBox::end();
             return true;
         } else {
-            LogBox::begin("AP Mode Error");
-            LogBox::line("Failed to start AP mode fallback");
-            LogBox::end();
+            LogBox::message("AP Mode Error", "Failed to start AP mode fallback");
             uiError->showAPStartError();
             delay(3000);
             
@@ -141,9 +135,7 @@ bool ConfigModeController::startConfigPortalWithAP() {
             return false;
         }
     } else {
-        LogBox::begin("AP Mode Error");
-        LogBox::line("Failed to start AP mode fallback");
-        LogBox::end();
+        LogBox::message("AP Mode Error", "Failed to start AP mode fallback");
         uiError->showConfigModeFailure();
         delay(3000);
         

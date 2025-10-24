@@ -1,5 +1,7 @@
 #include "config_portal.h"
 #include "config_portal_css.h"
+#include "config_portal_html.h"
+#include "config_portal_js.h"
 #include "version.h"
 #include "config.h"
 #include <src/logo_bitmap.h>
@@ -17,9 +19,7 @@ ConfigPortal::~ConfigPortal() {
 
 bool ConfigPortal::begin(PortalMode mode) {
     if (_server != nullptr) {
-        LogBox::begin("Config Portal");
-        LogBox::line("Config portal already running");
-        LogBox::end();
+        LogBox::message("Config Portal", "Config portal already running");
         return true;
     }
     
@@ -49,9 +49,7 @@ bool ConfigPortal::begin(PortalMode mode) {
                 // Handle upload data
                 HTTPUpload& upload = _server->upload();
                 if (upload.status == UPLOAD_FILE_START) {
-                    LogBox::begin("OTA Update");
-                    LogBox::line("Starting OTA update: " + upload.filename);
-                    LogBox::end();
+                    LogBox::message("OTA Update", "Starting OTA update: " + upload.filename);
                     
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
@@ -100,9 +98,7 @@ bool ConfigPortal::begin(PortalMode mode) {
                     }
                 } else if (upload.status == UPLOAD_FILE_END) {
                     if (Update.end(true)) {
-                        LogBox::begin("OTA Success");
-                        LogBox::linef("Update successful: %u bytes", upload.totalSize);
-                        LogBox::end();
+                        LogBox::messagef("OTA Success", "Update successful: %u bytes", upload.totalSize);
                         // Watchdog will be reset on reboot, no need to re-enable
                     } else {
                         Update.printError(Serial);
@@ -132,9 +128,7 @@ void ConfigPortal::stop() {
         _server->stop();
         delete _server;
         _server = nullptr;
-        LogBox::begin("Config Portal");
-        LogBox::line("Configuration portal stopped");
-        LogBox::end();
+        LogBox::message("Config Portal", "Configuration portal stopped");
     }
 }
 
@@ -153,16 +147,12 @@ int ConfigPortal::getPort() {
 }
 
 void ConfigPortal::handleRoot() {
-    LogBox::begin("Web Request");
-    LogBox::line("Serving configuration page");
-    LogBox::end();
+    LogBox::message("Web Request", "Serving configuration page");
     _server->send(200, "text/html", generateConfigPage());
 }
 
 void ConfigPortal::handleSubmit() {
-    LogBox::begin("Web Request");
-    LogBox::line("Configuration form submitted");
-    LogBox::end();
+    LogBox::message("Web Request", "Configuration form submitted");
     
     // Get form data
     String ssid = _server->arg("ssid");
@@ -254,9 +244,7 @@ void ConfigPortal::handleSubmit() {
     // In BOOT_MODE, only save WiFi credentials
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
-        LogBox::begin("Config Saved");
-        LogBox::line("WiFi credentials saved (boot mode)");
-        LogBox::end();
+        LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
         return;
@@ -285,9 +273,7 @@ void ConfigPortal::handleSubmit() {
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
         config.wifiPassword = _configManager->getWiFiPassword();
-        LogBox::begin("Config Update");
-        LogBox::line("Keeping existing WiFi password");
-        LogBox::end();
+        LogBox::message("Config Update", "Keeping existing WiFi password");
     } else {
         config.wifiPassword = password;
     }
@@ -295,32 +281,24 @@ void ConfigPortal::handleSubmit() {
     // Handle MQTT password - if empty and device is configured with MQTT, keep existing password
     if (mqttPass.length() == 0 && _configManager->isConfigured() && _configManager->getMQTTPassword().length() > 0) {
         config.mqttPassword = _configManager->getMQTTPassword();
-        LogBox::begin("Config Update");
-        LogBox::line("Keeping existing MQTT password");
-        LogBox::end();
+        LogBox::message("Config Update", "Keeping existing MQTT password");
     } else {
         config.mqttPassword = mqttPass;
     }
     
     // Save configuration
     if (_configManager->saveConfig(config)) {
-        LogBox::begin("Config Saved");
-        LogBox::line("Configuration saved successfully");
-        LogBox::end();
+        LogBox::message("Config Saved", "Configuration saved successfully");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
     } else {
-        LogBox::begin("Config Error");
-        LogBox::line("Failed to save configuration");
-        LogBox::end();
+        LogBox::message("Config Error", "Failed to save configuration");
         _server->send(500, "text/html", generateErrorPage("Failed to save configuration"));
     }
 }
 
 void ConfigPortal::handleFactoryReset() {
-    LogBox::begin("Factory Reset");
-    LogBox::line("Factory reset requested");
-    LogBox::end();
+    LogBox::message("Factory Reset", "Factory reset requested");
     
     // Clear all configuration
     _configManager->clearConfig();
@@ -338,17 +316,13 @@ void ConfigPortal::handleFactoryReset() {
 }
 
 void ConfigPortal::handleReboot() {
-    LogBox::begin("Reboot");
-    LogBox::line("Device reboot requested");
-    LogBox::end();
+    LogBox::message("Reboot", "Device reboot requested");
     
     // Send reboot page
     _server->send(200, "text/html", generateRebootPage());
     
     // Device will reboot after the response is sent
-    LogBox::begin("Reboot");
-    LogBox::line("Device will reboot in 2 seconds");
-    LogBox::end();
+    LogBox::message("Reboot", "Device will reboot in 2 seconds");
     delay(2000);
     ESP.restart();
 }
@@ -374,9 +348,7 @@ String ConfigPortal::generateConfigPage() {
         hasPartialConfig = true;
     }
     
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Inkplate Dashboard Setup</title>";
     html += getCSS();
     html += "</head><body>";
@@ -610,34 +582,18 @@ String ConfigPortal::generateConfigPage() {
     
     // OTA Update button - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += "<div style='margin-top: 20px;'>";
-        html += "<a href='/ota' style='display: block; text-decoration: none;'>";
-        html += "<button type='button' class='btn-secondary'>⬆️ Firmware Update</button>";
-        html += "</a>";
-        html += "</div>";
-        
-        // Reboot button - only shown in CONFIG_MODE
-        html += "<div style='margin-top: 10px;'>";
-        html += "<form method='POST' action='/reboot' style='display: block;'>";
-        html += "<button type='submit' class='btn-secondary' style='width: 100%;'>🔄 Reboot Device</button>";
-        html += "</form>";
-        html += "</div>";
+        html += CONFIG_PORTAL_FIRMWARE_UPDATE_BUTTON;
+        html += CONFIG_PORTAL_REBOOT_BUTTON;
     }
     
     // Factory Reset & VCOM Section - only show in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += "<div class='factory-reset-section'>";
-        html += "<div class='danger-zone'>";
-        html += "<h2>⚠️ Danger Zone</h2>";
-        html += "<p>Factory reset will erase all settings including WiFi credentials and configuration. The device will reboot and start fresh.</p>";
-        html += "<button class='btn-danger' onclick='showResetModal()'>🗑️ Factory Reset</button>";
+        html += CONFIG_PORTAL_DANGER_ZONE_START;
         #ifndef DISPLAY_MODE_INKPLATE2
         // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
-        html += "<p style='margin-top:20px;'>VCOM management allows you to view and adjust the display panel's VCOM voltage. This is an advanced feature for correcting image artifacts or ghosting. Use with caution.</p>";
-        html += "<button class='btn-danger' style='width:100%; margin-top:10px;' onclick=\"window.location.href='/vcom'\">⚠️ VCOM Management</button>";
+        html += CONFIG_PORTAL_VCOM_BUTTON;
         #endif
-        html += "</div>";
-        html += "</div>";
+        html += CONFIG_PORTAL_DANGER_ZONE_END;
     }
     
     html += "</div>";
@@ -670,20 +626,18 @@ String ConfigPortal::generateConfigPage() {
 }
 
 String ConfigPortal::generateSuccessPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Configuration Saved</title>";
     html += getCSS();
     html += "<meta http-equiv='refresh' content='5;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>✅ Success!</h1>";
-    html += "<p style='margin-top: 15px;'>Configuration saved successfully.</p>";
-    html += "<p style='margin-top: 10px;'>The device will restart and connect to your WiFi network.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>";
-    html += "</div>";
+    
+    String successContent = CONFIG_PORTAL_SUCCESS_PAGE_TEMPLATE;
+    successContent.replace("%MESSAGE%", "Configuration saved successfully.");
+    successContent.replace("%SUBMESSAGE%", "The device will restart and connect to your WiFi network.");
+    successContent.replace("%REDIRECT_INFO%", "<p style='margin-top: 15px; font-size: 14px;'>This page will redirect in 5 seconds...</p>");
+    html += successContent;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -696,19 +650,17 @@ String ConfigPortal::generateSuccessPage() {
 }
 
 String ConfigPortal::generateErrorPage(const String& error) {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Error</title>";
     html += getCSS();
     html += "<meta http-equiv='refresh' content='3;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='error'>";
-    html += "<h1>❌ Error</h1>";
-    html += "<p style='margin-top: 15px;'>" + error + "</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>";
-    html += "</div>";
+    
+    String errorContent = CONFIG_PORTAL_ERROR_PAGE_TEMPLATE;
+    errorContent.replace("%ERROR%", error);
+    errorContent.replace("%REDIRECT_INFO%", "<p style='margin-top: 15px; font-size: 14px;'>Redirecting back in 3 seconds...</p>");
+    html += errorContent;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -721,19 +673,13 @@ String ConfigPortal::generateErrorPage(const String& error) {
 }
 
 String ConfigPortal::generateFactoryResetPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Factory Reset</title>";
     html += getCSS();
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>🔄 Factory Reset Complete</h1>";
-    html += "<p style='margin-top: 15px;'>All configuration has been erased.</p>";
-    html += "<p style='margin-top: 10px;'>The device will reboot now and start in setup mode.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
-    html += "</div>";
+    
+    html += CONFIG_PORTAL_FACTORY_RESET_SUCCESS;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -746,19 +692,13 @@ String ConfigPortal::generateFactoryResetPage() {
 }
 
 String ConfigPortal::generateRebootPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Rebooting</title>";
     html += getCSS();
     html += "</head><body>";
     html += "<div class='container'>";
-    html += "<div class='success'>";
-    html += "<h1>🔄 Rebooting</h1>";
-    html += "<p style='margin-top: 15px;'>The device is restarting now.</p>";
-    html += "<p style='margin-top: 10px;'>Configuration has been preserved.</p>";
-    html += "<p style='margin-top: 15px; font-size: 14px;'>Please wait for the device to restart...</p>";
-    html += "</div>";
+    
+    html += CONFIG_PORTAL_REBOOT_SUCCESS;
     
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
@@ -771,9 +711,7 @@ String ConfigPortal::generateRebootPage() {
 }
 
 String ConfigPortal::generateOTAPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Firmware Update</title>";
     html += getCSS();
     html += "</head><body>";
@@ -823,9 +761,7 @@ void ConfigPortal::handleOTAUpload() {
 }
 
 void ConfigPortal::handleOTACheck() {
-    LogBox::begin("OTA Check");
-    LogBox::line("Checking GitHub for updates...");
-    LogBox::end();
+    LogBox::message("OTA Check", "Checking GitHub for updates...");
     
     GitHubOTA ota;
     GitHubOTA::ReleaseInfo info;
@@ -889,9 +825,7 @@ void otaUpdateTask(void* parameter) {
             data->displayManager->refresh();
         }
         
-        LogBox::begin("OTA Success");
-        LogBox::line("Rebooting in 3 seconds...");
-        LogBox::end();
+        LogBox::message("OTA Success", "Rebooting in 3 seconds...");
         
         delay(3000);
         
@@ -1044,9 +978,7 @@ void ConfigPortal::handleVcomSubmit() {
 
 // VCOM management HTML page
 String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>VCOM Management</title>";
     html += getCSS();
     html += "</head><body>";
@@ -1056,20 +988,12 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     
     // Warning Section
     html += SECTION_START("⚠️", "Important Warning");
-    html += "<div style='background: #fef2f2; border: 2px solid #fee2e2; border-radius: 8px; padding: 15px; color: #991b1b;'>";
-    html += "<strong style='font-size: 16px;'>⚠️ Caution:</strong><br>";
-    html += "Changing the VCOM value can permanently damage your e-ink display if set incorrectly. ";
-    html += "Only proceed if you know what you are doing!<br><br>";
-    html += "<strong>Note:</strong> Programming VCOM writes to the PMIC EEPROM.";
-    html += "</div>";
+    html += CONFIG_PORTAL_VCOM_WARNING_HTML;
     html += SECTION_END();
     
     // Test Pattern Section
     html += SECTION_START("📊", "Test Pattern Display");
-    html += "<div class='help-text'>";
-    html += "Your device is now displaying a test pattern with 8 grayscale bars. ";
-    html += "Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.";
-    html += "</div>";
+    html += CONFIG_PORTAL_VCOM_TEST_PATTERN_HTML;
     html += SECTION_END();
     
     // Current VCOM Section
@@ -1126,46 +1050,16 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
 #endif // DISPLAY_MODE_INKPLATE2
 
 String ConfigPortal::generateOTAStatusPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Updating Firmware</title>";
     html += getCSS();
-    html += "<style>";
-    html += ".spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }";
-    html += "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
-    html += ".status-box { padding: 30px; background: #e8f4f8; border-radius: 8px; text-align: center; margin: 20px 0; }";
-    html += ".warning-box { padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin: 20px 0; }";
-    html += "</style>";
+    html += CONFIG_PORTAL_OTA_STATUS_STYLES;
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>🔄 Firmware Update</h1>";
     
-    html += "<div class='status-box'>";
-    html += "<div class='spinner'></div>";
-    html += "<h2 id='statusTitle'>Downloading Firmware...</h2>";
-    html += "<p id='statusMessage'>Please wait while the firmware is being downloaded and installed.</p>";
-    html += "</div>";
-    
-    html += "<div class='warning-box'>";
-    html += "<strong>⚠️ Important:</strong> Do not power off the device or close this page. ";
-    html += "The device will restart automatically when the update is complete.";
-    html += "</div>";
-    
-    html += "<div id='progressSection' style='margin-top: 20px;'>";
-    html += "<div class='progress-container'>";
-    html += "<div class='progress-bar' id='progressBar'>0%</div>";
-    html += "</div>";
-    html += "<p style='text-align: center; margin-top: 10px; color: #666;' id='progressText'>Initializing...</p>";
-    html += "</div>";
-    
-    html += "<div id='errorSection' style='display: none;'>";
-    html += "<div class='error'>";
-    html += "<h2>❌ Update Failed</h2>";
-    html += "<p id='errorMessage'></p>";
-    html += "<button type='button' class='btn-primary' style='margin-top: 20px;' onclick='window.location.href=\"/ota\"'>← Back to Firmware Update</button>";
-    html += "</div>";
-    html += "</div>";
+    // OTA Status Content (spinner, progress, error sections)
+    html += CONFIG_PORTAL_OTA_STATUS_CONTENT_HTML;
     
     // Footer
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
@@ -1175,80 +1069,7 @@ String ConfigPortal::generateOTAStatusPage() {
     html += "</div>"; // Close container
     
     // JavaScript to trigger the update and poll progress
-    html += "<script>";
-    html += "var updateStarted = false;";
-    html += "var progressInterval = null;";
-    html += "var failedPolls = 0;";
-    html += "function updateProgress() {";
-    html += "  fetch('/ota/progress')";
-    html += "    .then(function(response) { return response.json(); })";
-    html += "    .then(function(data) {";
-    html += "      failedPolls = 0;";
-    html += "      if (data.inProgress) {";
-    html += "        var percent = data.percentComplete;";
-    html += "        var kb = Math.round(data.bytesDownloaded / 1024);";
-    html += "        var totalKb = Math.round(data.totalBytes / 1024);";
-    html += "        document.getElementById('progressBar').style.width = percent + '%';";
-    html += "        document.getElementById('progressBar').innerText = percent + '%';";
-    html += "        if (totalKb > 0) {";
-    html += "          document.getElementById('progressText').innerText = kb + ' KB / ' + totalKb + ' KB';";
-    html += "        }";
-    html += "      } else if (data.percentComplete === 100) {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.getElementById('statusTitle').innerText = 'Installing...';";
-    html += "        document.getElementById('statusMessage').innerText = 'Firmware downloaded. Installing and rebooting...';";
-    html += "        document.getElementById('progressBar').style.width = '100%';";
-    html += "        document.getElementById('progressBar').innerText = '100%';";
-    html += "      }";
-    html += "    })";
-    html += "    .catch(function(error) {";
-    html += "      failedPolls++;";
-    html += "      if (failedPolls >= 3) {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.querySelector('.spinner').style.display = 'none';";
-    html += "        document.getElementById('statusTitle').innerText = 'Device is Rebooting';";
-    html += "        document.getElementById('statusMessage').innerText = 'The firmware has been installed successfully. The device is now rebooting...';";
-    html += "        document.getElementById('progressBar').style.width = '100%';";
-    html += "        document.getElementById('progressBar').innerText = '100%';";
-    html += "        document.getElementById('progressText').innerText = 'Complete';";
-    html += "      }";
-    html += "    });";
-    html += "}";
-    html += "window.addEventListener('DOMContentLoaded', function() {";
-    html += "  var urlParams = new URLSearchParams(window.location.search);";
-    html += "  var assetUrl = urlParams.get('asset_url');";
-    html += "  if (!assetUrl) {";
-    html += "    document.getElementById('statusTitle').innerText = 'Error';";
-    html += "    document.getElementById('statusMessage').innerText = 'Missing update URL';";
-    html += "    document.querySelector('.spinner').style.display = 'none';";
-    html += "    return;";
-    html += "  }";
-    html += "  if (updateStarted) return;";
-    html += "  updateStarted = true;";
-    html += "  progressInterval = setInterval(updateProgress, 500);";
-    html += "  var formData = new FormData();";
-    html += "  formData.append('asset_url', assetUrl);";
-    html += "  fetch('/ota/install', { method: 'POST', body: formData })";
-    html += "    .then(function(response) { return response.json(); })";
-    html += "    .then(function(data) {";
-    html += "      if (data.success) {";
-    html += "        document.getElementById('statusTitle').innerText = 'Downloading...';";
-    html += "        document.getElementById('statusMessage').innerText = 'Firmware is being downloaded and installed. The device will reboot automatically when complete.';";
-    html += "      } else {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.querySelector('.status-box').style.display = 'none';";
-    html += "        document.getElementById('errorMessage').innerText = data.error || 'Unknown error';";
-    html += "        document.getElementById('errorSection').style.display = 'block';";
-    html += "      }";
-    html += "    })";
-    html += "    .catch(function(error) {";
-    html += "      clearInterval(progressInterval);";
-    html += "      document.querySelector('.status-box').style.display = 'none';";
-    html += "      document.getElementById('errorMessage').innerText = 'Network error: ' + error.message;";
-    html += "      document.getElementById('errorSection').style.display = 'block';";
-    html += "    });";
-    html += "});";
-    html += "</script>";
+    html += CONFIG_PORTAL_OTA_STATUS_SCRIPT;
     
     html += "</body></html>";
     

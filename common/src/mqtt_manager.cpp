@@ -65,17 +65,13 @@ bool MQTTManager::begin() {
 
 bool MQTTManager::connect() {
     if (!_isConfigured) {
-        LogBox::begin("MQTT Connection");
-        LogBox::line("MQTT not configured - skipping connection");
-        LogBox::end();
+        LogBox::message("MQTT Connection", "MQTT not configured - skipping connection");
         return true;  // Not an error
     }
     
     if (_mqttClient == nullptr) {
         _lastError = "MQTT client not initialized";
-        LogBox::begin("MQTT Connection");
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        LogBox::message("MQTT Connection", "ERROR: " + _lastError);
         return false;
     }
     
@@ -180,9 +176,7 @@ bool MQTTManager::connect() {
 void MQTTManager::disconnect() {
     if (_mqttClient != nullptr && _mqttClient->connected()) {
         _mqttClient->disconnect();
-        LogBox::begin("MQTT");
-        LogBox::line("Disconnected");
-        LogBox::end();
+        LogBox::message("MQTT", "Disconnected");
     }
 }
 
@@ -595,9 +589,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
                                       int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32,
                                       const String& lastLogMessage, const String& lastLogSeverity) {
     if (!_isConfigured) {
-        LogBox::begin("MQTT");
-        LogBox::line("MQTT not configured - skipping");
-        LogBox::end();
+        LogBox::message("MQTT", "MQTT not configured - skipping");
         return true;  // Not an error
     }
     

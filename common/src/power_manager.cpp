@@ -42,13 +42,9 @@ void PowerManager::begin(uint8_t buttonPin) {
     // Wake when button is pressed (LOW level, assuming active low button)
     esp_sleep_enable_ext0_wakeup((gpio_num_t)_buttonPin, 0);  // 0 = LOW, 1 = HIGH
     
-    LogBox::begin("PowerManager initialized");
-    LogBox::linef("Button pin configured: GPIO %d", _buttonPin);
-    LogBox::end();
+    LogBox::messagef("PowerManager initialized", "Button pin configured: GPIO %d", _buttonPin);
     #else
-    LogBox::begin("PowerManager initialized");
-    LogBox::line("No button on this board");
-    LogBox::end();
+    LogBox::message("PowerManager initialized", "No button on this board");
     #endif
     
     printWakeupReason();
@@ -63,15 +59,11 @@ WakeupReason PowerManager::detectWakeupReason() {
     
     switch (wakeup_reason) {
         case ESP_SLEEP_WAKEUP_EXT0:
-            LogBox::begin("Wakeup Detection");
-            LogBox::line("Wakeup caused by button press (EXT0)");
-            LogBox::end();
+            LogBox::message("Wakeup Detection", "Wakeup caused by button press (EXT0)");
             return WAKEUP_BUTTON;
             
         case ESP_SLEEP_WAKEUP_TIMER:
-            LogBox::begin("Wakeup Detection");
-            LogBox::line("Wakeup caused by timer");
-            LogBox::end();
+            LogBox::message("Wakeup Detection", "Wakeup caused by timer");
             return WAKEUP_TIMER;
             
         case ESP_SLEEP_WAKEUP_UNDEFINED: {
@@ -137,9 +129,7 @@ WakeupReason PowerManager::detectWakeupReason() {
         }
             
         default:
-            LogBox::begin("Wakeup Detection");
-            LogBox::linef("Wakeup caused by unknown reason: %d", wakeup_reason);
-            LogBox::end();
+            LogBox::messagef("Wakeup Detection", "Wakeup caused by unknown reason: %d", wakeup_reason);
             return WAKEUP_UNKNOWN;
     }
 }
@@ -236,9 +226,7 @@ uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)refreshRateMinutes * 60ULL * 1000000ULL;
     
-    LogBox::begin("Sleep Duration Calculation");
-    LogBox::linef("Sleep duration: %u minutes = %llu microseconds", refreshRateMinutes, microseconds);
-    LogBox::end();
+    LogBox::messagef("Sleep Duration Calculation", "Sleep duration: %u minutes = %llu microseconds", refreshRateMinutes, microseconds);
     
     return microseconds;
 }
@@ -248,9 +236,7 @@ uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
     
-    LogBox::begin("Sleep Duration Calculation");
-    LogBox::linef("Sleep duration: %.2f minutes = %llu microseconds", refreshRateMinutes, microseconds);
-    LogBox::end();
+    LogBox::messagef("Sleep Duration Calculation", "Sleep duration: %.2f minutes = %llu microseconds", refreshRateMinutes, microseconds);
     
     return microseconds;
 }
@@ -415,9 +401,7 @@ void PowerManager::markDeviceRunning() {
     
     if (!was_already_set) {
         prefs.putBool("was_running", true);
-        LogBox::begin("Power Manager");
-        LogBox::line("Device marked as running in NVS (one-time write)");
-        LogBox::end();
+        LogBox::message("Power Manager", "Device marked as running in NVS (one-time write)");
     }
     
     prefs.end();
