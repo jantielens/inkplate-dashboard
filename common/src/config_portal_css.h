@@ -102,6 +102,30 @@ const char* CONFIG_PORTAL_CSS = R"(
         margin-top: 5px;
     }
     
+    /* Image slot styling */
+    .image-slot {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .image-slot label {
+        margin-top: 10px;
+    }
+    
+    .image-slot label:first-child {
+        margin-top: 0;
+    }
+    
+    #addImageBtn {
+        width: auto;
+        padding: 10px 20px;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    
     /* Section card styling */
     .section {
         background: white;
@@ -161,6 +185,26 @@ const char* CONFIG_PORTAL_CSS = R"(
         padding: 12px 24px;
         font-size: 15px;
         width: 100%;
+    }
+    
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        width: auto;
+        touch-action: manipulation;
+    }
+    
+    @media (hover: hover) {
+        .btn-remove:hover {
+            background: #dc2626;
+        }
     }
     
     /* Desktop hover effect */
@@ -783,7 +827,22 @@ const POWER_CONSTANTS = {
 };
 
 function calculateBatteryLife() {
-  const refreshRate = parseInt(document.getElementById('refresh').value) || 5;
+  // Calculate average interval from image slots
+  let totalInterval = 0;
+  let imageCount = 0;
+  
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && urlInput.value.trim().length > 0) {
+      const interval = parseInt(intInput.value) || 5;
+      totalInterval += interval;
+      imageCount++;
+    }
+  }
+  
+  const refreshRate = imageCount > 0 ? (totalInterval / imageCount) : 5;
   const useCRC32 = document.getElementById('crc32check').checked;
   const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
   const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
@@ -860,11 +919,170 @@ function calculateBatteryLife() {
   }
 }
 
+let visibleSlots = 1;
+
+function updateCRC32CheckboxState() {
+  const crc32Checkbox = document.getElementById('crc32check');
+  const crc32Warning = document.getElementById('crc32-carousel-warning');
+  
+  if (!crc32Checkbox) return;
+  
+  // Count how many image URLs are filled in visible slots
+  let filledImageCount = 0;
+  for (let i = 0; i < visibleSlots; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    if (urlInput && urlInput.value.trim().length > 0) {
+      filledImageCount++;
+    }
+  }
+  
+  // Disable CRC32 if more than 1 image is configured
+  if (filledImageCount > 1) {
+    crc32Checkbox.disabled = true;
+    crc32Checkbox.checked = false;
+    if (crc32Warning) crc32Warning.style.display = 'block';
+  } else {
+    crc32Checkbox.disabled = false;
+    if (crc32Warning) crc32Warning.style.display = 'none';
+  }
+}
+
+function updateRemoveButtons() {
+  // Hide all remove buttons first
+  for (let i = 1; i < 10; i++) {
+    const removeBtn = document.getElementById('remove_' + i);
+    if (removeBtn) {
+      removeBtn.style.display = 'none';
+    }
+  }
+  
+  // Show only the remove button for the last visible slot (if > 1)
+  if (visibleSlots > 1) {
+    const lastVisibleIndex = visibleSlots - 1;
+    const lastRemoveBtn = document.getElementById('remove_' + lastVisibleIndex);
+    if (lastRemoveBtn) {
+      lastRemoveBtn.style.display = 'inline-block';
+    }
+  }
+}
+
+function addImageSlot() {
+  if (visibleSlots >= 10) return;
+  
+  const slot = document.getElementById('slot_' + visibleSlots);
+  if (slot) {
+    slot.style.display = 'block';
+    visibleSlots++;
+    
+    // Auto-fill interval with default value
+    const intInput = slot.querySelector('input[type="number"]');
+    if (intInput && !intInput.value) {
+      intInput.value = '5';
+    }
+    
+    // Hide button if all 10 slots are visible
+    if (visibleSlots >= 10) {
+      document.getElementById('addImageBtn').style.display = 'none';
+    }
+    
+    // Update remove button visibility
+    updateRemoveButtons();
+    
+    // Update CRC32 checkbox state
+    updateCRC32CheckboxState();
+    
+    // Recalculate battery life with new slot
+    calculateBatteryLife();
+  }
+}
+
+function removeLastImageSlot() {
+  if (visibleSlots <= 1) return; // Can't remove if only 1 slot visible
+  
+  const lastVisibleIndex = visibleSlots - 1;
+  const slot = document.getElementById('slot_' + lastVisibleIndex);
+  if (!slot) return;
+  
+  // Clear the inputs
+  const urlInput = slot.querySelector(`input[name="img_url_${lastVisibleIndex}"]`);
+  const intInput = slot.querySelector(`input[name="img_int_${lastVisibleIndex}"]`);
+  if (urlInput) urlInput.value = '';
+  if (intInput) intInput.value = '';
+  
+  // Hide the slot
+  slot.style.display = 'none';
+  
+  // Decrease visible slots count
+  visibleSlots--;
+  
+  // Show add button again if not all slots are visible
+  if (visibleSlots < 10) {
+    const addBtn = document.getElementById('addImageBtn');
+    if (addBtn) addBtn.style.display = 'block';
+  }
+  
+  // Update remove button visibility
+  updateRemoveButtons();
+  
+  // Update CRC32 checkbox state
+  updateCRC32CheckboxState();
+  
+  // Recalculate battery life
+  calculateBatteryLife();
+}
+
+// Auto-fill interval when URL is entered
+function setupImageSlotListeners() {
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && intInput) {
+      urlInput.addEventListener('input', function() {
+        if (this.value.trim().length > 0 && !intInput.value) {
+          intInput.value = '5';
+        }
+        updateCRC32CheckboxState();
+        calculateBatteryLife();
+      });
+      
+      intInput.addEventListener('input', calculateBatteryLife);
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('refresh').addEventListener('input', calculateBatteryLife);
-  document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);
-  document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);
-  document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);
+  // Initialize visible slots count based on existing data
+  for (let i = 1; i < 10; i++) {
+    const slot = document.getElementById('slot_' + i);
+    if (slot && slot.style.display !== 'none') {
+      visibleSlots = i + 1;
+    }
+  }
+  
+  // Hide add button if all slots visible
+  if (visibleSlots >= 10) {
+    const addBtn = document.getElementById('addImageBtn');
+    if (addBtn) addBtn.style.display = 'none';
+  }
+  
+  setupImageSlotListeners();
+  
+  // Update remove button visibility on initial load
+  updateRemoveButtons();
+  
+  // Update CRC32 checkbox state on initial load
+  updateCRC32CheckboxState();
+  
+  const crc32Check = document.getElementById('crc32check');
+  if (crc32Check) crc32Check.addEventListener('change', calculateBatteryLife);
+  
+  const batteryCapacity = document.getElementById('battery-capacity');
+  if (batteryCapacity) batteryCapacity.addEventListener('change', calculateBatteryLife);
+  
+  const dailyChanges = document.getElementById('daily-changes');
+  if (dailyChanges) dailyChanges.addEventListener('input', calculateBatteryLife);
+  
   for (let hour = 0; hour < 24; hour++) {
     const checkbox = document.getElementById('hour_' + hour);
     if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);

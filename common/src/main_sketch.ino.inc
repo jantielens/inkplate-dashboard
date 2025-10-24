@@ -42,8 +42,10 @@ bool configModeActive = false;  // Config mode triggered by button
 bool normalUpdateActive = false;  // Normal update triggered by short button press
 unsigned long configModeStartTime = 0;
 
-// RTC memory for retry mechanism (persists across deep sleep)
-RTC_DATA_ATTR uint8_t imageRetryCount = 0;
+// RTC memory for carousel position and retry state (persists across deep sleep)
+// In carousel mode: tracks which image to display next (0-9)
+// In single image mode: tracks retry attempts (0-2)
+RTC_DATA_ATTR uint8_t imageStateIndex = 0;
 
 // UI Components
 UIMessages uiMessages(&displayManager);
@@ -53,7 +55,7 @@ UIStatus uiStatus(&displayManager);
 // Mode Controllers
 APModeController apModeController(&wifiManager, &configPortal, &uiStatus, &uiError);
 ConfigModeController configModeController(&configManager, &wifiManager, &configPortal, &mqttManager, &powerManager, &uiStatus, &uiError);
-NormalModeController normalModeController(&display, &configManager, &wifiManager, &imageManager, &powerManager, &mqttManager, &uiStatus, &uiError, &imageRetryCount);
+NormalModeController normalModeController(&display, &configManager, &wifiManager, &imageManager, &powerManager, &mqttManager, &uiStatus, &uiError, &imageStateIndex);
 
 void setup() {
     Serial.begin(115200);
@@ -250,11 +252,11 @@ void loop() {
         
         // Check for timeout
         if (configModeController.isTimedOut(configModeStartTime)) {
-            // Load config to get refresh rate
+            // Load config to get average interval
             DashboardConfig config;
-            uint16_t sleepMinutes = 5;  // Default
+            uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;  // Default
             if (configManager.loadConfig(config)) {
-                sleepMinutes = config.refreshRate;
+                sleepMinutes = config.getAverageInterval();
             }
             
             configModeController.handleTimeout(sleepMinutes);

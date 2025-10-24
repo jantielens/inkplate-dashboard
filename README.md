@@ -4,7 +4,7 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 ## Features
 
 - 📶 **Easy WiFi setup** via captive portal
-- 🖼️ **Displays PNG images** from any public URL
+- 🖼️ **Multi-image carousel** support (1-10 images with individual display intervals)
 - 🔄 **Configurable screen rotation** (portrait/landscape)
 - 🔋 **Power efficient**: deep sleep between updates
 - 🌐 **Web-based configuration** and OTA firmware updates
@@ -52,7 +52,7 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 	- Download firmware from [GitHub Releases](https://github.com/jantielens/inkplate-dashboard/releases) and flash using [ESPHome Flasher](https://github.com/esphome/esphome-flasher) or similar tools
 3. Power on your device. The onboarding flow has two steps:
 	- **Step 1: WiFi Setup (AP Mode)** – On first boot, the device creates a WiFi access point. Connect to it and enter your WiFi credentials in the browser.
-	- **Step 2: Dashboard Configuration (Config Mode)** – After joining your WiFi, the device automatically enters config mode. Access the device’s IP in your browser to set your image URL and refresh rate.
+	- **Step 2: Dashboard Configuration (Config Mode)** – After joining your WiFi, the device automatically enters config mode. Access the device's IP in your browser to configure your image(s) with display intervals (1 image for single mode, 2+ for carousel).
 	The device will guide you through each step directly on the screen.
 5. Enjoy your personalized, always-on dashboard!
 

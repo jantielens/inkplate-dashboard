@@ -30,8 +30,8 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 3. **Fill out the configuration form**:
    - WiFi Network Name (SSID) - Required
    - WiFi Password - Optional (leave empty for open networks)
-   - Image URL - Required (must be PNG format)
-   - Refresh Rate - Optional (default: 5 minutes)
+   - Dashboard Images - Required (at least 1 image URL with display interval)
+   - Additional images - Optional (add up to 10 images total for carousel mode)
 
 4. **Click "Save Configuration"**
 5. **Device saves settings and restarts**
@@ -51,22 +51,42 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Description**: Password for your WiFi network (leave empty if open network)
 - **Security**: Stored securely in ESP32 NVS
 
-### Image URL
-- **Required**: Yes
-- **Type**: URL
-- **Description**: Full URL to PNG image
-- **Format**: Must be PNG
+### Dashboard Images (Carousel Support)
+- **Required**: Yes (at least 1 image)
+- **Maximum**: 10 images
+- **Type**: Multiple URL + interval pairs
+- **Description**: Configure single image or multi-image carousel
+- **Format**: PNG or JPEG (baseline encoding only, not progressive JPEG)
 - **Resolution**: Must match screen resolution:
-  - Inkplate 5 V2: 1280x720
+  - Inkplate 2: 212x104
+  - Inkplate 5 V2: 960x540
+  - Inkplate 6 Flick: 1448x1072
   - Inkplate 10: 1200x825
-- **Example**: `https://example.com/dashboard.png`
+- **Mode Detection**: Automatic based on number of images configured
+  - **1 image** = Single image mode (refreshes periodically)
+  - **2+ images** = Carousel mode (rotates through images)
 
-### Refresh Rate
-- **Required**: No
+#### Image URL (per image)
+- **Required**: Yes for first image, optional for others
+- **Type**: URL
+- **Example**: `https://example.com/dashboard1.png`
+- **Validation**: Must start with `http://` or `https://`
+- **Length**: Maximum 250 characters
+
+#### Display Interval (per image)
+- **Required**: Yes (when image URL provided)
 - **Type**: Number
-- **Default**: 5 minutes
+- **Unit**: Minutes
+- **Default**: 5 minutes (auto-filled when URL entered)
 - **Minimum**: 1 minute
-- **Description**: How often to download and update the image
+- **Description**: How long to display this image before moving to next (or refreshing in single image mode)
+- **Example**: Image 1 for 10 minutes, Image 2 for 5 minutes, Image 3 for 15 minutes
+
+#### Progressive Disclosure UI
+- Form shows **2 image slots by default** (required + optional)
+- Click **"➕ Add Another Image"** to reveal slots 3-10 on demand
+- Button hides when all 10 slots are visible
+- Battery life estimator calculates average interval across all images
 
 ### Screen Rotation
 - **Required**: No
@@ -116,9 +136,9 @@ The configuration portal features a modern, card-based design optimized for mobi
 Configuration options are organized into clearly separated sections:
 
 1. **📶 WiFi Network** - Network credentials
-2. **🖼️ Dashboard Image** - Display settings (timezone, rotation, debug mode)
+2. **🖼️ Dashboard Images** - Image URLs with individual display intervals (carousel support)
 3. **📡 MQTT / Home Assistant** - Optional MQTT integration
-4. **🕐 Scheduling** - Refresh rate, update hours, battery estimator
+4. **🕐 Scheduling** - Update hours, CRC32 change detection, battery estimator
 
 Each section features:
 - Clear icon-based headers
@@ -233,9 +253,11 @@ configPortal.stop();
 
 The portal validates:
 1. **WiFi SSID** must not be empty
-2. **Image URL** must not be empty
-3. **Refresh rate** must be at least 1 minute (defaults to 5 if invalid)
-4. **Screen rotation** must be 0-3 (defaults to 0 if invalid)
+2. **At least 1 image URL** must be provided
+3. **Each image URL** must start with `http://` or `https://`
+4. **Each image URL** must not exceed 250 characters
+5. **Display interval** must be provided for each image (minimum 1 minute)
+6. **Screen rotation** must be 0-3 (defaults to 0 if invalid)
 
 ## After Configuration
 

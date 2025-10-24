@@ -32,7 +32,7 @@ bool ConfigModeController::begin() {
     if (hasPartialConfig) {
         config.wifiSSID = configManager->getWiFiSSID();
         config.wifiPassword = configManager->getWiFiPassword();
-        config.refreshRate = DEFAULT_REFRESH_RATE;
+        // No need to set refreshRate anymore
     }
     
     // Show config mode message
@@ -90,15 +90,15 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
         uiError->showPortalError();
         delay(3000);
         
-        // Load refresh rate for sleep
+        // Load average interval for sleep
         DashboardConfig config;
-        uint16_t refreshRate = 5;
+        uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
         if (configManager->loadConfig(config)) {
-            refreshRate = config.refreshRate;
+            sleepMinutes = config.getAverageInterval();
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(refreshRate);
+        powerManager->enterDeepSleep(sleepMinutes);
         return false;
     }
 }
@@ -129,15 +129,15 @@ bool ConfigModeController::startConfigPortalWithAP() {
             uiError->showAPStartError();
             delay(3000);
             
-            // Load refresh rate for sleep
+            // Load average interval for sleep
             DashboardConfig config;
-            uint16_t refreshRate = 5;
+            uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
             if (configManager->loadConfig(config)) {
-                refreshRate = config.refreshRate;
+                sleepMinutes = config.getAverageInterval();
             }
             
             powerManager->prepareForSleep();
-            powerManager->enterDeepSleep(refreshRate);
+            powerManager->enterDeepSleep(sleepMinutes);
             return false;
         }
     } else {
@@ -147,15 +147,15 @@ bool ConfigModeController::startConfigPortalWithAP() {
         uiError->showConfigModeFailure();
         delay(3000);
         
-        // Load refresh rate for sleep
+        // Load average interval for sleep
         DashboardConfig config;
-        uint16_t refreshRate = 5;
+        uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
         if (configManager->loadConfig(config)) {
-            refreshRate = config.refreshRate;
+            sleepMinutes = config.getAverageInterval();
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(refreshRate);
+        powerManager->enterDeepSleep(sleepMinutes);
         return false;
     }
 }

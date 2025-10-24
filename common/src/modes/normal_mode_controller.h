@@ -26,7 +26,7 @@ class NormalModeController {
 public:
     NormalModeController(Inkplate* display, ConfigManager* config, WiFiManager* wifi,
                         ImageManager* image, PowerManager* power, MQTTManager* mqtt,
-                        UIStatus* uiStatus, UIError* uiError, uint8_t* retryCount);
+                        UIStatus* uiStatus, UIError* uiError, uint8_t* stateIndex);
     
     /**
      * @brief Execute normal update cycle
@@ -42,7 +42,7 @@ private:
     MQTTManager* mqttManager;
     UIStatus* uiStatus;
     UIError* uiError;
-    uint8_t* imageRetryCount;  // Pointer to RTC memory
+    uint8_t* imageStateIndex;  // Pointer to RTC memory (carousel position or retry state)
     
     // Helper methods
     bool loadConfiguration(DashboardConfig& config);

@@ -3,10 +3,10 @@
 
 NormalModeController::NormalModeController(Inkplate* disp, ConfigManager* config, WiFiManager* wifi,
                                            ImageManager* image, PowerManager* power, MQTTManager* mqtt,
-                                           UIStatus* uiStatus, UIError* uiError, uint8_t* retryCount)
+                                           UIStatus* uiStatus, UIError* uiError, uint8_t* stateIndex)
     : display(disp), configManager(config), wifiManager(wifi),
       imageManager(image), powerManager(power), mqttManager(mqtt),
-      uiStatus(uiStatus), uiError(uiError), imageRetryCount(retryCount) {
+      uiStatus(uiStatus), uiError(uiError), imageStateIndex(stateIndex) {
 }
 
 void NormalModeController::execute() {
@@ -19,7 +19,8 @@ void NormalModeController::execute() {
     }
     
     if (config.debugMode) {
-        uiStatus->showDebugStatus(config.wifiSSID.c_str(), config.refreshRate);
+        int debugInterval = config.getAverageInterval();
+        uiStatus->showDebugStatus(config.wifiSSID.c_str(), debugInterval);
     }
     
     // Collect telemetry data early
@@ -94,7 +95,8 @@ void NormalModeController::execute() {
             if (sleepMinutes > 0) {
                 powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
             } else {
-                powerManager->enterDeepSleep((float)config.refreshRate, loopTimeMs);  // Fallback to refresh rate
+                // Fallback to average interval
+                powerManager->enterDeepSleep((float)config.getAverageInterval(), loopTimeMs);
             }
             return;
         }
@@ -105,24 +107,136 @@ void NormalModeController::execute() {
     LogBox::end();
     
 
-    // Check CRC32 and potentially skip download
+    // Get current image index and URL from carousel
+    uint8_t currentIndex = *imageStateIndex % config.imageCount;
+    String currentImageUrl = config.imageUrls[currentIndex];
+    int currentInterval = config.imageIntervals[currentIndex];
+    
+    // Validate interval (sanity check)
+    if (currentInterval < MIN_INTERVAL_MINUTES) {
+        LogBox::begin("Config Error");
+        LogBox::linef("Invalid interval for image %d, using default", currentIndex + 1);
+        LogBox::end();
+        currentInterval = DEFAULT_INTERVAL_MINUTES;
+    }
+    
+    // Log mode information
+    if (config.isCarouselMode()) {
+        LogBox::begin("Carousel Mode");
+        LogBox::linef("Displaying image %d of %d", currentIndex + 1, config.imageCount);
+        LogBox::line("URL: " + currentImageUrl);
+        LogBox::linef("Display for: %d minutes", currentInterval);
+        LogBox::end();
+    } else {
+        LogBox::begin("Single Image Mode");
+        LogBox::line("URL: " + currentImageUrl);
+        LogBox::linef("Refresh in: %d minutes", currentInterval);
+        LogBox::end();
+    }
+    
+    // Check CRC32 and potentially skip download (only for single image mode)
     uint32_t newCRC32 = 0;
     bool crc32WasChecked = false;
     bool crc32Matched = false;
+    bool shouldCheckCRC32 = config.useCRC32Check && !config.isCarouselMode();
     
-    if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI)) {
-        return;  // CRC32 matched and timer wake - already went to sleep
+    if (shouldCheckCRC32) {
+        if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI)) {
+            return;  // CRC32 matched and timer wake - already went to sleep
+        }
+    } else if (config.isCarouselMode()) {
+        LogBox::begin("CRC32 Check");
+        LogBox::line("CRC32 disabled in carousel mode");
+        LogBox::end();
     }
     
     // Download and display image
     if (config.debugMode) {
-        uiStatus->showDownloading(config.imageURL.c_str(), false);
+        uiStatus->showDownloading(currentImageUrl.c_str(), false);
     }
     
-    if (imageManager->downloadAndDisplay(config.imageURL.c_str())) {
-        handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+    bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str());
+    
+    // Handle carousel mode vs single image mode
+    if (config.isCarouselMode()) {
+        if (success) {
+            // Success - advance to next image
+            *imageStateIndex = (currentIndex + 1) % config.imageCount;
+            
+            // Save CRC32 if enabled (though disabled in carousel, keep for consistency)
+            if (config.useCRC32Check && newCRC32 != 0) {
+                imageManager->saveCRC32(newCRC32);
+            }
+            
+            float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
+            publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
+                               0, "Carousel image displayed successfully", "info");
+            
+            // Sleep with current image's interval
+            powerManager->disableWatchdog();
+            powerManager->prepareForSleep();
+            unsigned long loopTimeMs = millis() - loopStartTime;
+            powerManager->enterDeepSleep((float)currentInterval, loopTimeMs);
+        } else {
+            // Failed - check if it's the first image
+            if (currentIndex == 0) {
+                // First image - use retry logic (same as single image mode)
+                if (*imageStateIndex < 2) {
+                    (*imageStateIndex)++;
+                    LogBox::begin("Carousel Error");
+                    LogBox::linef("First image failed, retry attempt %d of 2", *imageStateIndex);
+                    LogBox::end();
+                    
+                    powerManager->disableWatchdog();
+                    powerManager->prepareForSleep();
+                    unsigned long loopTimeMs = millis() - loopStartTime;
+                    powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
+                } else {
+                    // Exhausted retries on first image - show error and move to next
+                    LogBox::begin("Carousel Error");
+                    LogBox::line("First image failed after retries, moving to next");
+                    LogBox::end();
+                    
+                    *imageStateIndex = 1;  // Move to second image
+                    uiError->showImageError(currentImageUrl.c_str(), imageManager->getLastError(), currentInterval);
+                    
+                    float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
+                    String errorMessage = "First carousel image failed: " + String(imageManager->getLastError());
+                    publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
+                                       0, errorMessage.c_str(), "error");
+                    
+                    delay(3000);
+                    powerManager->disableWatchdog();
+                    powerManager->prepareForSleep();
+                    unsigned long loopTimeMs = millis() - loopStartTime;
+                    powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds to next image
+                }
+            } else {
+                // Non-first image - skip to next immediately
+                LogBox::begin("Carousel Error");
+                LogBox::linef("Image %d failed, skipping to next", currentIndex + 1);
+                LogBox::end();
+                
+                *imageStateIndex = (currentIndex + 1) % config.imageCount;
+                
+                float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
+                String errorMessage = "Carousel image " + String(currentIndex + 1) + " failed, skipped: " + String(imageManager->getLastError());
+                publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
+                                   0, errorMessage.c_str(), "warning");
+                
+                powerManager->disableWatchdog();
+                powerManager->prepareForSleep();
+                unsigned long loopTimeMs = millis() - loopStartTime;
+                powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds to next image
+            }
+        }
     } else {
-        handleImageFailure(config, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+        // Single image mode - use existing handlers
+        if (success) {
+            handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+        } else {
+            handleImageFailure(config, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+        }
     }
 }
 
@@ -223,7 +337,9 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
     }
     
     crc32WasChecked = true;
-    bool shouldDownload = imageManager->checkCRC32Changed(config.imageURL.c_str(), &newCRC32);
+    // Use first image URL for CRC32 check (only called in single image mode)
+    String imageUrl = (config.imageCount > 0) ? config.imageUrls[0] : "";
+    bool shouldDownload = imageManager->checkCRC32Changed(imageUrl.c_str(), &newCRC32);
     crc32Matched = !shouldDownload;
     
     // If CRC32 matched during timer wake, skip download and sleep
@@ -240,7 +356,8 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
         // Calculate precise sleep time
         float sleepMinutes = calculateSleepMinutesToNextEnabledHour(currentTime, config.timezoneOffset, config.updateHours);
         if (sleepMinutes <= 0) {
-            sleepMinutes = config.refreshRate;
+            // Use first image's interval (single image mode)
+            sleepMinutes = (config.imageCount > 0) ? (float)config.imageIntervals[0] : (float)DEFAULT_INTERVAL_MINUTES;
         }
         
         powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
@@ -270,7 +387,8 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
         imageManager->saveCRC32(newCRC32);
     }
     
-    *imageRetryCount = 0;
+    // Reset state index (single image mode: reset retry counter, carousel: handled separately)
+    *imageStateIndex = 0;
     float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
     
     // Determine appropriate log message based on CRC32 check results
@@ -291,14 +409,18 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
                                               unsigned long loopStartTime, time_t currentTime, const String& deviceId,
                                               const String& deviceName, WakeupReason wakeReason,
                                               float batteryVoltage, int batteryPercentage, int wifiRSSI) {
-    if (*imageRetryCount < 2) {
-        (*imageRetryCount)++;
+    // Retry logic for single image mode (state index tracks retry attempts)
+    if (*imageStateIndex < 2) {
+        (*imageStateIndex)++;
         powerManager->prepareForSleep();
         unsigned long loopTimeMs = millis() - loopStartTime;
         powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
     } else {
-        *imageRetryCount = 0;
-        uiError->showImageError(config.imageURL.c_str(), imageManager->getLastError(), config.refreshRate);
+        *imageStateIndex = 0;
+        // For single image mode, use first image's interval; for carousel use average
+        int displayInterval = (config.imageCount > 0) ? config.imageIntervals[0] : DEFAULT_INTERVAL_MINUTES;
+        String firstUrl = (config.imageCount > 0) ? config.imageUrls[0] : "";
+        uiError->showImageError(firstUrl.c_str(), imageManager->getLastError(), displayInterval);
         
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
         String errorMessage = "Image download failed: " + String(imageManager->getLastError());
@@ -311,12 +433,13 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
 }
 
 void NormalModeController::handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime) {
-    uiError->showWiFiError(config.wifiSSID.c_str(), wifiManager->getStatusString().c_str(), config.refreshRate);
+    int fallbackInterval = config.getAverageInterval();
+    uiError->showWiFiError(config.wifiSSID.c_str(), wifiManager->getStatusString().c_str(), fallbackInterval);
     delay(3000);
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
     unsigned long loopTimeMs = millis() - loopStartTime;
-    powerManager->enterDeepSleep((uint16_t)config.refreshRate, loopTimeMs);
+    powerManager->enterDeepSleep((uint16_t)fallbackInterval, loopTimeMs);
 }
 
 
@@ -328,9 +451,10 @@ void NormalModeController::enterSleep(const DashboardConfig& config, time_t curr
     // Calculate precise sleep time based on hourly schedule
     float sleepMinutes = calculateSleepMinutesToNextEnabledHour(currentTime, config.timezoneOffset, config.updateHours);
     
-    // If no enabled hours found or calculation failed, use refresh rate
+    // If no enabled hours found or calculation failed, use current image's interval
     if (sleepMinutes <= 0) {
-        sleepMinutes = config.refreshRate;
+        uint8_t currentIndex = *imageStateIndex % config.imageCount;
+        sleepMinutes = (float)config.imageIntervals[currentIndex];
     }
     
     powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);

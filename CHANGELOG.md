@@ -3,6 +3,31 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-10-24
+
+### Added
+- **Multi-Image Carousel Support** (issue #54)
+  - Configure up to 10 images with individual display intervals
+  - Automatic mode detection: 1 image = single mode, 2+ = carousel rotation
+  - Per-image display duration (replaces global refresh rate)
+  - Progressive disclosure UI: start with 2 image slots, add up to 10 on demand
+  - Battery life estimator calculates average interval across all images
+
+### Changed
+- **BREAKING: Configuration format change** - Requires reconfiguration after upgrade
+  - Removed single `imageURL` and global `refreshRate` fields
+  - Replaced with carousel arrays: `imageUrls[10]` and `imageIntervals[10]`
+  - Config version tracking added for future upgrade detection
+  - First boot after upgrade will require reconfiguring images via config portal
+
+### Technical
+- Renamed RTC variable `imageRetryCount` → `imageStateIndex` (dual purpose: carousel position or retry state)
+- CRC32 change detection disabled in carousel mode (only works for single image)
+- First carousel image failure uses retry logic (3 attempts), others skip to next immediately
+- Sleep intervals now use per-image durations instead of global refresh rate
+- Config portal form dynamically generates image slots with JavaScript
+- Battery calculator updated to compute average interval from all configured images
+
 ## [0.16.0] - 2025-10-24
 
 ### Changed
