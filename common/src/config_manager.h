@@ -9,8 +9,8 @@
 #define PREF_CONFIGURED "configured"
 #define PREF_WIFI_SSID "wifi_ssid"
 #define PREF_WIFI_PASS "wifi_pass"
-#define PREF_IMAGE_URL "image_url"
-#define PREF_REFRESH_RATE "refresh_rate"
+#define PREF_IMAGE_URL "image_url"  // Legacy - kept for compatibility
+#define PREF_REFRESH_RATE "refresh_rate"  // Legacy - kept for compatibility
 #define PREF_MQTT_BROKER "mqtt_broker"
 #define PREF_MQTT_USER "mqtt_user"
 #define PREF_MQTT_PASS "mqtt_pass"
@@ -23,16 +23,24 @@
 #define PREF_TIMEZONE_OFFSET "tz_offset"
 #define PREF_SCREEN_ROTATION "screen_rot"
 
+// Carousel configuration keys
+#define PREF_CONFIG_VERSION "cfg_ver"
+#define PREF_IMAGE_COUNT "img_count"
+#define CONFIG_VERSION_CURRENT 2
+
+// Carousel constraints
+#define MAX_IMAGE_SLOTS 10
+#define MAX_URL_LENGTH 250
+#define MIN_INTERVAL_MINUTES 1
+#define DEFAULT_INTERVAL_MINUTES 5
+
 // Default values
-#define DEFAULT_REFRESH_RATE 5  // 5 minutes
 #define DEFAULT_SCREEN_ROTATION 0  // 0 degrees (landscape)
 
 // Configuration data structure
 struct DashboardConfig {
     String wifiSSID;
     String wifiPassword;
-    String imageURL;
-    int refreshRate;  // in minutes
     String mqttBroker;  // MQTT broker URL (e.g., mqtt://broker.example.com:1883)
     String mqttUsername;
     String mqttPassword;
@@ -43,12 +51,15 @@ struct DashboardConfig {
     int timezoneOffset;  // Timezone offset in hours (-12 to +14)
     uint8_t screenRotation;  // Screen rotation: 0, 1, 2, 3 (0°, 90°, 180°, 270°)
     
+    // Carousel configuration
+    uint8_t imageCount;           // How many URLs provided (0-10)
+    String imageUrls[MAX_IMAGE_SLOTS];    // Image URLs
+    int imageIntervals[MAX_IMAGE_SLOTS];  // Display duration per image in minutes
+    
     // Constructor with defaults
     DashboardConfig() : 
         wifiSSID(""),
         wifiPassword(""),
-        imageURL(""),
-        refreshRate(DEFAULT_REFRESH_RATE),
         mqttBroker(""),
         mqttUsername(""),
         mqttPassword(""),
@@ -56,11 +67,33 @@ struct DashboardConfig {
         debugMode(false),
         useCRC32Check(false),
         timezoneOffset(0),
-        screenRotation(DEFAULT_SCREEN_ROTATION) {
+        screenRotation(DEFAULT_SCREEN_ROTATION),
+        imageCount(0) {
         // Initialize all hours enabled by default (0xFF = all bits set)
         updateHours[0] = 0xFF;  // Hours 0-7
         updateHours[1] = 0xFF;  // Hours 8-15
         updateHours[2] = 0xFF;  // Hours 16-23
+        
+        // Initialize carousel arrays
+        for (int i = 0; i < MAX_IMAGE_SLOTS; i++) {
+            imageUrls[i] = "";
+            imageIntervals[i] = 0;
+        }
+    }
+    
+    // Helper methods
+    bool isCarouselMode() const {
+        return imageCount > 1;
+    }
+    
+    // Calculate average interval for battery estimates and fallbacks
+    int getAverageInterval() const {
+        if (imageCount == 0) return DEFAULT_INTERVAL_MINUTES;
+        int total = 0;
+        for (uint8_t i = 0; i < imageCount; i++) {
+            total += imageIntervals[i];
+        }
+        return total / imageCount;
     }
 };
 
@@ -93,8 +126,6 @@ public:
     // Individual getters
     String getWiFiSSID();
     String getWiFiPassword();
-    String getImageURL();
-    int getRefreshRate();
     String getMQTTBroker();
     String getMQTTUsername();
     String getMQTTPassword();
@@ -104,8 +135,6 @@ public:
     
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
-    void setImageURL(const String& url);
-    void setRefreshRate(int minutes);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
     void setUseCRC32Check(bool enabled);

@@ -102,6 +102,30 @@ const char* CONFIG_PORTAL_CSS = R"(
         margin-top: 5px;
     }
     
+    /* Image slot styling */
+    .image-slot {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .image-slot label {
+        margin-top: 10px;
+    }
+    
+    .image-slot label:first-child {
+        margin-top: 0;
+    }
+    
+    #addImageBtn {
+        width: auto;
+        padding: 10px 20px;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    
     /* Section card styling */
     .section {
         background: white;
@@ -783,7 +807,22 @@ const POWER_CONSTANTS = {
 };
 
 function calculateBatteryLife() {
-  const refreshRate = parseInt(document.getElementById('refresh').value) || 5;
+  // Calculate average interval from image slots
+  let totalInterval = 0;
+  let imageCount = 0;
+  
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && urlInput.value.trim().length > 0) {
+      const interval = parseInt(intInput.value) || 5;
+      totalInterval += interval;
+      imageCount++;
+    }
+  }
+  
+  const refreshRate = imageCount > 0 ? (totalInterval / imageCount) : 5;
   const useCRC32 = document.getElementById('crc32check').checked;
   const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
   const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
@@ -860,8 +899,67 @@ function calculateBatteryLife() {
   }
 }
 
+let visibleSlots = 2;
+
+function addImageSlot() {
+  if (visibleSlots >= 10) return;
+  
+  const slot = document.getElementById('slot_' + visibleSlots);
+  if (slot) {
+    slot.style.display = 'block';
+    visibleSlots++;
+    
+    // Auto-fill interval with default value
+    const intInput = slot.querySelector('input[type="number"]');
+    if (intInput && !intInput.value) {
+      intInput.value = '5';
+    }
+    
+    // Hide button if all 10 slots are visible
+    if (visibleSlots >= 10) {
+      document.getElementById('addImageBtn').style.display = 'none';
+    }
+    
+    // Recalculate battery life with new slot
+    calculateBatteryLife();
+  }
+}
+
+// Auto-fill interval when URL is entered
+function setupImageSlotListeners() {
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && intInput) {
+      urlInput.addEventListener('input', function() {
+        if (this.value.trim().length > 0 && !intInput.value) {
+          intInput.value = '5';
+        }
+        calculateBatteryLife();
+      });
+      
+      intInput.addEventListener('input', calculateBatteryLife);
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('refresh').addEventListener('input', calculateBatteryLife);
+  // Initialize visible slots count based on existing data
+  for (let i = 2; i < 10; i++) {
+    const slot = document.getElementById('slot_' + i);
+    if (slot && slot.style.display !== 'none') {
+      visibleSlots = i + 1;
+    }
+  }
+  
+  // Hide add button if all slots visible
+  if (visibleSlots >= 10) {
+    const addBtn = document.getElementById('addImageBtn');
+    if (addBtn) addBtn.style.display = 'none';
+  }
+  
+  setupImageSlotListeners();
   document.getElementById('crc32check').addEventListener('change', calculateBatteryLife);
   document.getElementById('battery-capacity').addEventListener('change', calculateBatteryLife);
   document.getElementById('daily-changes').addEventListener('input', calculateBatteryLife);

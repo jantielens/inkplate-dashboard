@@ -20,7 +20,15 @@ bool ConfigManager::begin() {
         LogBox::begin("ConfigManager Error");
         LogBox::line("Failed to initialize Preferences");
         LogBox::end();
+        return false;
     }
+    
+    // Initialize config version if not set (new device)
+    uint8_t configVersion = _preferences.getUChar(PREF_CONFIG_VERSION, 0);
+    if (configVersion == 0) {
+        _preferences.putUChar(PREF_CONFIG_VERSION, CONFIG_VERSION_CURRENT);
+    }
+    
     return _initialized;
 }
 
@@ -47,9 +55,9 @@ bool ConfigManager::isFullyConfigured() {
     }
     
     String ssid = _preferences.getString(PREF_WIFI_SSID, "");
-    String imageUrl = _preferences.getString(PREF_IMAGE_URL, "");
+    uint8_t imageCount = _preferences.getUChar(PREF_IMAGE_COUNT, 0);
     
-    return (ssid.length() > 0 && imageUrl.length() > 0);
+    return (ssid.length() > 0 && imageCount > 0);
 }
 
 bool ConfigManager::loadConfig(DashboardConfig& config) {
@@ -72,8 +80,6 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     
     config.wifiSSID = _preferences.getString(PREF_WIFI_SSID, "");
     config.wifiPassword = _preferences.getString(PREF_WIFI_PASS, "");
-    config.imageURL = _preferences.getString(PREF_IMAGE_URL, "");
-    config.refreshRate = _preferences.getInt(PREF_REFRESH_RATE, DEFAULT_REFRESH_RATE);
     config.mqttBroker = _preferences.getString(PREF_MQTT_BROKER, "");
     config.mqttUsername = _preferences.getString(PREF_MQTT_USER, "");
     config.mqttPassword = _preferences.getString(PREF_MQTT_PASS, "");
@@ -91,18 +97,38 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     // Load screen rotation
     config.screenRotation = _preferences.getUChar(PREF_SCREEN_ROTATION, DEFAULT_SCREEN_ROTATION);
     
+    // Load carousel configuration
+    config.imageCount = _preferences.getUChar(PREF_IMAGE_COUNT, 0);
+    if (config.imageCount > MAX_IMAGE_SLOTS) {
+        config.imageCount = MAX_IMAGE_SLOTS;
+    }
+    
+    for (uint8_t i = 0; i < config.imageCount; i++) {
+        String urlKey = "img_url_" + String(i);
+        String intKey = "img_int_" + String(i);
+        
+        config.imageUrls[i] = _preferences.getString(urlKey.c_str(), "");
+        config.imageIntervals[i] = _preferences.getInt(intKey.c_str(), DEFAULT_INTERVAL_MINUTES);
+    }
+    
     // Validate configuration
-    if (config.wifiSSID.length() == 0 || config.imageURL.length() == 0) {
+    if (config.wifiSSID.length() == 0 || config.imageCount == 0) {
         LogBox::begin("Config Error");
-        LogBox::line("Invalid configuration: missing SSID or URL");
+        LogBox::line("Invalid configuration: missing SSID or images");
         LogBox::end();
         return false;
     }
     
     LogBox::begin("Configuration Loaded");
     LogBox::line("WiFi SSID: " + config.wifiSSID);
-    LogBox::line("Image URL: " + config.imageURL);
-    LogBox::linef("Refresh Rate: %d minutes", config.refreshRate);
+    if (config.imageCount == 1) {
+        LogBox::line("Mode: Single Image");
+        LogBox::line("Image URL: " + config.imageUrls[0]);
+        LogBox::linef("Interval: %d minutes", config.imageIntervals[0]);
+    } else {
+        LogBox::linef("Mode: Carousel (%d images)", config.imageCount);
+        LogBox::linef("Average Interval: %d minutes", config.getAverageInterval());
+    }
     if (config.mqttBroker.length() > 0) {
         LogBox::line("MQTT Broker: " + config.mqttBroker);
         LogBox::line("MQTT Username: " + (config.mqttUsername.length() > 0 ? config.mqttUsername : "(none)"));
@@ -128,25 +154,32 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
         return false;
     }
     
-    if (config.imageURL.length() == 0) {
+    if (config.imageCount == 0 || config.imageCount > MAX_IMAGE_SLOTS) {
         LogBox::begin("Config Error");
-        LogBox::line("Image URL cannot be empty");
+        LogBox::linef("Invalid image count: %d (must be 1-%d)", config.imageCount, MAX_IMAGE_SLOTS);
         LogBox::end();
         return false;
     }
     
-    if (config.refreshRate < 1) {
-        LogBox::begin("Config Error");
-        LogBox::line("Refresh rate must be at least 1 minute");
-        LogBox::end();
-        return false;
+    // Validate each image has URL and interval
+    for (uint8_t i = 0; i < config.imageCount; i++) {
+        if (config.imageUrls[i].length() == 0) {
+            LogBox::begin("Config Error");
+            LogBox::linef("Image %d URL cannot be empty", i + 1);
+            LogBox::end();
+            return false;
+        }
+        if (config.imageIntervals[i] < MIN_INTERVAL_MINUTES) {
+            LogBox::begin("Config Error");
+            LogBox::linef("Image %d interval must be at least %d minute(s)", i + 1, MIN_INTERVAL_MINUTES);
+            LogBox::end();
+            return false;
+        }
     }
     
     // Save all configuration values
     _preferences.putString(PREF_WIFI_SSID, config.wifiSSID);
     _preferences.putString(PREF_WIFI_PASS, config.wifiPassword);
-    _preferences.putString(PREF_IMAGE_URL, config.imageURL);
-    _preferences.putInt(PREF_REFRESH_RATE, config.refreshRate);
     _preferences.putString(PREF_MQTT_BROKER, config.mqttBroker);
     _preferences.putString(PREF_MQTT_USER, config.mqttUsername);
     _preferences.putString(PREF_MQTT_PASS, config.mqttPassword);
@@ -165,8 +198,42 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     // Save screen rotation
     _preferences.putUChar(PREF_SCREEN_ROTATION, config.screenRotation);
     
+    // Save config version
+    _preferences.putUChar(PREF_CONFIG_VERSION, CONFIG_VERSION_CURRENT);
+    
+    // Save carousel configuration
+    _preferences.putUChar(PREF_IMAGE_COUNT, config.imageCount);
+    
+    for (uint8_t i = 0; i < config.imageCount; i++) {
+        String urlKey = "img_url_" + String(i);
+        String intKey = "img_int_" + String(i);
+        
+        size_t urlBytes = _preferences.putString(urlKey.c_str(), config.imageUrls[i]);
+        if (urlBytes == 0) {
+            LogBox::begin("Config Error");
+            LogBox::linef("Failed to save URL #%d", i);
+            LogBox::end();
+            return false;
+        }
+        
+        _preferences.putInt(intKey.c_str(), config.imageIntervals[i]);
+    }
+    
+    // Clear unused slots
+    for (uint8_t i = config.imageCount; i < MAX_IMAGE_SLOTS; i++) {
+        String urlKey = "img_url_" + String(i);
+        String intKey = "img_int_" + String(i);
+        _preferences.remove(urlKey.c_str());
+        _preferences.remove(intKey.c_str());
+    }
+    
     LogBox::begin("Config Saved");
     LogBox::line("Configuration saved successfully");
+    if (config.imageCount == 1) {
+        LogBox::line("Mode: Single Image");
+    } else {
+        LogBox::linef("Mode: Carousel (%d images)", config.imageCount);
+    }
     LogBox::end();
     
     return true;
@@ -198,20 +265,6 @@ String ConfigManager::getWiFiPassword() {
         return "";
     }
     return _preferences.getString(PREF_WIFI_PASS, "");
-}
-
-String ConfigManager::getImageURL() {
-    if (!_initialized && !begin()) {
-        return "";
-    }
-    return _preferences.getString(PREF_IMAGE_URL, "");
-}
-
-int ConfigManager::getRefreshRate() {
-    if (!_initialized && !begin()) {
-        return DEFAULT_REFRESH_RATE;
-    }
-    return _preferences.getInt(PREF_REFRESH_RATE, DEFAULT_REFRESH_RATE);
 }
 
 String ConfigManager::getMQTTBroker() {
@@ -254,41 +307,6 @@ void ConfigManager::setWiFiCredentials(const String& ssid, const String& passwor
     _preferences.putString(PREF_WIFI_PASS, password);
     LogBox::begin("Config Update");
     LogBox::line("WiFi credentials updated");
-    LogBox::end();
-}
-
-void ConfigManager::setImageURL(const String& url) {
-    if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
-        return;
-    }
-    
-    _preferences.putString(PREF_IMAGE_URL, url);
-    LogBox::begin("Config Update");
-    LogBox::line("Image URL updated: " + url);
-    LogBox::end();
-}
-
-void ConfigManager::setRefreshRate(int minutes) {
-    if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
-        return;
-    }
-    
-    if (minutes < 1) {
-        LogBox::begin("Config Error");
-        LogBox::line("Refresh rate must be at least 1 minute");
-        LogBox::end();
-        return;
-    }
-    
-    _preferences.putInt(PREF_REFRESH_RATE, minutes);
-    LogBox::begin("Config Update");
-    LogBox::linef("Refresh rate updated: %d minutes", minutes);
     LogBox::end();
 }
 

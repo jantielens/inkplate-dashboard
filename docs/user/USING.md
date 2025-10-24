@@ -134,8 +134,10 @@ Open browser to:
 3. **Open a web browser** and go to the IP address shown on the screen
 
 4. **Complete your dashboard settings**:
-   - **Image URL**: Full URL to your PNG image (e.g., `http://example.com/dashboard.png`)
-   - **Refresh Rate**: How often to update (in minutes, default is 5)
+   - **Image URLs**: Configure 1-10 images with individual display intervals
+     - **Single image mode**: 1 image refreshes periodically
+     - **Carousel mode**: 2+ images rotate automatically
+   - **Display Intervals**: Per-image duration in minutes (default 5 minutes each)
    - **MQTT Settings** (optional): For Home Assistant integration
    - **Debug Mode** (optional): Shows status messages on the display
 
@@ -161,30 +163,39 @@ Open browser to:
 - **Case sensitive**: Yes
 - **Example**: `MySecurePassword123`
 
-#### Image URL
-- **What it is**: Full web address to your PNG image
-- **Required**: Yes (in Step 2)
-- **Format**: Must start with `http://` or `https://`
-- **Can be local**: Works with local web servers (e.g., `http://192.168.1.50/dashboard.png`) as long as it's on the same network
-- **Can be public**: Works with public URLs (e.g., `https://example.com/images/dashboard.png`)
-- **Example**: `http://192.168.1.100:8123/local/dashboard.png` (Home Assistant) or `https://example.com/dashboard.png`
+#### Dashboard Images (Carousel Support)
+- **What it is**: Configure 1-10 image URLs with individual display intervals
+- **Required**: Yes (at least 1 image in Step 2)
+- **Maximum**: 10 images total
+- **Mode Detection**: Automatic based on number of images
+  - **1 image** = Single image mode (refreshes periodically)
+  - **2+ images** = Carousel mode (rotates through all images)
+- **Format**: Each URL must start with `http://` or `https://`
+- **Can be local**: Works with local web servers (e.g., `http://192.168.1.50/dashboard1.png`)
+- **Can be public**: Works with public URLs (e.g., `https://example.com/images/dashboard1.png`)
+- **Example**: 
+  - Single: `http://192.168.1.100:8123/local/dashboard.png` (Home Assistant)
+  - Carousel: `http://example.com/weather.png`, `http://example.com/calendar.png`, `http://example.com/photos.png`
 
 **Image Requirements:**
 - **Format**: PNG only (JPG/GIF not supported)
 - **Resolution**: Must match your screen exactly (in the orientation you've configured):
   - Inkplate 2: 212×104 pixels (landscape) or 104×212 pixels (portrait)
-  - Inkplate 5 V2: 1280×720 pixels (landscape) or 720×1280 pixels (portrait)
+  - Inkplate 5 V2: 960×540 pixels (landscape) or 540×960 pixels (portrait)
+  - Inkplate 6 Flick: 1448×1072 pixels (landscape) or 1072×1448 pixels (portrait)
   - Inkplate 10: 1200×825 pixels (landscape) or 825×1200 pixels (portrait)
-  - Inkplate 6 Flick: 1024×758 pixels (landscape) or 758×1024 pixels (portrait)
-- **Rotation**: Your image must be pre-rotated to match the Screen Rotation setting (see below)
-- **Accessibility**: Must be reachable from the device's network - can be a local server on your network or a public URL on the internet
+- **Rotation**: Your images must be pre-rotated to match the Screen Rotation setting (see below)
+- **Accessibility**: Must be reachable from the device's network - can be local server or public URL
 
-#### Refresh Rate
-- **What it is**: How often the device updates the image (in minutes)
-- **Required**: Yes (in Step 2)
-- **Default**: 5 minutes
+#### Display Interval (per image)
+- **What it is**: How long to display each image before moving to the next (or refreshing in single image mode)
+- **Required**: Yes (for each image)
+- **Default**: 5 minutes (auto-filled when URL entered)
 - **Minimum**: 1 minute
-- **Example**: 15 (updates every 15 minutes)
+- **Unit**: Minutes
+- **Example**: Image 1 for 10 minutes, Image 2 for 5 minutes, Image 3 for 15 minutes
+- **Carousel behavior**: Device cycles through all images using each image's individual interval
+- **Single image**: Device refreshes the same image after the specified interval
 
 #### Update Hours
 - **What it is**: Select which hours (0-23) the device should perform scheduled updates
@@ -209,14 +220,16 @@ Open browser to:
 - **What it is**: Checks if the image has changed before downloading it
 - **Default**: Disabled
 - **Battery impact**: Can extend battery life by 2.5× when images change infrequently
+- **Compatibility**: **Only works in single image mode** (disabled automatically in carousel mode)
 - **Requirements**: Your web server must provide `.crc32` files alongside images (e.g., `image.png.crc32`)
 - **How it works**: Downloads a small checksum file first; if unchanged, skips the full image download
 - **Fallback**: If `.crc32` file is missing or invalid, automatically downloads the full image
 - **When to enable**: 
+  - If you're using single image mode (not carousel)
   - If you're running on battery power
   - If your image doesn't change on every refresh (e.g., once per day)
   - If you're using [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) which automatically generates CRC32 files
-- **When to disable**: If your server doesn't provide `.crc32` files, or if your image changes frequently
+- **When to disable**: If using carousel mode, if your server doesn't provide `.crc32` files, or if your image changes frequently
 
 #### Timezone Offset
 - **What it is**: Your timezone offset from UTC for adjusting hourly schedule times

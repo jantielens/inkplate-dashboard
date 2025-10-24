@@ -167,8 +167,6 @@ void ConfigPortal::handleSubmit() {
     // Get form data
     String ssid = _server->arg("ssid");
     String password = _server->arg("password");
-    String imageUrl = _server->arg("imageurl");
-    String refreshRateStr = _server->arg("refresh");
     String mqttBroker = _server->arg("mqttbroker");
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
@@ -176,6 +174,47 @@ void ConfigPortal::handleSubmit() {
     String rotationStr = _server->arg("rotation");
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
+    
+    // Parse carousel image configuration
+    uint8_t imageCount = 0;
+    String imageUrls[MAX_IMAGE_SLOTS];
+    int imageIntervals[MAX_IMAGE_SLOTS];
+    
+    for (uint8_t i = 0; i < MAX_IMAGE_SLOTS; i++) {
+        String urlKey = "img_url_" + String(i);
+        String intKey = "img_int_" + String(i);
+        String url = _server->arg(urlKey);
+        String intervalStr = _server->arg(intKey);
+        
+        url.trim();
+        
+        if (url.length() > 0) {
+            // Validate URL
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                String errorMsg = "Image " + String(i + 1) + " URL must start with http:// or https://";
+                _server->send(400, "text/html", generateErrorPage(errorMsg));
+                return;
+            }
+            
+            if (url.length() > MAX_URL_LENGTH) {
+                String errorMsg = "Image " + String(i + 1) + " URL too long (max " + String(MAX_URL_LENGTH) + " characters)";
+                _server->send(400, "text/html", generateErrorPage(errorMsg));
+                return;
+            }
+            
+            // Parse and validate interval
+            int interval = intervalStr.toInt();
+            if (interval < MIN_INTERVAL_MINUTES) {
+                String errorMsg = "Image " + String(i + 1) + " requires a display interval of at least " + String(MIN_INTERVAL_MINUTES) + " minute(s)";
+                _server->send(400, "text/html", generateErrorPage(errorMsg));
+                return;
+            }
+            
+            imageUrls[imageCount] = url;
+            imageIntervals[imageCount] = interval;
+            imageCount++;
+        }
+    }
     
     // Parse timezone offset
     int timezoneOffset = timezoneStr.toInt();
@@ -206,15 +245,10 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // In CONFIG_MODE, image URL is required; in BOOT_MODE it's optional
-    if (_mode == CONFIG_MODE && imageUrl.length() == 0) {
-        _server->send(400, "text/html", generateErrorPage("Image URL is required"));
+    // In CONFIG_MODE, at least one image is required; in BOOT_MODE it's optional
+    if (_mode == CONFIG_MODE && imageCount == 0) {
+        _server->send(400, "text/html", generateErrorPage("At least one image URL is required"));
         return;
-    }
-    
-    int refreshRate = refreshRateStr.toInt();
-    if (refreshRate < 1) {
-        refreshRate = DEFAULT_REFRESH_RATE;
     }
     
     // In BOOT_MODE, only save WiFi credentials
@@ -231,8 +265,6 @@ void ConfigPortal::handleSubmit() {
     // In CONFIG_MODE, save all configuration
     DashboardConfig config;
     config.wifiSSID = ssid;
-    config.imageURL = imageUrl;
-    config.refreshRate = refreshRate;
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
     config.debugMode = debugMode;
@@ -242,6 +274,13 @@ void ConfigPortal::handleSubmit() {
     config.updateHours[2] = updateHours[2];
     config.timezoneOffset = timezoneOffset;
     config.screenRotation = screenRotation;
+    
+    // Save carousel configuration
+    config.imageCount = imageCount;
+    for (uint8_t i = 0; i < imageCount; i++) {
+        config.imageUrls[i] = imageUrls[i];
+        config.imageIntervals[i] = imageIntervals[i];
+    }
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -393,18 +432,46 @@ String ConfigPortal::generateConfigPage() {
     
     // Dashboard Image Section - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += SECTION_START("🖼️", "Dashboard Image");
+        html += SECTION_START("🖼️", "Dashboard Images");
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Fill 1 image for single image mode, or 2+ for automatic carousel rotation. Each image must be PNG matching your screen resolution.</div>";
         
-        // Image URL
-        html += "<div class='form-group'>";
-        html += "<label for='imageurl'>Image URL *</label>";
-        if (hasConfig) {
-            html += "<input type='text' id='imageurl' name='imageurl' required placeholder='https://example.com/image.png' value='" + currentConfig.imageURL + "'>";
-        } else {
-            html += "<input type='text' id='imageurl' name='imageurl' required placeholder='https://example.com/image.png'>";
+        // Get existing image configuration if available
+        uint8_t existingCount = hasConfig ? currentConfig.imageCount : 0;
+        
+        // Always show first 2 image slots
+        for (uint8_t i = 0; i < 2; i++) {
+            String imageNum = String(i + 1);
+            bool hasExisting = (i < existingCount);
+            String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
+            int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
+            
+            html += "<div class='image-slot' id='slot_" + String(i) + "'>";
+            html += "<label>Image " + imageNum + " URL" + (i == 0 ? " *" : "") + "</label>";
+            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "'" + (i == 0 ? " required" : "") + ">";
+            html += "<label>Display for (minutes)" + (i == 0 ? " *" : "") + "</label>";
+            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'" + (i == 0 ? " required" : "") + ">";
+            html += "</div>";
         }
-        html += "<div class='help-text'>Must be a PNG image matching your screen resolution</div>";
-        html += "</div>";
+        
+        // Add remaining slots (3-10) if they have data
+        for (uint8_t i = 2; i < MAX_IMAGE_SLOTS; i++) {
+            bool hasExisting = (i < existingCount);
+            String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
+            int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
+            String displayStyle = hasExisting ? "" : " style='display:none;'";
+            
+            html += "<div class='image-slot' id='slot_" + String(i) + "'" + displayStyle + ">";
+            html += "<label>Image " + String(i + 1) + " URL</label>";
+            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + String(i + 1) + ".png' value='" + existingUrl + "'>";
+            html += "<label>Display for (minutes)</label>";
+            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'>";
+            html += "</div>";
+        }
+        
+        // Add button to show more slots (hidden when all 10 are visible)
+        String visibleSlots = String(existingCount > 2 ? existingCount : 2);
+        String buttonDisplay = existingCount >= MAX_IMAGE_SLOTS ? " style='display:none;'" : "";
+        html += "<button type='button' id='addImageBtn' onclick='addImageSlot()'" + buttonDisplay + ">➕ Add Another Image (up to 10 total)</button>";
         
         // Timezone Offset
         html += "<div class='form-group'>";
@@ -483,17 +550,6 @@ String ConfigPortal::generateConfigPage() {
         // Scheduling Section
         html += SECTION_START("🕐", "Scheduling");
         
-        // Refresh Rate
-        html += "<div class='form-group'>";
-        html += "<label for='refresh'>Refresh Rate (minutes)</label>";
-        if (hasConfig) {
-            html += "<input type='number' id='refresh' name='refresh' min='1' value='" + String(currentConfig.refreshRate) + "' placeholder='5'>";
-        } else {
-            html += "<input type='number' id='refresh' name='refresh' min='1' value='5' placeholder='5'>";
-        }
-        html += "<div class='help-text'>How often to update the image (default: 5 minutes)</div>";
-        html += "</div>";
-        
         // CRC32 change detection toggle
         html += "<div class='form-group'>";
         html += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
@@ -503,7 +559,7 @@ String ConfigPortal::generateConfigPage() {
         }
         html += "> Enable CRC32-based change detection";
         html += "</label>";
-        html += "<div class='help-text'>Skips image download & refresh when unchanged. Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
+        html += "<div class='help-text'>Skips image download & refresh when unchanged. Only works in single image mode (disabled in carousel). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
         html += "</div>";
         
         // Hourly Schedule - Update Hours

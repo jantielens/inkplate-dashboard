@@ -7,10 +7,10 @@
 // - MINOR: New features (backward compatible additions)
 // - PATCH: Bug fixes (backward compatible fixes)
 
-#define FIRMWARE_VERSION_MAJOR 0
-#define FIRMWARE_VERSION_MINOR 16
+#define FIRMWARE_VERSION_MAJOR 1
+#define FIRMWARE_VERSION_MINOR 0
 #define FIRMWARE_VERSION_PATCH 0
 
-#define FIRMWARE_VERSION "0.16.0"
+#define FIRMWARE_VERSION "1.0.0"
 
 #endif // VERSION_H

@@ -9,6 +9,7 @@ This folder contains records of architectural decisions and deep-dive technical 
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Project architecture and multi-board design |
 | [BUILD_EXAMPLES.md](BUILD_EXAMPLES.md) | Build system explained with real examples |
 | [BUILD_QUICK_REFERENCE.md](BUILD_QUICK_REFERENCE.md) | Quick reference for the build system |
+| [CAROUSEL_IMPLEMENTATION.MD](ADR-CAROUSEL_IMPLEMENTATION.MD) | Multi-image carousel feature implementation (v1.0.0) |
 | [CHANGELOG.md](CHANGELOG.md) | Project changelog and release notes |
 | [CRC32_GUIDE.md](CRC32_GUIDE.md) | Guide to CRC32-based change detection |
 | [HOURLY_SCHEDULING.md](HOURLY_SCHEDULING.md) | Hourly scheduling feature overview |
