@@ -1317,6 +1317,120 @@ document.getElementById('otaForm').addEventListener('submit', function(e) {
 </script>
 )";
 
+// Page Header Template - reusable HTML header for all portal pages
+// This reduces code duplication across different page generation functions
+const char* CONFIG_PORTAL_PAGE_HEADER_START = R"(<!DOCTYPE html><html><head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+)";
+
+// OTA Status Page - Custom CSS for spinner and status displays
+const char* CONFIG_PORTAL_OTA_STATUS_STYLES = R"(
+<style>
+.spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.status-box { padding: 30px; background: #e8f4f8; border-radius: 8px; text-align: center; margin: 20px 0; }
+.warning-box { padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin: 20px 0; }
+</style>
+)";
+
+// OTA Status Page - JavaScript for progress polling and update management
+// Handles downloading, progress tracking, error handling, and automatic reboot detection
+const char* CONFIG_PORTAL_OTA_STATUS_SCRIPT = R"(
+<script>
+var updateStarted = false;
+var progressInterval = null;
+var failedPolls = 0;
+function updateProgress() {
+  fetch('/ota/progress')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      failedPolls = 0;
+      if (data.inProgress) {
+        var percent = data.percentComplete;
+        var kb = Math.round(data.bytesDownloaded / 1024);
+        var totalKb = Math.round(data.totalBytes / 1024);
+        document.getElementById('progressBar').style.width = percent + '%';
+        document.getElementById('progressBar').innerText = percent + '%';
+        if (totalKb > 0) {
+          document.getElementById('progressText').innerText = kb + ' KB / ' + totalKb + ' KB';
+        }
+      } else if (data.percentComplete === 100) {
+        clearInterval(progressInterval);
+        document.getElementById('statusTitle').innerText = 'Installing...';
+        document.getElementById('statusMessage').innerText = 'Firmware downloaded. Installing and rebooting...';
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressBar').innerText = '100%';
+      }
+    })
+    .catch(function(error) {
+      failedPolls++;
+      if (failedPolls >= 3) {
+        clearInterval(progressInterval);
+        document.querySelector('.spinner').style.display = 'none';
+        document.getElementById('statusTitle').innerText = 'Device is Rebooting';
+        document.getElementById('statusMessage').innerText = 'The firmware has been installed successfully. The device is now rebooting...';
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressBar').innerText = '100%';
+        document.getElementById('progressText').innerText = 'Complete';
+      }
+    });
+}
+window.addEventListener('DOMContentLoaded', function() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var assetUrl = urlParams.get('asset_url');
+  if (!assetUrl) {
+    document.getElementById('statusTitle').innerText = 'Error';
+    document.getElementById('statusMessage').innerText = 'Missing update URL';
+    document.querySelector('.spinner').style.display = 'none';
+    return;
+  }
+  if (updateStarted) return;
+  updateStarted = true;
+  progressInterval = setInterval(updateProgress, 500);
+  var formData = new FormData();
+  formData.append('asset_url', assetUrl);
+  fetch('/ota/install', { method: 'POST', body: formData })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.success) {
+        document.getElementById('statusTitle').innerText = 'Downloading...';
+        document.getElementById('statusMessage').innerText = 'Firmware is being downloaded and installed. The device will reboot automatically when complete.';
+      } else {
+        clearInterval(progressInterval);
+        document.querySelector('.status-box').style.display = 'none';
+        document.getElementById('errorMessage').innerText = data.error || 'Unknown error';
+        document.getElementById('errorSection').style.display = 'block';
+      }
+    })
+    .catch(function(error) {
+      clearInterval(progressInterval);
+      document.querySelector('.status-box').style.display = 'none';
+      document.getElementById('errorMessage').innerText = 'Network error: ' + error.message;
+      document.getElementById('errorSection').style.display = 'block';
+    });
+});
+</script>
+)";
+
+// VCOM Warning Section - Critical safety warning for VCOM management page
+const char* CONFIG_PORTAL_VCOM_WARNING_HTML = R"(
+<div style='background: #fef2f2; border: 2px solid #fee2e2; border-radius: 8px; padding: 15px; color: #991b1b;'>
+<strong style='font-size: 16px;'>⚠️ Caution:</strong><br>
+Changing the VCOM value can permanently damage your e-ink display if set incorrectly. 
+Only proceed if you know what you are doing!<br><br>
+<strong>Note:</strong> Programming VCOM writes to the PMIC EEPROM.
+</div>
+)";
+
+// VCOM Test Pattern Section - Instructions for test pattern display
+const char* CONFIG_PORTAL_VCOM_TEST_PATTERN_HTML = R"(
+<div class='help-text'>
+Your device is now displaying a test pattern with 8 grayscale bars. 
+Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.
+</div>
+)";
+
 // Helper macros for generating section HTML
 // Usage: SECTION_START("icon", "Title") + content + SECTION_END()
 #define SECTION_START(icon, title) \

@@ -346,9 +346,7 @@ String ConfigPortal::generateConfigPage() {
         hasPartialConfig = true;
     }
     
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Inkplate Dashboard Setup</title>";
     html += getCSS();
     html += "</head><body>";
@@ -642,9 +640,7 @@ String ConfigPortal::generateConfigPage() {
 }
 
 String ConfigPortal::generateSuccessPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Configuration Saved</title>";
     html += getCSS();
     html += "<meta http-equiv='refresh' content='5;url=/'>";
@@ -668,9 +664,7 @@ String ConfigPortal::generateSuccessPage() {
 }
 
 String ConfigPortal::generateErrorPage(const String& error) {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Error</title>";
     html += getCSS();
     html += "<meta http-equiv='refresh' content='3;url=/'>";
@@ -693,9 +687,7 @@ String ConfigPortal::generateErrorPage(const String& error) {
 }
 
 String ConfigPortal::generateFactoryResetPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Factory Reset</title>";
     html += getCSS();
     html += "</head><body>";
@@ -718,9 +710,7 @@ String ConfigPortal::generateFactoryResetPage() {
 }
 
 String ConfigPortal::generateRebootPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Rebooting</title>";
     html += getCSS();
     html += "</head><body>";
@@ -743,9 +733,7 @@ String ConfigPortal::generateRebootPage() {
 }
 
 String ConfigPortal::generateOTAPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Firmware Update</title>";
     html += getCSS();
     html += "</head><body>";
@@ -1012,9 +1000,7 @@ void ConfigPortal::handleVcomSubmit() {
 
 // VCOM management HTML page
 String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>VCOM Management</title>";
     html += getCSS();
     html += "</head><body>";
@@ -1024,20 +1010,12 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     
     // Warning Section
     html += SECTION_START("⚠️", "Important Warning");
-    html += "<div style='background: #fef2f2; border: 2px solid #fee2e2; border-radius: 8px; padding: 15px; color: #991b1b;'>";
-    html += "<strong style='font-size: 16px;'>⚠️ Caution:</strong><br>";
-    html += "Changing the VCOM value can permanently damage your e-ink display if set incorrectly. ";
-    html += "Only proceed if you know what you are doing!<br><br>";
-    html += "<strong>Note:</strong> Programming VCOM writes to the PMIC EEPROM.";
-    html += "</div>";
+    html += CONFIG_PORTAL_VCOM_WARNING_HTML;
     html += SECTION_END();
     
     // Test Pattern Section
     html += SECTION_START("📊", "Test Pattern Display");
-    html += "<div class='help-text'>";
-    html += "Your device is now displaying a test pattern with 8 grayscale bars. ";
-    html += "Compare the visual quality as you adjust VCOM values. Look for smooth gradients and good contrast.";
-    html += "</div>";
+    html += CONFIG_PORTAL_VCOM_TEST_PATTERN_HTML;
     html += SECTION_END();
     
     // Current VCOM Section
@@ -1094,17 +1072,10 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
 #endif // DISPLAY_MODE_INKPLATE2
 
 String ConfigPortal::generateOTAStatusPage() {
-    String html = "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Updating Firmware</title>";
     html += getCSS();
-    html += "<style>";
-    html += ".spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }";
-    html += "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
-    html += ".status-box { padding: 30px; background: #e8f4f8; border-radius: 8px; text-align: center; margin: 20px 0; }";
-    html += ".warning-box { padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin: 20px 0; }";
-    html += "</style>";
+    html += CONFIG_PORTAL_OTA_STATUS_STYLES;
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>🔄 Firmware Update</h1>";
@@ -1143,80 +1114,7 @@ String ConfigPortal::generateOTAStatusPage() {
     html += "</div>"; // Close container
     
     // JavaScript to trigger the update and poll progress
-    html += "<script>";
-    html += "var updateStarted = false;";
-    html += "var progressInterval = null;";
-    html += "var failedPolls = 0;";
-    html += "function updateProgress() {";
-    html += "  fetch('/ota/progress')";
-    html += "    .then(function(response) { return response.json(); })";
-    html += "    .then(function(data) {";
-    html += "      failedPolls = 0;";
-    html += "      if (data.inProgress) {";
-    html += "        var percent = data.percentComplete;";
-    html += "        var kb = Math.round(data.bytesDownloaded / 1024);";
-    html += "        var totalKb = Math.round(data.totalBytes / 1024);";
-    html += "        document.getElementById('progressBar').style.width = percent + '%';";
-    html += "        document.getElementById('progressBar').innerText = percent + '%';";
-    html += "        if (totalKb > 0) {";
-    html += "          document.getElementById('progressText').innerText = kb + ' KB / ' + totalKb + ' KB';";
-    html += "        }";
-    html += "      } else if (data.percentComplete === 100) {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.getElementById('statusTitle').innerText = 'Installing...';";
-    html += "        document.getElementById('statusMessage').innerText = 'Firmware downloaded. Installing and rebooting...';";
-    html += "        document.getElementById('progressBar').style.width = '100%';";
-    html += "        document.getElementById('progressBar').innerText = '100%';";
-    html += "      }";
-    html += "    })";
-    html += "    .catch(function(error) {";
-    html += "      failedPolls++;";
-    html += "      if (failedPolls >= 3) {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.querySelector('.spinner').style.display = 'none';";
-    html += "        document.getElementById('statusTitle').innerText = 'Device is Rebooting';";
-    html += "        document.getElementById('statusMessage').innerText = 'The firmware has been installed successfully. The device is now rebooting...';";
-    html += "        document.getElementById('progressBar').style.width = '100%';";
-    html += "        document.getElementById('progressBar').innerText = '100%';";
-    html += "        document.getElementById('progressText').innerText = 'Complete';";
-    html += "      }";
-    html += "    });";
-    html += "}";
-    html += "window.addEventListener('DOMContentLoaded', function() {";
-    html += "  var urlParams = new URLSearchParams(window.location.search);";
-    html += "  var assetUrl = urlParams.get('asset_url');";
-    html += "  if (!assetUrl) {";
-    html += "    document.getElementById('statusTitle').innerText = 'Error';";
-    html += "    document.getElementById('statusMessage').innerText = 'Missing update URL';";
-    html += "    document.querySelector('.spinner').style.display = 'none';";
-    html += "    return;";
-    html += "  }";
-    html += "  if (updateStarted) return;";
-    html += "  updateStarted = true;";
-    html += "  progressInterval = setInterval(updateProgress, 500);";
-    html += "  var formData = new FormData();";
-    html += "  formData.append('asset_url', assetUrl);";
-    html += "  fetch('/ota/install', { method: 'POST', body: formData })";
-    html += "    .then(function(response) { return response.json(); })";
-    html += "    .then(function(data) {";
-    html += "      if (data.success) {";
-    html += "        document.getElementById('statusTitle').innerText = 'Downloading...';";
-    html += "        document.getElementById('statusMessage').innerText = 'Firmware is being downloaded and installed. The device will reboot automatically when complete.';";
-    html += "      } else {";
-    html += "        clearInterval(progressInterval);";
-    html += "        document.querySelector('.status-box').style.display = 'none';";
-    html += "        document.getElementById('errorMessage').innerText = data.error || 'Unknown error';";
-    html += "        document.getElementById('errorSection').style.display = 'block';";
-    html += "      }";
-    html += "    })";
-    html += "    .catch(function(error) {";
-    html += "      clearInterval(progressInterval);";
-    html += "      document.querySelector('.status-box').style.display = 'none';";
-    html += "      document.getElementById('errorMessage').innerText = 'Network error: ' + error.message;";
-    html += "      document.getElementById('errorSection').style.display = 'block';";
-    html += "    });";
-    html += "});";
-    html += "</script>";
+    html += CONFIG_PORTAL_OTA_STATUS_SCRIPT;
     
     html += "</body></html>";
     
