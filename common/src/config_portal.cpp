@@ -1062,7 +1062,6 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
     html += "Only proceed if you know what you are doing!<br><br>";
     html += "<strong>Note:</strong> Programming VCOM writes to the PMIC EEPROM.";
     html += "</div>";
-    html += "</div>";
     html += SECTION_END();
     
     // Test Pattern Section
