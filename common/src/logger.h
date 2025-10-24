@@ -34,6 +34,11 @@ public:
     // Call with no argument for horizontal line, or provide a custom message
     static void end(const char* message = "");
     static void end(const String& message);
+    
+    // Convenience method: combines begin + line + end for single-line messages
+    static void message(const char* title, const char* msg);
+    static void message(const String& title, const String& msg);
+    static void messagef(const char* title, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 private:
     static unsigned long startTime;  // Tracks time when begin() was called

@@ -17,9 +17,7 @@ bool ConfigManager::begin() {
     
     _initialized = _preferences.begin(PREF_NAMESPACE, false);
     if (!_initialized) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("Failed to initialize Preferences");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "Failed to initialize Preferences");
         return false;
     }
     
@@ -62,9 +60,7 @@ bool ConfigManager::isFullyConfigured() {
 
 bool ConfigManager::loadConfig(DashboardConfig& config) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return false;
     }
     
@@ -72,9 +68,7 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.isConfigured = _preferences.getBool(PREF_CONFIGURED, false);
     
     if (!config.isConfigured) {
-        LogBox::begin("Config Status");
-        LogBox::line("Device not configured yet");
-        LogBox::end();
+        LogBox::message("Config Status", "Device not configured yet");
         return false;
     }
     
@@ -113,9 +107,7 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageCount == 0) {
-        LogBox::begin("Config Error");
-        LogBox::line("Invalid configuration: missing SSID or images");
-        LogBox::end();
+        LogBox::message("Config Error", "Invalid configuration: missing SSID or images");
         return false;
     }
     
@@ -140,39 +132,29 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
 
 bool ConfigManager::saveConfig(const DashboardConfig& config) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return false;
     }
     
     // Validate input
     if (config.wifiSSID.length() == 0) {
-        LogBox::begin("Config Error");
-        LogBox::line("WiFi SSID cannot be empty");
-        LogBox::end();
+        LogBox::message("Config Error", "WiFi SSID cannot be empty");
         return false;
     }
     
     if (config.imageCount == 0 || config.imageCount > MAX_IMAGE_SLOTS) {
-        LogBox::begin("Config Error");
-        LogBox::linef("Invalid image count: %d (must be 1-%d)", config.imageCount, MAX_IMAGE_SLOTS);
-        LogBox::end();
+        LogBox::messagef("Config Error", "Invalid image count: %d (must be 1-%d)", config.imageCount, MAX_IMAGE_SLOTS);
         return false;
     }
     
     // Validate each image has URL and interval
     for (uint8_t i = 0; i < config.imageCount; i++) {
         if (config.imageUrls[i].length() == 0) {
-            LogBox::begin("Config Error");
-            LogBox::linef("Image %d URL cannot be empty", i + 1);
-            LogBox::end();
+            LogBox::messagef("Config Error", "Image %d URL cannot be empty", i + 1);
             return false;
         }
         if (config.imageIntervals[i] < MIN_INTERVAL_MINUTES) {
-            LogBox::begin("Config Error");
-            LogBox::linef("Image %d interval must be at least %d minute(s)", i + 1, MIN_INTERVAL_MINUTES);
-            LogBox::end();
+            LogBox::messagef("Config Error", "Image %d interval must be at least %d minute(s)", i + 1, MIN_INTERVAL_MINUTES);
             return false;
         }
     }
@@ -210,9 +192,7 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
         
         size_t urlBytes = _preferences.putString(urlKey.c_str(), config.imageUrls[i]);
         if (urlBytes == 0) {
-            LogBox::begin("Config Error");
-            LogBox::linef("Failed to save URL #%d", i);
-            LogBox::end();
+            LogBox::messagef("Config Error", "Failed to save URL #%d", i);
             return false;
         }
         
@@ -241,16 +221,12 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
 
 void ConfigManager::clearConfig() {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     _preferences.clear();
-    LogBox::begin("Factory Reset");
-    LogBox::line("Configuration cleared (factory reset)");
-    LogBox::end();
+    LogBox::message("Factory Reset", "Configuration cleared (factory reset)");
 }
 
 String ConfigManager::getWiFiSSID() {
@@ -297,40 +273,30 @@ bool ConfigManager::getDebugMode() {
 
 void ConfigManager::setWiFiCredentials(const String& ssid, const String& password) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     _preferences.putString(PREF_WIFI_SSID, ssid);
     _preferences.putString(PREF_WIFI_PASS, password);
-    LogBox::begin("Config Update");
-    LogBox::line("WiFi credentials updated");
-    LogBox::end();
+    LogBox::message("Config Update", "WiFi credentials updated");
 }
 
 void ConfigManager::setMQTTConfig(const String& broker, const String& username, const String& password) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     _preferences.putString(PREF_MQTT_BROKER, broker);
     _preferences.putString(PREF_MQTT_USER, username);
     _preferences.putString(PREF_MQTT_PASS, password);
-    LogBox::begin("Config Update");
-    LogBox::line("MQTT configuration updated");
-    LogBox::end();
+    LogBox::message("Config Update", "MQTT configuration updated");
 }
 
 void ConfigManager::setDebugMode(bool enabled) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
 
@@ -342,9 +308,7 @@ void ConfigManager::setDebugMode(bool enabled) {
 
 void ConfigManager::setUseCRC32Check(bool enabled) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
 
@@ -370,17 +334,13 @@ uint8_t ConfigManager::getScreenRotation() {
 
 void ConfigManager::setScreenRotation(uint8_t rotation) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     // Validate rotation value (only 0, 1, 2, 3 are valid)
     if (rotation > 3) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("Invalid rotation value: " + String(rotation) + " (must be 0-3)");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "Invalid rotation value: " + String(rotation) + " (must be 0-3)");
         return;
     }
     
@@ -409,16 +369,12 @@ void ConfigManager::setLastCRC32(uint32_t crc32) {
 
 void ConfigManager::markAsConfigured() {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     _preferences.putBool(PREF_CONFIGURED, true);
-    LogBox::begin("Config Update");
-    LogBox::line("Device marked as configured");
-    LogBox::end();
+    LogBox::message("Config Update", "Device marked as configured");
 }
 
 bool ConfigManager::isHourEnabled(uint8_t hour) {
@@ -445,9 +401,7 @@ void ConfigManager::setHourEnabled(uint8_t hour, bool enabled) {
     }
     
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
@@ -484,9 +438,7 @@ void ConfigManager::getUpdateHours(uint8_t hours[3]) {
 
 void ConfigManager::setUpdateHours(const uint8_t hours[3]) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
@@ -494,9 +446,7 @@ void ConfigManager::setUpdateHours(const uint8_t hours[3]) {
     _preferences.putUChar(PREF_UPDATE_HOURS_1, hours[1]);
     _preferences.putUChar(PREF_UPDATE_HOURS_2, hours[2]);
     
-    LogBox::begin("Config Update");
-    LogBox::linef("Update hours bitmask set: 0x%02X%02X%02X", hours[2], hours[1], hours[0]);
-    LogBox::end();
+    LogBox::messagef("Config Update", "Update hours bitmask set: 0x%02X%02X%02X", hours[2], hours[1], hours[0]);
 }
 
 int ConfigManager::getTimezoneOffset() {
@@ -508,23 +458,17 @@ int ConfigManager::getTimezoneOffset() {
 
 void ConfigManager::setTimezoneOffset(int offset) {
     if (!_initialized && !begin()) {
-        LogBox::begin("ConfigManager Error");
-        LogBox::line("ConfigManager not initialized");
-        LogBox::end();
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
         return;
     }
     
     // Validate timezone offset (-12 to +14)
     if (offset < -12 || offset > 14) {
-        LogBox::begin("Config Error");
-        LogBox::linef("Invalid timezone offset: %d (valid range: -12 to +14)", offset);
-        LogBox::end();
+        LogBox::messagef("Config Error", "Invalid timezone offset: %d (valid range: -12 to +14)", offset);
         return;
     }
     
     _preferences.putInt(PREF_TIMEZONE_OFFSET, offset);
-    LogBox::begin("Config Update");
-    LogBox::linef("Timezone offset set to UTC%s%d", offset >= 0 ? "+" : "", offset);
-    LogBox::end();
+    LogBox::messagef("Config Update", "Timezone offset set to UTC%s%d", offset >= 0 ? "+" : "", offset);
 }
 

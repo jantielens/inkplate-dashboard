@@ -17,9 +17,7 @@ ConfigPortal::~ConfigPortal() {
 
 bool ConfigPortal::begin(PortalMode mode) {
     if (_server != nullptr) {
-        LogBox::begin("Config Portal");
-        LogBox::line("Config portal already running");
-        LogBox::end();
+        LogBox::message("Config Portal", "Config portal already running");
         return true;
     }
     
@@ -49,9 +47,7 @@ bool ConfigPortal::begin(PortalMode mode) {
                 // Handle upload data
                 HTTPUpload& upload = _server->upload();
                 if (upload.status == UPLOAD_FILE_START) {
-                    LogBox::begin("OTA Update");
-                    LogBox::line("Starting OTA update: " + upload.filename);
-                    LogBox::end();
+                    LogBox::message("OTA Update", "Starting OTA update: " + upload.filename);
                     
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
@@ -100,9 +96,7 @@ bool ConfigPortal::begin(PortalMode mode) {
                     }
                 } else if (upload.status == UPLOAD_FILE_END) {
                     if (Update.end(true)) {
-                        LogBox::begin("OTA Success");
-                        LogBox::linef("Update successful: %u bytes", upload.totalSize);
-                        LogBox::end();
+                        LogBox::messagef("OTA Success", "Update successful: %u bytes", upload.totalSize);
                         // Watchdog will be reset on reboot, no need to re-enable
                     } else {
                         Update.printError(Serial);
@@ -132,9 +126,7 @@ void ConfigPortal::stop() {
         _server->stop();
         delete _server;
         _server = nullptr;
-        LogBox::begin("Config Portal");
-        LogBox::line("Configuration portal stopped");
-        LogBox::end();
+        LogBox::message("Config Portal", "Configuration portal stopped");
     }
 }
 
@@ -153,16 +145,12 @@ int ConfigPortal::getPort() {
 }
 
 void ConfigPortal::handleRoot() {
-    LogBox::begin("Web Request");
-    LogBox::line("Serving configuration page");
-    LogBox::end();
+    LogBox::message("Web Request", "Serving configuration page");
     _server->send(200, "text/html", generateConfigPage());
 }
 
 void ConfigPortal::handleSubmit() {
-    LogBox::begin("Web Request");
-    LogBox::line("Configuration form submitted");
-    LogBox::end();
+    LogBox::message("Web Request", "Configuration form submitted");
     
     // Get form data
     String ssid = _server->arg("ssid");
@@ -254,9 +242,7 @@ void ConfigPortal::handleSubmit() {
     // In BOOT_MODE, only save WiFi credentials
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
-        LogBox::begin("Config Saved");
-        LogBox::line("WiFi credentials saved (boot mode)");
-        LogBox::end();
+        LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
         return;
@@ -285,9 +271,7 @@ void ConfigPortal::handleSubmit() {
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
         config.wifiPassword = _configManager->getWiFiPassword();
-        LogBox::begin("Config Update");
-        LogBox::line("Keeping existing WiFi password");
-        LogBox::end();
+        LogBox::message("Config Update", "Keeping existing WiFi password");
     } else {
         config.wifiPassword = password;
     }
@@ -295,32 +279,24 @@ void ConfigPortal::handleSubmit() {
     // Handle MQTT password - if empty and device is configured with MQTT, keep existing password
     if (mqttPass.length() == 0 && _configManager->isConfigured() && _configManager->getMQTTPassword().length() > 0) {
         config.mqttPassword = _configManager->getMQTTPassword();
-        LogBox::begin("Config Update");
-        LogBox::line("Keeping existing MQTT password");
-        LogBox::end();
+        LogBox::message("Config Update", "Keeping existing MQTT password");
     } else {
         config.mqttPassword = mqttPass;
     }
     
     // Save configuration
     if (_configManager->saveConfig(config)) {
-        LogBox::begin("Config Saved");
-        LogBox::line("Configuration saved successfully");
-        LogBox::end();
+        LogBox::message("Config Saved", "Configuration saved successfully");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
     } else {
-        LogBox::begin("Config Error");
-        LogBox::line("Failed to save configuration");
-        LogBox::end();
+        LogBox::message("Config Error", "Failed to save configuration");
         _server->send(500, "text/html", generateErrorPage("Failed to save configuration"));
     }
 }
 
 void ConfigPortal::handleFactoryReset() {
-    LogBox::begin("Factory Reset");
-    LogBox::line("Factory reset requested");
-    LogBox::end();
+    LogBox::message("Factory Reset", "Factory reset requested");
     
     // Clear all configuration
     _configManager->clearConfig();
@@ -338,17 +314,13 @@ void ConfigPortal::handleFactoryReset() {
 }
 
 void ConfigPortal::handleReboot() {
-    LogBox::begin("Reboot");
-    LogBox::line("Device reboot requested");
-    LogBox::end();
+    LogBox::message("Reboot", "Device reboot requested");
     
     // Send reboot page
     _server->send(200, "text/html", generateRebootPage());
     
     // Device will reboot after the response is sent
-    LogBox::begin("Reboot");
-    LogBox::line("Device will reboot in 2 seconds");
-    LogBox::end();
+    LogBox::message("Reboot", "Device will reboot in 2 seconds");
     delay(2000);
     ESP.restart();
 }
@@ -823,9 +795,7 @@ void ConfigPortal::handleOTAUpload() {
 }
 
 void ConfigPortal::handleOTACheck() {
-    LogBox::begin("OTA Check");
-    LogBox::line("Checking GitHub for updates...");
-    LogBox::end();
+    LogBox::message("OTA Check", "Checking GitHub for updates...");
     
     GitHubOTA ota;
     GitHubOTA::ReleaseInfo info;
@@ -889,9 +859,7 @@ void otaUpdateTask(void* parameter) {
             data->displayManager->refresh();
         }
         
-        LogBox::begin("OTA Success");
-        LogBox::line("Rebooting in 3 seconds...");
-        LogBox::end();
+        LogBox::message("OTA Success", "Rebooting in 3 seconds...");
         
         delay(3000);
         

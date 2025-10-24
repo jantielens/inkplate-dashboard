@@ -27,15 +27,11 @@ String formatMemory(size_t bytes) {
 }
 
 void printDebug(const char* message) {
-    LogBox::begin("Debug");
-    LogBox::line(message);
-    LogBox::end();
+    LogBox::message("Debug", message);
 }
 
 void printDebug(const String& message) {
-    LogBox::begin("Debug");
-    LogBox::line(message);
-    LogBox::end();
+    LogBox::message("Debug", message);
 }
 
 String getBoardName() {

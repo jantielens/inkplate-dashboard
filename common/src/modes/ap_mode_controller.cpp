@@ -22,16 +22,12 @@ bool APModeController::begin() {
             LogBox::end();
             return true;
         } else {
-            LogBox::begin("Configuration Portal");
-            LogBox::line("Failed to start configuration portal!");
-            LogBox::end();
+            LogBox::message("Configuration Portal", "Failed to start configuration portal!");
             uiError->showPortalError();
             return false;
         }
     } else {
-        LogBox::begin("Access Point");
-        LogBox::line("Failed to start Access Point!");
-        LogBox::end();
+        LogBox::message("Access Point", "Failed to start Access Point!");
         uiError->showAPStartError();
         return false;
     }

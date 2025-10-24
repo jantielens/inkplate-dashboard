@@ -51,9 +51,7 @@ bool WiFiManager::startAccessPoint() {
 
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
-        LogBox::begin("Access Point");
-        LogBox::line("Stopping Access Point...");
-        LogBox::end();
+        LogBox::message("Access Point", "Stopping Access Point...");
         WiFi.softAPdisconnect(true);
         _apActive = false;
     }
@@ -128,9 +126,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
 
 bool WiFiManager::connectToWiFi() {
     if (!_configManager) {
-        LogBox::begin("WiFi Connection");
-        LogBox::line("ConfigManager not set");
-        LogBox::end();
+        LogBox::message("WiFi Connection", "ConfigManager not set");
         return false;
     }
     
@@ -138,9 +134,7 @@ bool WiFiManager::connectToWiFi() {
     String password = _configManager->getWiFiPassword();
     
     if (ssid.length() == 0) {
-        LogBox::begin("WiFi Connection");
-        LogBox::line("No WiFi credentials stored");
-        LogBox::end();
+        LogBox::message("WiFi Connection", "No WiFi credentials stored");
         return false;
     }
     
@@ -149,9 +143,7 @@ bool WiFiManager::connectToWiFi() {
 
 void WiFiManager::disconnect() {
     if (WiFi.status() == WL_CONNECTED) {
-        LogBox::begin("WiFi");
-        LogBox::line("Disconnecting from WiFi...");
-        LogBox::end();
+        LogBox::message("WiFi", "Disconnecting from WiFi...");
         WiFi.disconnect();
     }
 }

@@ -52,9 +52,7 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
 
 bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
     if (!_configManager) {
-        LogBox::begin("CRC32 Check");
-        LogBox::line("ConfigManager not set - cannot check CRC32");
-        LogBox::end();
+        LogBox::message("CRC32 Check", "ConfigManager not set - cannot check CRC32");
         return true;  // Fallback to download
     }
     

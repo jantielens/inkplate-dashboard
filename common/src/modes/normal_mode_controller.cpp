@@ -114,9 +114,7 @@ void NormalModeController::execute() {
     
     // Validate interval (sanity check)
     if (currentInterval < MIN_INTERVAL_MINUTES) {
-        LogBox::begin("Config Error");
-        LogBox::linef("Invalid interval for image %d, using default", currentIndex + 1);
-        LogBox::end();
+        LogBox::messagef("Config Error", "Invalid interval for image %d, using default", currentIndex + 1);
         currentInterval = DEFAULT_INTERVAL_MINUTES;
     }
     
@@ -145,9 +143,7 @@ void NormalModeController::execute() {
             return;  // CRC32 matched and timer wake - already went to sleep
         }
     } else if (config.isCarouselMode()) {
-        LogBox::begin("CRC32 Check");
-        LogBox::line("CRC32 disabled in carousel mode");
-        LogBox::end();
+        LogBox::message("CRC32 Check", "CRC32 disabled in carousel mode");
     }
     
     // Download and display image
@@ -183,9 +179,7 @@ void NormalModeController::execute() {
                 // First image - use retry logic (same as single image mode)
                 if (*imageStateIndex < 2) {
                     (*imageStateIndex)++;
-                    LogBox::begin("Carousel Error");
-                    LogBox::linef("First image failed, retry attempt %d of 2", *imageStateIndex);
-                    LogBox::end();
+                    LogBox::messagef("Carousel Error", "First image failed, retry attempt %d of 2", *imageStateIndex);
                     
                     powerManager->disableWatchdog();
                     powerManager->prepareForSleep();
@@ -193,9 +187,7 @@ void NormalModeController::execute() {
                     powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
                 } else {
                     // Exhausted retries on first image - show error and move to next
-                    LogBox::begin("Carousel Error");
-                    LogBox::line("First image failed after retries, moving to next");
-                    LogBox::end();
+                    LogBox::message("Carousel Error", "First image failed after retries, moving to next");
                     
                     *imageStateIndex = 1;  // Move to second image
                     uiError->showImageError(currentImageUrl.c_str(), imageManager->getLastError(), currentInterval);
@@ -213,9 +205,7 @@ void NormalModeController::execute() {
                 }
             } else {
                 // Non-first image - skip to next immediately
-                LogBox::begin("Carousel Error");
-                LogBox::linef("Image %d failed, skipping to next", currentIndex + 1);
-                LogBox::end();
+                LogBox::messagef("Carousel Error", "Image %d failed, skipping to next", currentIndex + 1);
                 
                 *imageStateIndex = (currentIndex + 1) % config.imageCount;
                 
