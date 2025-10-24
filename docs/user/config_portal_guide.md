@@ -56,7 +56,7 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Maximum**: 10 images
 - **Type**: Multiple URL + interval pairs
 - **Description**: Configure single image or multi-image carousel
-- **Format**: Each image must be PNG
+- **Format**: PNG or JPEG (baseline encoding only, not progressive JPEG)
 - **Resolution**: Must match screen resolution:
   - Inkplate 2: 212x104
   - Inkplate 5 V2: 960x540

@@ -25,7 +25,7 @@ A complete guide for using your Inkplate Dashboard to display images on your e-i
 - **USB Cable** for initial programming
 - **WiFi Network** (2.4GHz - 5GHz is not supported)
 - **Computer** with USB port for flashing firmware
-- **Image URL** - A web URL hosting your PNG image (can be on your local network or public internet)
+- **Image URL** - A web URL hosting your PNG or JPEG image (can be on your local network or public internet)
 
 ### Flashing the Firmware
 
@@ -178,7 +178,7 @@ Open browser to:
   - Carousel: `http://example.com/weather.png`, `http://example.com/calendar.png`, `http://example.com/photos.png`
 
 **Image Requirements:**
-- **Format**: PNG only (JPG/GIF not supported)
+- **Format**: PNG or JPEG (baseline encoding only - progressive JPEG not supported, GIF not supported)
 - **Resolution**: Must match your screen exactly (in the orientation you've configured):
   - Inkplate 2: 212×104 pixels (landscape) or 104×212 pixels (portrait)
   - Inkplate 5 V2: 960×540 pixels (landscape) or 540×960 pixels (portrait)
@@ -384,7 +384,7 @@ Once your device is fully configured, it operates automatically:
 
 Your device follows a simple cycle that repeats automatically. When the device wakes up from deep sleep based on your configured refresh rate, you may notice the status LED briefly flash if your board has one. The first thing the device does is connect to your WiFi network, which usually takes between 3 and 5 seconds depending on signal strength.
 
-Once connected, the device downloads the PNG image from your configured URL. The download time varies based on your image size and network speed, but typically takes between 2 and 10 seconds for a dashboard image. After the download completes, the device clears the e-ink screen and renders the downloaded image. The e-ink refresh process takes a few seconds - this is normal behavior for e-ink displays as they physically move particles to create the image.
+Once connected, the device downloads the image (PNG or JPEG) from your configured URL. The download time varies based on your image size and network speed, but typically takes between 2 and 10 seconds for a dashboard image. After the download completes, the device clears the e-ink screen and renders the downloaded image. The e-ink refresh process takes a few seconds - this is normal behavior for e-ink displays as they physically move particles to create the image.
 
 If you have MQTT enabled for Home Assistant integration, the device will publish status information including battery voltage, battery percentage (calculated from voltage using Li-ion discharge curve), WiFi signal strength, and loop time (how long the entire update took). Finally, the device enters deep sleep mode to conserve power. During deep sleep, the device consumes almost no power - just 20 microamps - which is why battery life can extend for months. The device will wake automatically after the configured refresh interval and repeat the entire cycle.
 
@@ -665,7 +665,7 @@ Open browser to:
 **Solutions:**
 1. **Check image URL** - must be complete URL starting with `http://` or `https://`
 2. **Test URL in browser** - open the URL on your computer to verify it works
-3. **Check image format** - must be PNG (JPG/GIF not supported)
+3. **Check image format** - must be PNG or baseline JPEG (progressive JPEG and GIF not supported)
 4. **Verify image size and orientation** - must match your screen exactly in the orientation you've configured (see Configuration Options)
 5. **Check rotation setting** - if you changed Screen Rotation, make sure your image matches (landscape images for 0°/180°, portrait for 90°/270°)
 6. **Check network access** - image must be accessible from your WiFi network
@@ -674,9 +674,10 @@ Open browser to:
 
 **Common URL Mistakes:**
 - ❌ `www.example.com/image.png` - missing `http://`
-- ❌ `example.com/image.jpg` - wrong file format
+- ❌ `example.com/image.gif` - wrong file format (GIF not supported)
 - ❌ `http://localhost/image.png` - not accessible from device's network
 - ✅ `http://example.com/images/dashboard.png` - correct format
+- ✅ `http://example.com/images/dashboard.jpg` - correct format (baseline JPEG)
 
 ### Manual Refresh Doesn't Work
 
@@ -874,6 +875,13 @@ If you're still having issues:
 
 Getting the best results from your e-ink display starts with properly preparing your image. The most important requirement is using the exact resolution that matches your screen size **in the orientation you've configured** - images must be pixel-perfect or they won't display correctly. 
 
+**Supported Image Formats:**
+- **PNG**: Fully supported (recommended for best compatibility)
+- **JPEG**: Supported, but only baseline encoding (not progressive JPEG)
+  - To check if a JPEG is baseline: Use ImageMagick's `identify -verbose image.jpg` and look for `Interlace: None`
+  - To convert progressive to baseline: `magick convert image.jpg -interlace none baseline.jpg`
+  - Most image editors (Photoshop, GIMP) can export as baseline - just uncheck "Progressive" option
+
 **Important:** Images must be pre-rotated to match your Screen Rotation setting:
 - **0° or 180° (Landscape)**: Provide landscape-oriented images (e.g., 1280×720 for Inkplate 5 V2)
 - **90° or 270° (Portrait)**: Provide portrait-oriented images (e.g., 720×1280 for Inkplate 5 V2)
@@ -952,7 +960,7 @@ Once configured, your device will automatically appear in Home Assistant as "Ink
 ## Frequently Asked Questions
 
 **Q: Can I use JPG or GIF images?**  
-A: No, only PNG format is supported.
+A: JPEG images are supported, but only baseline encoding (not progressive JPEG). PNG is also supported. GIF is not supported.
 
 **Q: Can I use images from Google Drive or Dropbox?**  
 A: Only if you have a direct download link that ends in .png and doesn't require authentication. Regular shared links typically require a login page and won't work with the device.

@@ -23,7 +23,7 @@ Once the device is configured, it should connect to the specified wi-fi network 
 If the device fails to connect to the wifi network, or if it fails to download the image, it should display a meaningful error message on the screen and go to deep sleep (for the specified refresh rate). So next time it boots, it will try again to connect to the wifi network and download the image.
 
 **Image Specifications:**
-- Format: PNG only
+- Format: PNG or JPEG (baseline DCT with Huffman coding only - progressive JPEG not supported)
 - Resolution: Must match screen resolution (provided correctly, no resizing needed)
 - Processing: No rotation or other image processing
 - Source: Public web server (HTTP/HTTPS, no authentication)

@@ -196,7 +196,7 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     showDownloadProgress("Downloading image data...");
     
     // Use the InkPlate library's drawImage function
-    // The library supports drawing PNG directly from a stream
+    // The library supports PNG and JPEG (baseline DCT with Huffman coding, not progressive)
     bool success = false;
     
     // Temporarily set rotation to 0 for image drawing
@@ -221,7 +221,7 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     } else {
         // Restore rotation even on failure
         _display->setRotation(currentRotation);
-        showError("Failed to draw image (invalid format or size mismatch)");
+        showError("Failed to draw image (check format: PNG or baseline JPEG, size must match screen)");
         success = false;
     }
     

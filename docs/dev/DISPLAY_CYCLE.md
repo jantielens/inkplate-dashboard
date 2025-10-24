@@ -84,7 +84,7 @@ After setup the firmware branches according to configuration state and wake reas
 5. **CRC32 check (optional)** – If enabled, checks if image has changed:
    - On timer wake with matching CRC32: Skip image download, publish telemetry with "unchanged" message, and sleep immediately.
    - On button wake or CRC32 change: Continue to image download.
-6. **Download & display** – `ImageManager::downloadAndDisplay()` streams the PNG directly to the Inkplate. Success resets the retry counter and saves the new CRC32 (if enabled).
+6. **Download & display** – `ImageManager::downloadAndDisplay()` streams the image (PNG or baseline JPEG) directly to the Inkplate. Success resets the retry counter and saves the new CRC32 (if enabled).
 7. **MQTT telemetry (single session)** – If MQTT is configured, a single session publishes all data at once:
    - **Discovery messages** (conditional): Published only on first boot and hardware reset, skipped on normal timer wakes.
    - **State messages**: Battery voltage, WiFi signal, loop time, and optional log message.

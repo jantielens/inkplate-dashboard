@@ -433,7 +433,7 @@ String ConfigPortal::generateConfigPage() {
     // Dashboard Image Section - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         html += SECTION_START("🖼️", "Dashboard Images");
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Fill 1 image for single image mode, or 2+ for automatic carousel rotation. Each image must be PNG matching your screen resolution.</div>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Fill 1 image for single image mode, or 2+ for automatic carousel rotation. Supported formats: PNG or JPEG (baseline encoding only, not progressive). Image must match your screen resolution.</div>";
         
         // Get existing image configuration if available
         uint8_t existingCount = hasConfig ? currentConfig.imageCount : 0;
