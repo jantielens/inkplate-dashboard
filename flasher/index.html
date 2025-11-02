@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Inkplate Dashboard Web Flasher</title>
@@ -9,505 +9,250 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      
-      body {
-        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Ubuntu, sans-serif;
-        padding: 0;
-        margin: 0;
-        line-height: 1.6;
-        background-color: #f5f5f5;
-      }
-      
-      .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem 1rem;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      
-      .header h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 700;
-      }
-      
-      .header p {
-        margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
-        opacity: 0.95;
-      }
-      
-      .content {
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-      }
-      
-      .card {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-      
-      .card h2 {
-        margin-top: 0;
-        color: #333;
-        font-size: 1.5rem;
-        border-bottom: 2px solid #667eea;
-        padding-bottom: 0.5rem;
-      }
-      
-      .card h3 {
-        color: #555;
-        font-size: 1.2rem;
-        margin-top: 1.5rem;
-      }
-      
-      .board-selection {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin: 1.5rem 0;
-      }
-      
-      .board-option {
-        position: relative;
-      }
-      
-      .board-option input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-      }
-      
-      .board-option label {
-        display: block;
-        padding: 1.5rem 1rem;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: white;
-        font-weight: 500;
-      }
-      
-      .board-option label:hover {
-        border-color: #667eea;
-        background: #f8f9ff;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
-      }
-      
-      .board-option input[type="radio"]:checked + label {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-      }
-      
-      .board-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        display: block;
-      }
-      
-      .install-button-container {
-        text-align: center;
-        margin: 2rem 0;
-      }
-      
-      esp-web-install-button {
-        display: inline-block;
-      }
-      
-      esp-web-install-button.hidden {
-        display: none;
-      }
-      
-      .alert {
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-      }
-      
-      .alert-info {
-        background: #e3f2fd;
-        border-left: 4px solid #2196f3;
-        color: #1565c0;
-      }
-      
-      .alert-warning {
-        background: #fff3e0;
-        border-left: 4px solid #ff9800;
-        color: #e65100;
-      }
-      
-      .alert strong {
-        display: block;
-        margin-bottom: 0.5rem;
-      }
-      
-      .instructions {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-      }
-      
-      .instructions ol {
-        margin: 0;
-        padding-left: 1.5rem;
-      }
-      
-      .instructions li {
-        margin: 0.5rem 0;
-      }
-      
-      .features {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 1.5rem 0;
-      }
-      
-      .feature {
-        padding: 1rem;
-        background: #f8f9fa;
-        border-radius: 8px;
-        text-align: center;
-      }
-      
-      .feature-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-      }
-      
-      .footer {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: #666;
-        border-top: 1px solid #ddd;
-        margin-top: 3rem;
-      }
-      
-      .footer a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 500;
-      }
-      
-      .footer a:hover {
-        text-decoration: underline;
-      }
-      
-      .version-badge {
-        display: inline-block;
-        background: #667eea;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-left: 0.5rem;
-      }
-      
-      code {
-        background: #f4f4f4;
-        padding: 0.2rem 0.4rem;
-        border-radius: 4px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9em;
-      }
-      
-      @media (prefers-color-scheme: dark) {
-        body {
-          background-color: #1a1a1a;
-          color: #e0e0e0;
-        }
-        
-        .card {
-          background: #2d2d2d;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .card h2 {
-          color: #e0e0e0;
-        }
-        
-        .card h3 {
-          color: #c0c0c0;
-        }
-        
-        .board-option label {
-          background: #2d2d2d;
-          border-color: #444;
-          color: #e0e0e0;
-        }
-        
-        .board-option label:hover {
-          background: #3a3a4f;
-          border-color: #667eea;
-        }
-        
-        .alert-info {
-          background: #1a2332;
-          color: #64b5f6;
-        }
-        
-        .alert-warning {
-          background: #332a1a;
-          color: #ffb74d;
-        }
-        
-        .instructions {
-          background: #2d2d2d;
-        }
-        
-        .feature {
-          background: #2d2d2d;
-        }
-        
-        .footer {
-          border-top-color: #444;
-          color: #999;
-        }
-        
-        code {
-          background: #1a1a1a;
-          color: #e0e0e0;
-        }
-      }
-      
-      @media (max-width: 600px) {
-        .header h1 {
-          font-size: 1.75rem;
-        }
-        
-        .board-selection {
-          grid-template-columns: 1fr;
-        }
-        
-        .features {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
     <script
       type="module"
       src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
     ></script>
   </head>
   <body>
-    <div class="header">
-      <h1>📱 Inkplate Dashboard</h1>
-      <p>Web-based firmware flasher</p>
-    </div>
+    <!-- Header Navigation -->
+    <header class="header">
+      <h1 class="header-title">📱 Inkplate Dashboard</h1>
+      <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank" class="header-link">
+        <svg class="header-icon" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span>View on GitHub</span>
+        <svg class="header-arrow" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8.5 1.5a.5.5 0 1 0-1 0v11.293l-3.146-3.147a.5.5 0 0 0-.708.708l4 4a.5.5 0 0 0 .708 0l4-4a.5.5 0 0 0-.708-.708L8.5 12.793V1.5z" transform="rotate(-90 8 8)"/>
+        </svg>
+      </a>
+    </header>
 
+    <!-- Hero Section -->
+    <section class="hero">
+      <h2 class="hero-title">Inkplate Dashboard Firmware Flasher</h2>
+      <p class="hero-description">
+        A smart, multi-board firmware for Inkplate e-ink displays that transforms your device into a beautiful, 
+        always-on dashboard. Effortlessly download and display custom images from any web URL, with easy WiFi setup, 
+        web-based configuration, and power-saving features. Perfect for Home Assistant users, digital signage, and 
+        battery-powered displays.
+      </p>
+      <div class="hero-features">
+        <div class="hero-feature">
+          <span class="hero-feature-icon">📶</span>
+          <span>Easy Setup & Web Config</span>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon">🖼️</span>
+          <span>Single Image or Carousel</span>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon">🔋</span>
+          <span>Power Efficient</span>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon">🔗</span>
+          <span>Optional Home Assistant Integration</span>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon">⚡</span>
+          <span>Advanced Options</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
     <div class="content">
-      <div class="card">
-        <h2>🎯 Select Your Inkplate Device</h2>
-        
-        <div class="alert alert-info">
-          <strong>ℹ️ Before you start:</strong>
-          Make sure your Inkplate device is connected via USB cable to your computer.
-        </div>
+      <div class="content-main">
+        <!-- Left Column: Device Selection -->
+        <div class="content-left">
+          <div class="card">
+            <h2 class="card-title">🎯 Select Your Device</h2>
 
-        <div class="alert alert-warning" id="local-test-warning" style="display: none;">
-          <strong>🧪 Local Testing Mode</strong>
-          You're running in local testing mode. The flasher will use binaries from your local build directory instead of GitHub releases.
-        </div>
+            <div class="alert alert-info">
+              <strong>ℹ️ Before you start:</strong>
+              Make sure your Inkplate device is connected via USB cable to your computer.
+            </div>
 
-        <div class="board-selection">
-          <div class="board-option">
-            <input type="radio" name="board" id="inkplate2" value="inkplate2" />
-            <label for="inkplate2">
-              <span class="board-icon">📟</span>
-              Inkplate 2
-            </label>
-          </div>
-          
-          <div class="board-option">
-            <input type="radio" name="board" id="inkplate5v2" value="inkplate5v2" />
-            <label for="inkplate5v2">
-              <span class="board-icon">📱</span>
-              Inkplate 5 V2
-            </label>
-          </div>
-          
-          <div class="board-option">
-            <input type="radio" name="board" id="inkplate6flick" value="inkplate6flick" />
-            <label for="inkplate6flick">
-              <span class="board-icon">📲</span>
-              Inkplate 6 Flick
-            </label>
-          </div>
-          
-          <div class="board-option">
-            <input type="radio" name="board" id="inkplate10" value="inkplate10" />
-            <label for="inkplate10">
-              <span class="board-icon">🖥️</span>
-              Inkplate 10
-            </label>
-          </div>
-        </div>
+            <div class="alert alert-warning hidden" id="local-test-warning">
+              <strong>🧪 Local Testing Mode</strong>
+              You're running in local testing mode. The flasher will use binaries from your local build directory.
+            </div>
 
-        <div class="install-button-container">
-          <esp-web-install-button class="hidden" manifest="">
-            <button slot="activate" class="install-btn">
-              Install Inkplate Dashboard
-            </button>
-          </esp-web-install-button>
-        </div>
+            <div class="device-selection">
+              <label class="device-option">
+                <input type="radio" name="board" value="inkplate2" />
+                <span class="device-label">
+                  <span class="device-icon">📟</span>
+                  <span class="device-name">Inkplate 2</span>
+                </span>
+              </label>
 
-        <div class="alert alert-warning" id="no-support-warning" style="display: none;">
-          <strong>⚠️ Browser not supported</strong>
-          This flasher requires a browser with Web Serial API support. Please use:
-          <ul>
-            <li>Google Chrome (version 89+)</li>
-            <li>Microsoft Edge (version 89+)</li>
-            <li>Opera (version 75+)</li>
-          </ul>
-          Safari and Firefox are not currently supported.
-        </div>
-      </div>
+              <label class="device-option">
+                <input type="radio" name="board" value="inkplate5v2" />
+                <span class="device-label">
+                  <span class="device-icon">📱</span>
+                  <span class="device-name">Inkplate 5 V2</span>
+                </span>
+              </label>
 
-      <div class="card">
-        <h2>📋 Features</h2>
-        <div class="features">
-          <div class="feature">
-            <div class="feature-icon">🔄</div>
-            <strong>MQTT Dashboard</strong>
-            <p>Real-time data display</p>
+              <label class="device-option">
+                <input type="radio" name="board" value="inkplate6flick" />
+                <span class="device-label">
+                  <span class="device-icon">📲</span>
+                  <span class="device-name">Inkplate 6 Flick</span>
+                </span>
+              </label>
+
+              <label class="device-option">
+                <input type="radio" name="board" value="inkplate10" />
+                <span class="device-label">
+                  <span class="device-icon">🖥️</span>
+                  <span class="device-name">Inkplate 10</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="install-button-container">
+              <esp-web-install-button class="hidden" manifest="">
+                <button slot="activate" class="install-btn">
+                  Install Inkplate Dashboard
+                </button>
+              </esp-web-install-button>
+            </div>
+
+            <div class="alert alert-warning hidden" id="no-support-warning">
+              <strong>⚠️ Browser not supported</strong>
+              This flasher requires a browser with Web Serial API support. Please use:
+              <ul>
+                <li>Google Chrome (version 89+)</li>
+                <li>Microsoft Edge (version 89+)</li>
+                <li>Opera (version 75+)</li>
+              </ul>
+              Safari and Firefox are not currently supported.
+            </div>
           </div>
-          <div class="feature">
-            <div class="feature-icon">🌐</div>
-            <strong>WiFi Portal</strong>
-            <p>Easy network setup</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">🔋</div>
-            <strong>Battery Optimized</strong>
-            <p>Deep sleep support</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⚙️</div>
-            <strong>Configurable</strong>
-            <p>Web-based config</p>
+
+          <!-- Battery Estimation Section -->
+          <div class="card">
+            <h2 class="card-title">🔋 Battery Estimation</h2>
+            <div class="placeholder-section">
+              <div class="placeholder-icon">⏳</div>
+              <p class="placeholder-title">Coming Soon</p>
+              <p class="placeholder-text">
+                Battery life estimation based on your configuration will be available in a future update.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <h2>📚 How to Flash</h2>
-        <div class="instructions">
-          <ol>
-            <li>Select your Inkplate device model above</li>
-            <li>Click the "Install Inkplate Dashboard" button</li>
-            <li>In the popup, select your device's serial port</li>
-            <li>Wait for the installation to complete (2-3 minutes)</li>
-            <li>After flashing, the device will restart automatically</li>
-            <li>Look for a WiFi network named <code>Inkplate-XXXXXX</code></li>
-            <li>Connect to it and configure your settings at <code>http://192.168.4.1</code></li>
-          </ol>
+        <!-- Right Column: Getting Started & Resources -->
+        <div class="content-right">
+          <div class="card">
+            <h2 class="card-title">📚 Getting Started</h2>
+
+            <h3 class="card-subtitle">How to Flash Your Device</h3>
+            <div class="instructions">
+              <ol>
+                <li>Select your Inkplate device model on the left</li>
+                <li>Click the <strong>"Install Inkplate Dashboard"</strong> button</li>
+                <li>In the popup, select your device's serial port</li>
+                <li>Wait for the installation to complete (2-3 minutes)</li>
+                <li>After flashing, the device will restart automatically</li>
+                <li>Look for a WiFi network named <code>Inkplate-XXXXXX</code></li>
+                <li>Connect to it and configure your settings at <code>http://192.168.4.1</code></li>
+              </ol>
+            </div>
+
+            <h3 class="card-subtitle">Need Help?</h3>
+            <ul style="margin: 0; padding-left: 1.5rem;">
+              <li>📖 <a href="https://github.com/jantielens/inkplate-dashboard/tree/main/docs/user" target="_blank">User Documentation</a></li>
+              <li> <a href="https://github.com/jantielens/inkplate-dashboard/issues" target="_blank">Report Issues</a></li>
+            </ul>
+          </div>
+
+          <!-- Troubleshooting Section -->
+          <div class="card">
+            <h2 class="card-title">❓ Troubleshooting</h2>
+
+            <div class="accordion">
+              <div class="accordion-header">
+                <span>Can't see the serial port?</span>
+                <span class="accordion-toggle">▼</span>
+              </div>
+              <div class="accordion-content">
+                <ul>
+                  <li>Make sure the USB cable is properly connected</li>
+                  <li>Try a different USB cable (some cables are charge-only)</li>
+                  <li>Install the <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">CP210x USB driver</a></li>
+                  <li>On Linux, you may need to add your user to the <code>dialout</code> group: <code>sudo usermod -a -G dialout $USER</code></li>
+                  <li>Restart your browser after installing drivers</li>
+                </ul>
+              </div>
+
+              <div class="accordion-header">
+                <span>Flash failed or stuck?</span>
+                <span class="accordion-toggle">▼</span>
+              </div>
+              <div class="accordion-content">
+                <ul>
+                  <li>Try pressing the reset button on your Inkplate before starting</li>
+                  <li>Close any other programs using the serial port (Arduino IDE, PlatformIO, etc.)</li>
+                  <li>Try a different USB port</li>
+                  <li>Try a different browser if possible</li>
+                  <li>Refresh this page and try again</li>
+                </ul>
+              </div>
+
+              <div class="accordion-header">
+                <span>Device won't start after flashing?</span>
+                <span class="accordion-toggle">▼</span>
+              </div>
+              <div class="accordion-content">
+                <ul>
+                  <li>Press the reset button on the device</li>
+                  <li>Disconnect and reconnect the USB cable</li>
+                  <li>If using battery power, make sure it's charged</li>
+                  <li>Wait a few moments for the device to boot</li>
+                </ul>
+              </div>
+
+              <div class="accordion-header">
+                <span>Can't connect to the WiFi portal?</span>
+                <span class="accordion-toggle">▼</span>
+              </div>
+              <div class="accordion-content">
+                <ul>
+                  <li>Make sure you're connected to the <code>Inkplate-XXXXXX</code> WiFi network</li>
+                  <li>Try opening <code>192.168.4.1</code> directly in your browser</li>
+                  <li>Make sure your device is powered and has successfully started</li>
+                  <li>Try forgetting the network and connecting again</li>
+                  <li>Check if your network has a captive portal that might be blocking access</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>❓ Troubleshooting</h2>
-        <h3>Can't see the serial port?</h3>
-        <ul>
-          <li>Make sure the USB cable is properly connected</li>
-          <li>Try a different USB cable (some cables are charge-only)</li>
-          <li>Install the <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">CP210x USB driver</a></li>
-          <li>On Linux, you may need to add your user to the <code>dialout</code> group</li>
-        </ul>
-
-        <h3>Flash failed or stuck?</h3>
-        <ul>
-          <li>Try pressing the reset button on your Inkplate before starting</li>
-          <li>Close any other programs using the serial port (Arduino IDE, PlatformIO, etc.)</li>
-          <li>Try a different USB port</li>
-          <li>Refresh this page and try again</li>
-        </ul>
-
-        <h3>Device won't start after flashing?</h3>
-        <ul>
-          <li>Press the reset button on the device</li>
-          <li>Disconnect and reconnect the USB cable</li>
-          <li>If using battery power, make sure it's charged</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <h2>🔗 Resources</h2>
-        <ul>
-          <li>📖 <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank">GitHub Repository</a></li>
-          <li>📄 <a href="https://github.com/jantielens/inkplate-dashboard/blob/main/docs/user/README.md" target="_blank">Documentation</a></li>
-          <li>🐛 <a href="https://github.com/jantielens/inkplate-dashboard/issues" target="_blank">Report Issues</a></li>
-          <li>💬 <a href="https://github.com/jantielens/inkplate-dashboard/discussions" target="_blank">Discussions</a></li>
-        </ul>
       </div>
     </div>
 
-    <div class="footer">
+    <!-- Footer -->
+    <footer class="footer">
       <p>
-        <strong>Inkplate Dashboard</strong> by 
-        <a href="https://github.com/jantielens" target="_blank">Jan Tielens</a>
+        <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank">Inkplate Dashboard</a> — <a href="https://github.com/jantielens/inkplate-dashboard" target="_blank">https://github.com/jantielens/inkplate-dashboard</a>
       </p>
       <p>
         Powered by 
         <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
-        &bull;
+        <span class="footer-divider">•</span>
         Inkplate devices by 
         <a href="https://soldered.com/product-category/inkplate/" target="_blank">Soldered Electronics</a>
       </p>
-    </div>
+    </footer>
 
-    <script>
-      // Check for Web Serial API support
-      if (!navigator.serial) {
-        document.getElementById('no-support-warning').style.display = 'block';
-      }
-
-      // Detect if running in local/testing mode
-      const isLocal = window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1' ||
-                     window.location.hostname.includes('github.dev');
-      
-      if (isLocal) {
-        document.getElementById('local-test-warning').style.display = 'block';
-        console.log('🧪 Running in local testing mode - using local binaries');
-      }
-
-      // Handle board selection
-      const installButton = document.querySelector('esp-web-install-button');
-      const boardRadios = document.querySelectorAll('input[name="board"]');
-      
-      boardRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          const boardId = e.target.value;
-          
-          // For local testing, use the _local manifest which points to ../build/ files
-          const manifestSuffix = isLocal ? '_local' : '';
-          installButton.manifest = `./manifest_${boardId}${manifestSuffix}.json`;
-          installButton.classList.remove('hidden');
-          
-          console.log(`Selected board: ${boardId}, Using manifest: manifest_${boardId}${manifestSuffix}.json`);
-        });
-      });
-
-      // Add event listeners for install button
-      installButton.addEventListener('state-changed', (e) => {
-        console.log('State changed:', e.detail);
-      });
-    </script>
+    <!-- Application Script -->
+    <script src="app.js"></script>
   </body>
 </html>
