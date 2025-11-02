@@ -123,7 +123,142 @@
           </ul>
         </div>
 
-        <!-- Device Showcase -->
+        <!-- Battery Estimation -->
+        <div class="card">
+          <h2 class="card-title">🔋 Battery Life Estimator</h2>
+          
+          <div class="alert alert-info">
+            <strong>ℹ️ For Information Only:</strong> Experiment with available firmware configuration options and see their impact on battery life. This is for planning purposes only and does not modify your device.
+          </div>
+
+          <div class="battery-estimator">
+            <!-- Configuration Inputs -->
+            <div class="battery-config">
+              <div class="battery-input-group">
+                <label for="battery-capacity">Battery Capacity</label>
+                <select id="battery-capacity" class="battery-input">
+                  <option value="600">600 mAh (Small)</option>
+                  <option value="1200" selected>1200 mAh (Standard)</option>
+                  <option value="1800">1800 mAh (Medium)</option>
+                  <option value="3000">3000 mAh (Large)</option>
+                  <option value="6000">6000 mAh (Extra Large)</option>
+                </select>
+              </div>
+
+              <div class="battery-input-group">
+                <label for="refresh-interval">
+                  Refresh Interval
+                  <span class="battery-range-value" id="refresh-display">5 min</span>
+                </label>
+                <input 
+                  type="range" 
+                  id="refresh-interval" 
+                  class="battery-slider"
+                  min="1" 
+                  max="60" 
+                  value="5"
+                  step="1"
+                />
+                <div class="battery-slider-labels">
+                  <span>1 min</span>
+                  <span>30 min</span>
+                  <span>60 min</span>
+                </div>
+              </div>
+
+              <div class="battery-input-group">
+                <label for="active-hours">Active Hours Per Day</label>
+                <input 
+                  type="number" 
+                  id="active-hours" 
+                  class="battery-input"
+                  min="1" 
+                  max="24" 
+                  value="18"
+                />
+                <div class="help-text">Device can sleep during inactive hours (e.g., night) to save battery</div>
+              </div>
+
+              <div class="battery-input-group">
+                <label for="daily-changes">Expected Image Changes Per Day</label>
+                <input 
+                  type="number" 
+                  id="daily-changes" 
+                  class="battery-input"
+                  min="1" 
+                  max="1000" 
+                  value="5"
+                />
+                <div class="help-text">With CRC32 enabled, device only downloads & displays when content actually changes</div>
+              </div>
+
+              <div class="battery-input-group">
+                <label class="battery-checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    id="crc32-enabled"
+                    checked
+                  />
+                  <span>Enable CRC32 Change Detection</span>
+                </label>
+                <div class="help-text">Uses optional CRC32 value from compatible servers to skip downloads when image unchanged, saving battery. Compatible image generators & web servers integrated with Home Assistant: <a href="https://github.com/jantielens/ha-screenshotter" target="_blank">ha-screenshotter</a> & <a href="https://github.com/jantielens/ha-calendar2image" target="_blank">ha-calendar2image</a></div>
+              </div>
+            </div>
+
+            <!-- Results Display -->
+            <div class="battery-result good" id="battery-result">
+              <div class="battery-result-header">
+                <div class="battery-life-display" id="battery-days">174 days</div>
+                <span class="status-badge status-good" id="status-badge">GOOD</span>
+              </div>
+              <div class="battery-life-subtitle" id="battery-months">Approximately 5.8 months</div>
+              
+              <div class="battery-progress">
+                <div class="battery-progress-bar good" id="progress-bar" style="width: 58%;"></div>
+              </div>
+              
+              <div class="battery-details">
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Daily Power</span>
+                  <span class="battery-detail-value" id="daily-power">6.9 mAh</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Wake-ups/Day</span>
+                  <span class="battery-detail-value" id="wakeups">288</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Active Time</span>
+                  <span class="battery-detail-value" id="active-time">3.4 min/day</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Sleep Time</span>
+                  <span class="battery-detail-value" id="sleep-time">23.9 hrs/day</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tips Section -->
+            <div class="battery-tips" id="battery-tips" style="display: none;">
+              <strong>💡 Tip:</strong> <span id="tip-text"></span>
+            </div>
+
+            <!-- Assumptions -->
+            <details class="battery-assumptions">
+              <summary>📊 Calculation Assumptions</summary>
+              <ul>
+                <li>WiFi active: 100mA average</li>
+                <li>Display update: 50mA</li>
+                <li>Deep sleep: 20µA (0.02mA)</li>
+                <li>Image update time: 7 seconds</li>
+                <li>CRC32 check time: 1 second</li>
+                <li>Good WiFi signal strength assumed</li>
+                <li>Temperature: 20°C (68°F)</li>
+              </ul>
+            </details>
+          </div>
+        </div>
+
+        <!-- Device Showcase & Troubleshooting -->
         <div class="card">
           <div class="device-showcase">
             <div class="device-image-container">
@@ -131,23 +266,8 @@
               <img class="device-image device-image-2" src="./assets/inkplate5v2-tr2.png" alt="Inkplate device preview" />
             </div>
           </div>
-        </div>
 
-        <!-- Battery Estimation -->
-        <div class="card">
-          <h2 class="card-title">🔋 Battery Estimation</h2>
-          <div class="placeholder-section">
-            <div class="placeholder-icon">⏳</div>
-            <p class="placeholder-title">Coming Soon</p>
-            <p class="placeholder-text">
-              Battery life estimation based on your configuration will be available in a future update.
-            </p>
-          </div>
-        </div>
-
-        <!-- Troubleshooting -->
-        <div class="card">
-          <h2 class="card-title">❓ Troubleshooting</h2>
+          <h2 class="card-title" style="margin-top: 2rem;">❓ Troubleshooting</h2>
 
           <div class="accordion">
             <div class="accordion-header">
@@ -224,7 +344,8 @@
       </p>
     </footer>
 
-    <!-- Application Script -->
+    <!-- Application Scripts -->
     <script src="app.js"></script>
+    <script src="battery-calc.js"></script>
   </body>
 </html>
