@@ -90,7 +90,7 @@ for firmware_bin in "$ARTIFACTS_DIR"/*-v*.bin; do
       name: $name,
       version: $version,
       home_assistant_domain: "inkplate_dashboard",
-      new_install_prompt_erase: true,
+      new_install_prompt_erase: false,
       builds: [{
         chipFamily: "ESP32",
         parts: [
