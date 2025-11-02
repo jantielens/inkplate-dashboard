@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-11-02
+
+### Changed
+- **Flasher UI Modernization** - Complete redesign of the web-based firmware flasher
+  - Modern, minimalist design with two-column layout on desktop
+  - Separated CSS and JavaScript into external files for better maintainability
+  - Improved hero section highlighting core firmware capabilities
+  - Compact vertical device selection list (better scalability for future boards)
+  - Collapsible accordion sections for troubleshooting
+  - Enhanced GitHub repository link with logo and external link indicator
+  - Better responsive design supporting various screen sizes
+  - Placeholder section for future battery estimation feature
+
 ## [1.0.2] - 2025-11-02
 
 ### Fixed
