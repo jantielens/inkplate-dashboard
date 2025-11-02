@@ -64,6 +64,9 @@ function setupEventListeners() {
   // Generate device selection dynamically
   generateDeviceSelection(installButton);
 
+  // Setup device image animation on scroll
+  setupDeviceImageAnimation();
+
   // Accordion toggling
   accordionHeaders.forEach(header => {
     header.addEventListener('click', (e) => handleAccordionToggle(e));
@@ -192,6 +195,40 @@ function getBoardInfo(boardId) {
  */
 function getAvailableBoards() {
   return Object.entries(BOARDS).map(([id, info]) => ({ id, ...info }));
+}
+
+// =====================================================
+// Device Image Animation
+// =====================================================
+
+function setupDeviceImageAnimation() {
+  const container = document.querySelector('.device-image-container');
+  if (!container) return;
+
+  let scrollStarted = false;
+  let imageToggle = false;
+  let animationTimeout = null;
+
+  // Start animation on first scroll
+  window.addEventListener('scroll', () => {
+    if (!scrollStarted) {
+      scrollStarted = true;
+      startImageAnimation();
+    }
+  }, { once: true });
+
+  function startImageAnimation() {
+    function toggleImage() {
+      imageToggle = !imageToggle;
+      if (imageToggle) {
+        container.classList.add('show-image-2');
+      } else {
+        container.classList.remove('show-image-2');
+      }
+      animationTimeout = setTimeout(toggleImage, 3000);
+    }
+    toggleImage();
+  }
 }
 
 // Export for testing if needed
