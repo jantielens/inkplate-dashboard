@@ -1,7 +1,13 @@
 
 # Changelog
 
+
 ## [Unreleased]
+
+## [1.0.2] - 2025-11-02
+
+### Fixed
+- Flasher erase prompt now correctly reflects manifest setting
 
 ## [1.0.1] - 2025-10-24
 
