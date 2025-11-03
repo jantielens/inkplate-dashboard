@@ -146,55 +146,18 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     LogBox::begin("Starting image download");
     LogBox::line("URL: " + String(url));
     
-    // Determine if HTTPS or HTTP
-    bool useHttps = isHttps(url);
-    
-    HTTPClient http;
-    WiFiClient client;
-    WiFiClientSecure secureClient;
-    
-    if (useHttps) {
+    // Log connection type for debugging
+    if (isHttps(url)) {
         LogBox::line("Using HTTPS connection");
-        // Don't verify certificate for simplicity (public images)
-        secureClient.setInsecure();
-        http.begin(secureClient, url);
     } else {
         LogBox::line("Using HTTP connection");
-        http.begin(client, url);
     }
     
-    // Set timeout
-    http.setTimeout(30000);  // 30 seconds
-    
-    // Set user agent
-    http.setUserAgent("InkplateDashboard/1.0");
-    
-    // Send GET request
-    showDownloadProgress("Sending HTTP request...");
-    int httpCode = http.GET();
-    
-    if (httpCode != HTTP_CODE_OK) {
-        showError(("HTTP error: " + String(httpCode)).c_str());
-        LogBox::end();
-        http.end();
-        return false;
-    }
-    
-    // Get content length
-    int contentLength = http.getSize();
-    LogBox::linef("Content-Length: %d bytes", contentLength);
-    
-    if (contentLength <= 0) {
-        showError("Invalid content length");
-        LogBox::end();
-        http.end();
-        return false;
-    }
-    
-    showDownloadProgress("Downloading image data...");
+    showDownloadProgress("Downloading and rendering image...");
     
     // Use the InkPlate library's drawImage function
     // The library supports PNG and JPEG (baseline DCT with Huffman coding, not progressive)
+    // This method handles the HTTP(S) download internally
     bool success = false;
     
     // Temporarily set rotation to 0 for image drawing
@@ -203,8 +166,8 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     uint8_t currentRotation = ((Adafruit_GFX*)_display)->getRotation();
     _display->setRotation(0);
     
-    // Try to draw the image from the web stream
-    // InkPlate library has drawImage that can work with WiFiClient streams
+    // Draw the image directly from URL
+    // The InkPlate library's drawImage method downloads and renders in one operation
     if (_display->drawImage(url, 0, 0, true, false)) {
         LogBox::line("Image downloaded and displayed successfully!");
         
@@ -219,11 +182,9 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     } else {
         // Restore rotation even on failure
         _display->setRotation(currentRotation);
-        showError("Failed to draw image (check format: PNG or baseline JPEG, size must match screen)");
+        showError("Failed to download or draw image (check URL, format: PNG or baseline JPEG, size must match screen)");
         success = false;
     }
-    
-    http.end();
     
     if (success) {
         LogBox::end("Image display complete!");
