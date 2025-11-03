@@ -4,10 +4,34 @@
 
 ## [Unreleased]
 
-## [1.0.3] - 2025-11-03
+## [1.0.4] - 2025-11-03
 
 ### Fixed
 - **Eliminated redundant image download** (issue #61)
+  - Removed duplicate HTTP request in `ImageManager::downloadAndDisplay()`
+  - Now relies solely on InkPlate library's `drawImage()` method for single-pass download and rendering
+  - **Performance improvements**: 50% reduction in download time and bandwidth usage per refresh cycle
+  - **Battery life**: Reduced active time results in better battery efficiency
+  - **Server impact**: Half the HTTP requests to image servers (one request per refresh instead of two)
+  - Previous implementation was downloading the same image twice: once for validation, then again for rendering
+
+### Added
+- **Battery life estimator** with configuration options and UI updates
+  - Calculate estimated battery life based on configuration
+  - Display battery life estimate in configuration portal
+
+## [1.0.3] - 2025-11-03
+
+### Changed
+- **Flasher improvements**
+  - Modernized flasher UI with separate CSS/JS files
+  - Added second demo photo
+  - Fixed flasher workflow to allow commits
+
+## [1.0.3] - 2025-11-03 (main branch)
+
+### Changed
+- **Flasher UI Modernization** - Complete redesign of the web-based firmware flasher
   - Removed duplicate HTTP request in `ImageManager::downloadAndDisplay()`
   - Now relies solely on InkPlate library's `drawImage()` method for single-pass download and rendering
   - **Performance improvements**: 50% reduction in download time and bandwidth usage per refresh cycle
