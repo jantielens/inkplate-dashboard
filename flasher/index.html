@@ -66,172 +66,263 @@
     <!-- Main Content -->
     <div class="content">
       <div class="content-main">
-        <!-- Left Column: Device Selection -->
-        <div class="content-left">
-          <div class="card">
-            <h2 class="card-title">🎯 Select Your Device</h2>
+        <!-- Select Your Device -->
+        <div class="card">
+          <h2 class="card-title">🎯 Select Your Device</h2>
 
-            <div class="alert alert-info">
-              <strong>ℹ️ Before you start:</strong>
-              Make sure your Inkplate device is connected via USB cable to your computer.
-            </div>
-
-            <div class="alert alert-warning hidden" id="local-test-warning">
-              <strong>🧪 Local Testing Mode</strong>
-              You're running in local testing mode. The flasher will use binaries from your local build directory.
-            </div>
-
-            <div class="device-selection">
-              <label class="device-option">
-                <input type="radio" name="board" value="inkplate2" />
-                <span class="device-label">
-                  <span class="device-icon">📟</span>
-                  <span class="device-name">Inkplate 2</span>
-                </span>
-              </label>
-
-              <label class="device-option">
-                <input type="radio" name="board" value="inkplate5v2" />
-                <span class="device-label">
-                  <span class="device-icon">📱</span>
-                  <span class="device-name">Inkplate 5 V2</span>
-                </span>
-              </label>
-
-              <label class="device-option">
-                <input type="radio" name="board" value="inkplate6flick" />
-                <span class="device-label">
-                  <span class="device-icon">📲</span>
-                  <span class="device-name">Inkplate 6 Flick</span>
-                </span>
-              </label>
-
-              <label class="device-option">
-                <input type="radio" name="board" value="inkplate10" />
-                <span class="device-label">
-                  <span class="device-icon">🖥️</span>
-                  <span class="device-name">Inkplate 10</span>
-                </span>
-              </label>
-            </div>
-
-            <div class="install-button-container">
-              <esp-web-install-button class="hidden" manifest="">
-                <button slot="activate" class="install-btn">
-                  Install Inkplate Dashboard
-                </button>
-              </esp-web-install-button>
-            </div>
-
-            <div class="alert alert-warning hidden" id="no-support-warning">
-              <strong>⚠️ Browser not supported</strong>
-              This flasher requires a browser with Web Serial API support. Please use:
-              <ul>
-                <li>Google Chrome (version 89+)</li>
-                <li>Microsoft Edge (version 89+)</li>
-                <li>Opera (version 75+)</li>
-              </ul>
-              Safari and Firefox are not currently supported.
-            </div>
+          <div class="alert alert-info">
+            <strong>ℹ️ Before you start:</strong>
+            Make sure your Inkplate device is connected via USB cable to your computer.
           </div>
 
-          <!-- Battery Estimation Section -->
-          <div class="card">
-            <h2 class="card-title">🔋 Battery Estimation</h2>
-            <div class="placeholder-section">
-              <div class="placeholder-icon">⏳</div>
-              <p class="placeholder-title">Coming Soon</p>
-              <p class="placeholder-text">
-                Battery life estimation based on your configuration will be available in a future update.
-              </p>
-            </div>
+          <div class="device-selection" id="device-selection">
+            <!-- Dynamically populated by app.js -->
+          </div>
+
+          <div class="install-button-container">
+            <esp-web-install-button class="hidden" manifest="">
+              <button slot="activate" class="install-btn">
+                Install Inkplate Dashboard
+              </button>
+            </esp-web-install-button>
+          </div>
+
+          <div class="alert alert-warning hidden" id="no-support-warning">
+            <strong>⚠️ Browser not supported</strong>
+            This flasher requires a browser with Web Serial API support. Please use:
+            <ul>
+              <li>Google Chrome (version 89+)</li>
+              <li>Microsoft Edge (version 89+)</li>
+              <li>Opera (version 75+)</li>
+            </ul>
+            Safari and Firefox are not currently supported.
           </div>
         </div>
 
-        <!-- Right Column: Getting Started & Resources -->
-        <div class="content-right">
-          <div class="card">
-            <h2 class="card-title">📚 Getting Started</h2>
+        <!-- Getting Started -->
+        <div class="card">
+          <h2 class="card-title">📚 Getting Started</h2>
 
-            <h3 class="card-subtitle">How to Flash Your Device</h3>
-            <div class="instructions">
-              <ol>
-                <li>Select your Inkplate device model on the left</li>
-                <li>Click the <strong>"Install Inkplate Dashboard"</strong> button</li>
-                <li>In the popup, select your device's serial port</li>
-                <li>Wait for the installation to complete (2-3 minutes)</li>
-                <li>After flashing, the device will restart automatically</li>
-                <li>Look for a WiFi network named <code>Inkplate-XXXXXX</code></li>
-                <li>Connect to it and configure your settings at <code>http://192.168.4.1</code></li>
-              </ol>
-            </div>
-
-            <h3 class="card-subtitle">Need Help?</h3>
-            <ul style="margin: 0; padding-left: 1.5rem;">
-              <li>📖 <a href="https://github.com/jantielens/inkplate-dashboard/tree/main/docs/user" target="_blank">User Documentation</a></li>
-              <li> <a href="https://github.com/jantielens/inkplate-dashboard/issues" target="_blank">Report Issues</a></li>
-            </ul>
+          <h3 class="card-subtitle">How to Flash Your Device</h3>
+          <div class="instructions">
+            <ol>
+              <li>Select your Inkplate device model above</li>
+              <li>Click the <strong>"Install Inkplate Dashboard"</strong> button</li>
+              <li>In the popup, select your device's serial port</li>
+              <li>Wait for the installation to complete (2-3 minutes)</li>
+              <li>After flashing, the device will restart automatically</li>
+              <li>Look for a WiFi network named <code>Inkplate-XXXXXX</code></li>
+              <li>Connect to it and configure your settings at <code>http://192.168.4.1</code></li>
+            </ol>
           </div>
 
-          <!-- Troubleshooting Section -->
-          <div class="card">
-            <h2 class="card-title">❓ Troubleshooting</h2>
+          <h3 class="card-subtitle">Need Help?</h3>
+          <ul style="margin: 0; padding-left: 1.5rem;">
+            <li>📖 <a href="https://github.com/jantielens/inkplate-dashboard/tree/main/docs/user" target="_blank">User Documentation</a></li>
+            <li> <a href="https://github.com/jantielens/inkplate-dashboard/issues" target="_blank">Report Issues</a></li>
+          </ul>
+        </div>
 
-            <div class="accordion">
-              <div class="accordion-header">
-                <span>Can't see the serial port?</span>
-                <span class="accordion-toggle">▼</span>
-              </div>
-              <div class="accordion-content">
-                <ul>
-                  <li>Make sure the USB cable is properly connected</li>
-                  <li>Try a different USB cable (some cables are charge-only)</li>
-                  <li>Install the <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">CP210x USB driver</a></li>
-                  <li>On Linux, you may need to add your user to the <code>dialout</code> group: <code>sudo usermod -a -G dialout $USER</code></li>
-                  <li>Restart your browser after installing drivers</li>
-                </ul>
-              </div>
+        <!-- Battery Estimation -->
+        <div class="card">
+          <h2 class="card-title">🔋 Battery Life Estimator</h2>
+          
+          <div class="alert alert-info">
+            <strong>ℹ️ For Information Only:</strong> Experiment with available firmware configuration options and see their impact on battery life. This is for planning purposes only and does not modify your device.
+          </div>
 
-              <div class="accordion-header">
-                <span>Flash failed or stuck?</span>
-                <span class="accordion-toggle">▼</span>
-              </div>
-              <div class="accordion-content">
-                <ul>
-                  <li>Try pressing the reset button on your Inkplate before starting</li>
-                  <li>Close any other programs using the serial port (Arduino IDE, PlatformIO, etc.)</li>
-                  <li>Try a different USB port</li>
-                  <li>Try a different browser if possible</li>
-                  <li>Refresh this page and try again</li>
-                </ul>
+          <div class="battery-estimator">
+            <!-- Configuration Inputs -->
+            <div class="battery-config">
+              <div class="battery-input-group">
+                <label for="battery-capacity">Battery Capacity</label>
+                <select id="battery-capacity" class="battery-input">
+                  <option value="600">600 mAh (Small)</option>
+                  <option value="1200" selected>1200 mAh (Standard)</option>
+                  <option value="1800">1800 mAh (Medium)</option>
+                  <option value="3000">3000 mAh (Large)</option>
+                  <option value="6000">6000 mAh (Extra Large)</option>
+                </select>
               </div>
 
-              <div class="accordion-header">
-                <span>Device won't start after flashing?</span>
-                <span class="accordion-toggle">▼</span>
-              </div>
-              <div class="accordion-content">
-                <ul>
-                  <li>Press the reset button on the device</li>
-                  <li>Disconnect and reconnect the USB cable</li>
-                  <li>If using battery power, make sure it's charged</li>
-                  <li>Wait a few moments for the device to boot</li>
-                </ul>
+              <div class="battery-input-group">
+                <label for="refresh-interval">
+                  Refresh Interval
+                  <span class="battery-range-value" id="refresh-display">5 min</span>
+                </label>
+                <input 
+                  type="range" 
+                  id="refresh-interval" 
+                  class="battery-slider"
+                  min="1" 
+                  max="60" 
+                  value="5"
+                  step="1"
+                />
+                <div class="battery-slider-labels">
+                  <span>1 min</span>
+                  <span>30 min</span>
+                  <span>60 min</span>
+                </div>
               </div>
 
-              <div class="accordion-header">
-                <span>Can't connect to the WiFi portal?</span>
-                <span class="accordion-toggle">▼</span>
+              <div class="battery-input-group">
+                <label for="active-hours">Active Hours Per Day</label>
+                <input 
+                  type="number" 
+                  id="active-hours" 
+                  class="battery-input"
+                  min="1" 
+                  max="24" 
+                  value="18"
+                />
+                <div class="help-text">Device can sleep during inactive hours (e.g., night) to save battery</div>
               </div>
-              <div class="accordion-content">
-                <ul>
-                  <li>Make sure you're connected to the <code>Inkplate-XXXXXX</code> WiFi network</li>
-                  <li>Try opening <code>192.168.4.1</code> directly in your browser</li>
-                  <li>Make sure your device is powered and has successfully started</li>
-                  <li>Try forgetting the network and connecting again</li>
-                  <li>Check if your network has a captive portal that might be blocking access</li>
-                </ul>
+
+              <div class="battery-input-group">
+                <label for="daily-changes">Expected Image Changes Per Day</label>
+                <input 
+                  type="number" 
+                  id="daily-changes" 
+                  class="battery-input"
+                  min="1" 
+                  max="1000" 
+                  value="5"
+                />
+                <div class="help-text">With CRC32 enabled, device only downloads & displays when content actually changes</div>
               </div>
+
+              <div class="battery-input-group">
+                <label class="battery-checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    id="crc32-enabled"
+                    checked
+                  />
+                  <span>Enable CRC32 Change Detection</span>
+                </label>
+                <div class="help-text">Uses optional CRC32 value from compatible servers to skip downloads when image unchanged, saving battery. Compatible image generators & web servers integrated with Home Assistant: <a href="https://github.com/jantielens/ha-screenshotter" target="_blank">ha-screenshotter</a> & <a href="https://github.com/jantielens/ha-calendar2image" target="_blank">ha-calendar2image</a></div>
+              </div>
+            </div>
+
+            <!-- Results Display -->
+            <div class="battery-result good" id="battery-result">
+              <div class="battery-result-header">
+                <div class="battery-life-display" id="battery-days">174 days</div>
+                <span class="status-badge status-good" id="status-badge">GOOD</span>
+              </div>
+              <div class="battery-life-subtitle" id="battery-months">Approximately 5.8 months</div>
+              
+              <div class="battery-progress">
+                <div class="battery-progress-bar good" id="progress-bar" style="width: 58%;"></div>
+              </div>
+              
+              <div class="battery-details">
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Daily Power</span>
+                  <span class="battery-detail-value" id="daily-power">6.9 mAh</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Wake-ups/Day</span>
+                  <span class="battery-detail-value" id="wakeups">288</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Active Time</span>
+                  <span class="battery-detail-value" id="active-time">3.4 min/day</span>
+                </div>
+                <div class="battery-detail-item">
+                  <span class="battery-detail-label">Sleep Time</span>
+                  <span class="battery-detail-value" id="sleep-time">23.9 hrs/day</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tips Section -->
+            <div class="battery-tips" id="battery-tips" style="display: none;">
+              <strong>💡 Tip:</strong> <span id="tip-text"></span>
+            </div>
+
+            <!-- Assumptions -->
+            <details class="battery-assumptions">
+              <summary>📊 Calculation Assumptions</summary>
+              <ul>
+                <li>WiFi active: 100mA average</li>
+                <li>Display update: 50mA</li>
+                <li>Deep sleep: 20µA (0.02mA)</li>
+                <li>Image update time: 7 seconds</li>
+                <li>CRC32 check time: 1 second</li>
+                <li>Good WiFi signal strength assumed</li>
+                <li>Temperature: 20°C (68°F)</li>
+              </ul>
+            </details>
+          </div>
+        </div>
+
+        <!-- Device Showcase & Troubleshooting -->
+        <div class="card">
+          <div class="device-showcase">
+            <div class="device-image-container">
+              <img class="device-image device-image-1" src="./assets/inkplate5v2-tr.png" alt="Inkplate device preview" />
+              <img class="device-image device-image-2" src="./assets/inkplate5v2-tr2.png" alt="Inkplate device preview" />
+            </div>
+          </div>
+
+          <h2 class="card-title" style="margin-top: 2rem;">❓ Troubleshooting</h2>
+
+          <div class="accordion">
+            <div class="accordion-header">
+              <span>Can't see the serial port?</span>
+              <span class="accordion-toggle">▼</span>
+            </div>
+            <div class="accordion-content">
+              <ul>
+                <li>Make sure the USB cable is properly connected</li>
+                <li>Try a different USB cable (some cables are charge-only)</li>
+                <li>Install the <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">CP210x USB driver</a></li>
+                <li>On Linux, you may need to add your user to the <code>dialout</code> group: <code>sudo usermod -a -G dialout $USER</code></li>
+                <li>Restart your browser after installing drivers</li>
+              </ul>
+            </div>
+
+            <div class="accordion-header">
+              <span>Flash failed or stuck?</span>
+              <span class="accordion-toggle">▼</span>
+            </div>
+            <div class="accordion-content">
+              <ul>
+                <li>Try pressing the reset button on your Inkplate before starting</li>
+                <li>Close any other programs using the serial port (Arduino IDE, PlatformIO, etc.)</li>
+                <li>Try a different USB port</li>
+                <li>Try a different browser if possible</li>
+                <li>Refresh this page and try again</li>
+              </ul>
+            </div>
+
+            <div class="accordion-header">
+              <span>Device won't start after flashing?</span>
+              <span class="accordion-toggle">▼</span>
+            </div>
+            <div class="accordion-content">
+              <ul>
+                <li>Press the reset button on the device</li>
+                <li>Disconnect and reconnect the USB cable</li>
+                <li>If using battery power, make sure it's charged</li>
+                <li>Wait a few moments for the device to boot</li>
+              </ul>
+            </div>
+
+            <div class="accordion-header">
+              <span>Can't connect to the WiFi portal?</span>
+              <span class="accordion-toggle">▼</span>
+            </div>
+            <div class="accordion-content">
+              <ul>
+                <li>Make sure you're connected to the <code>Inkplate-XXXXXX</code> WiFi network</li>
+                <li>Try opening <code>192.168.4.1</code> directly in your browser</li>
+                <li>Make sure your device is powered and has successfully started</li>
+                <li>Try forgetting the network and connecting again</li>
+                <li>Check if your network has a captive portal that might be blocking access</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -247,12 +338,14 @@
         Powered by 
         <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
         <span class="footer-divider">•</span>
-        Inkplate devices by 
-        <a href="https://soldered.com/product-category/inkplate/" target="_blank">Soldered Electronics</a>
+        Built for 
+        <a href="https://soldered.com/product-category/inkplate/" target="_blank">Inkplate devices by Soldered Electronics</a>
+        (not affiliated)
       </p>
     </footer>
 
-    <!-- Application Script -->
+    <!-- Application Scripts -->
     <script src="app.js"></script>
+    <script src="battery-calc.js"></script>
   </body>
 </html>

@@ -40,7 +40,6 @@ ENV/
 # Flasher - local testing files (keep production manifests)
 flasher/*_local.json
 flasher/builds/
-flasher/latest.json
 
 # Flasher - firmware binaries (only on main-flasher branch)
 flasher/firmware/

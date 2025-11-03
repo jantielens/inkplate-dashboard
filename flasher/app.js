@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp() {
   checkBrowserSupport();
-  detectRunningMode();
   setupEventListeners();
 }
 
@@ -55,47 +54,18 @@ function checkBrowserSupport() {
 }
 
 // =====================================================
-// Running Mode Detection (Local vs Production)
-// =====================================================
-
-function detectRunningMode() {
-  const hostname = window.location.hostname;
-  const isLocal = 
-    hostname === 'localhost' || 
-    hostname === '127.0.0.1' ||
-    hostname.includes('github.dev');
-  
-  if (isLocal) {
-    const warning = document.getElementById('local-test-warning');
-    if (warning) {
-      warning.classList.remove('hidden');
-    }
-    console.log('🧪 Running in local testing mode - using local binaries');
-  }
-  
-  return isLocal;
-}
-
-// =====================================================
 // Event Listeners Setup
 // =====================================================
 
 function setupEventListeners() {
   const installButton = document.querySelector('esp-web-install-button');
-  const boardRadios = document.querySelectorAll('input[name="board"]');
   const accordionHeaders = document.querySelectorAll('.accordion-header');
 
-  // Board selection
-  boardRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => handleBoardSelection(e, installButton));
-  });
+  // Generate device selection dynamically
+  generateDeviceSelection(installButton);
 
-  // Install button state changes
-  if (installButton) {
-    installButton.addEventListener('state-changed', (e) => {
-      console.log('Install button state changed:', e.detail);
-    });
-  }
+  // Setup device image animation on scroll
+  setupDeviceImageAnimation();
 
   // Accordion toggling
   accordionHeaders.forEach(header => {
@@ -104,18 +74,70 @@ function setupEventListeners() {
 }
 
 // =====================================================
+// Device Selection Generator
+// =====================================================
+
+async function generateDeviceSelection(installButton) {
+  const container = document.getElementById('device-selection');
+  if (!container) return;
+
+  for (const [boardId, boardInfo] of Object.entries(BOARDS)) {
+    const label = document.createElement('label');
+    label.className = 'device-option';
+
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'board';
+    input.value = boardId;
+    input.addEventListener('change', (e) => handleBoardSelection(e, installButton));
+
+    const deviceLabel = document.createElement('span');
+    deviceLabel.className = 'device-label';
+
+    const icon = document.createElement('span');
+    icon.className = 'device-icon';
+    icon.textContent = boardInfo.icon;
+
+    const name = document.createElement('span');
+    name.className = 'device-name';
+    
+    // Fetch version for this board
+    const version = await fetchVersion(`./manifest_${boardId}.json`);
+    const versionText = version ? ` - v${version}` : '';
+    name.textContent = `${boardInfo.name}${versionText}`;
+
+    deviceLabel.appendChild(icon);
+    deviceLabel.appendChild(name);
+    label.appendChild(input);
+    label.appendChild(deviceLabel);
+    container.appendChild(label);
+  }
+}
+
+/**
+ * Fetch version from manifest
+ */
+async function fetchVersion(manifestUrl) {
+  try {
+    const response = await fetch(manifestUrl);
+    if (!response.ok) {
+      return null;
+    }
+    const manifest = await response.json();
+    return manifest.version || null;
+  } catch (error) {
+    console.error('Error fetching version:', error);
+    return null;
+  }
+}
+
+// =====================================================
 // Board Selection Handler
 // =====================================================
 
-function handleBoardSelection(event, installButton) {
+async function handleBoardSelection(event, installButton) {
   const boardId = event.target.value;
-  const isLocal = window.location.hostname === 'localhost' || 
-                  window.location.hostname === '127.0.0.1' ||
-                  window.location.hostname.includes('github.dev');
-  
-  // Build manifest URL with optional local suffix
-  const manifestSuffix = isLocal ? '_local' : '';
-  const manifestUrl = `./manifest_${boardId}${manifestSuffix}.json`;
+  const manifestUrl = `./manifest_${boardId}.json`;
   
   if (installButton) {
     installButton.manifest = manifestUrl;
@@ -173,6 +195,40 @@ function getBoardInfo(boardId) {
  */
 function getAvailableBoards() {
   return Object.entries(BOARDS).map(([id, info]) => ({ id, ...info }));
+}
+
+// =====================================================
+// Device Image Animation
+// =====================================================
+
+function setupDeviceImageAnimation() {
+  const container = document.querySelector('.device-image-container');
+  if (!container) return;
+
+  let scrollStarted = false;
+  let imageToggle = false;
+  let animationTimeout = null;
+
+  // Start animation on first scroll
+  window.addEventListener('scroll', () => {
+    if (!scrollStarted) {
+      scrollStarted = true;
+      startImageAnimation();
+    }
+  }, { once: true });
+
+  function startImageAnimation() {
+    function toggleImage() {
+      imageToggle = !imageToggle;
+      if (imageToggle) {
+        container.classList.add('show-image-2');
+      } else {
+        container.classList.remove('show-image-2');
+      }
+      animationTimeout = setTimeout(toggleImage, 3000);
+    }
+    toggleImage();
+  }
 }
 
 // Export for testing if needed
