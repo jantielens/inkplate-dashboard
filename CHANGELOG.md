@@ -20,24 +20,24 @@
   - Calculate estimated battery life based on configuration
   - Display battery life estimate in configuration portal
 
-## [1.0.3] - 2025-11-03
-
 ### Changed
 - **Flasher improvements**
   - Modernized flasher UI with separate CSS/JS files
   - Added second demo photo
   - Fixed flasher workflow to allow commits
 
-## [1.0.3] - 2025-11-03 (main branch)
+## [1.0.3] - 2025-11-02
 
 ### Changed
 - **Flasher UI Modernization** - Complete redesign of the web-based firmware flasher
-  - Removed duplicate HTTP request in `ImageManager::downloadAndDisplay()`
-  - Now relies solely on InkPlate library's `drawImage()` method for single-pass download and rendering
-  - **Performance improvements**: 50% reduction in download time and bandwidth usage per refresh cycle
-  - **Battery life**: Reduced active time results in better battery efficiency
-  - **Server impact**: Half the HTTP requests to image servers (one request per refresh instead of two)
-  - Previous implementation was downloading the same image twice: once for validation, then again for rendering
+  - Modern, minimalist design with two-column layout on desktop
+  - Separated CSS and JavaScript into external files for better maintainability
+  - Improved hero section highlighting core firmware capabilities
+  - Compact vertical device selection list (better scalability for future boards)
+  - Collapsible accordion sections for troubleshooting
+  - Enhanced GitHub repository link with logo and external link indicator
+  - Better responsive design supporting various screen sizes
+  - Placeholder section for future battery estimation feature
 
 ## [1.0.2] - 2025-11-02
 
