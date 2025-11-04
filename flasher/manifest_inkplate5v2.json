@@ -1,6 +1,6 @@
 {
   "name": "Inkplate Dashboard for Inkplate 5 V2",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "home_assistant_domain": "inkplate_dashboard",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.1.0/inkplate5v2-v1.1.0.bootloader.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.2.0/inkplate5v2-v1.2.0.bootloader.bin",
           "offset": 4096
         },
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.1.0/inkplate5v2-v1.1.0.partitions.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.2.0/inkplate5v2-v1.2.0.partitions.bin",
           "offset": 32768
         },
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.1.0/inkplate5v2-v1.1.0.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.2.0/inkplate5v2-v1.2.0.bin",
           "offset": 65536
         }
       ]
