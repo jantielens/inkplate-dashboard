@@ -91,6 +91,14 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     // Load screen rotation
     config.screenRotation = _preferences.getUChar(PREF_SCREEN_ROTATION, DEFAULT_SCREEN_ROTATION);
     
+    // Load static IP configuration (backwards compatible - defaults to DHCP if not set)
+    config.useStaticIP = _preferences.getBool(PREF_USE_STATIC_IP, false);
+    config.staticIP = _preferences.getString(PREF_STATIC_IP, "");
+    config.gateway = _preferences.getString(PREF_GATEWAY, "");
+    config.subnet = _preferences.getString(PREF_SUBNET, "");
+    config.primaryDNS = _preferences.getString(PREF_PRIMARY_DNS, "");
+    config.secondaryDNS = _preferences.getString(PREF_SECONDARY_DNS, "");
+    
     // Load carousel configuration
     config.imageCount = _preferences.getUChar(PREF_IMAGE_COUNT, 0);
     if (config.imageCount > MAX_IMAGE_SLOTS) {
@@ -179,6 +187,14 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     
     // Save screen rotation
     _preferences.putUChar(PREF_SCREEN_ROTATION, config.screenRotation);
+    
+    // Save static IP configuration
+    _preferences.putBool(PREF_USE_STATIC_IP, config.useStaticIP);
+    _preferences.putString(PREF_STATIC_IP, config.staticIP);
+    _preferences.putString(PREF_GATEWAY, config.gateway);
+    _preferences.putString(PREF_SUBNET, config.subnet);
+    _preferences.putString(PREF_PRIMARY_DNS, config.primaryDNS);
+    _preferences.putString(PREF_SECONDARY_DNS, config.secondaryDNS);
     
     // Save config version
     _preferences.putUChar(PREF_CONFIG_VERSION, CONFIG_VERSION_CURRENT);
@@ -470,5 +486,141 @@ void ConfigManager::setTimezoneOffset(int offset) {
     
     _preferences.putInt(PREF_TIMEZONE_OFFSET, offset);
     LogBox::messagef("Config Update", "Timezone offset set to UTC%s%d", offset >= 0 ? "+" : "", offset);
+}
+
+// Static IP getters
+bool ConfigManager::getUseStaticIP() {
+    if (!_initialized && !begin()) {
+        return false;  // Default to DHCP
+    }
+    return _preferences.getBool(PREF_USE_STATIC_IP, false);
+}
+
+String ConfigManager::getStaticIP() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_STATIC_IP, "");
+}
+
+String ConfigManager::getGateway() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_GATEWAY, "");
+}
+
+String ConfigManager::getSubnet() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_SUBNET, "");
+}
+
+String ConfigManager::getPrimaryDNS() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_PRIMARY_DNS, "");
+}
+
+String ConfigManager::getSecondaryDNS() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_SECONDARY_DNS, "");
+}
+
+// Static IP setter
+void ConfigManager::setStaticIPConfig(bool useStatic, const String& ip, const String& gw, 
+                                     const String& sn, const String& dns1, const String& dns2) {
+    if (!_initialized && !begin()) {
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putBool(PREF_USE_STATIC_IP, useStatic);
+    _preferences.putString(PREF_STATIC_IP, ip);
+    _preferences.putString(PREF_GATEWAY, gw);
+    _preferences.putString(PREF_SUBNET, sn);
+    _preferences.putString(PREF_PRIMARY_DNS, dns1);
+    _preferences.putString(PREF_SECONDARY_DNS, dns2);
+    
+    if (useStatic) {
+        LogBox::begin("Static IP Config Saved");
+        LogBox::line("IP: " + ip);
+        LogBox::line("Gateway: " + gw);
+        LogBox::line("Subnet: " + sn);
+        LogBox::line("Primary DNS: " + dns1);
+        if (dns2.length() > 0) {
+            LogBox::line("Secondary DNS: " + dns2);
+        }
+        LogBox::end();
+    } else {
+        LogBox::message("Config Update", "Network mode: DHCP");
+    }
+}
+
+// WiFi channel locking methods
+bool ConfigManager::hasWiFiChannelLock() {
+    if (!_initialized && !begin()) {
+        return false;
+    }
+    
+    uint8_t channel = _preferences.getUChar(PREF_WIFI_CHANNEL, 0);
+    return channel != 0;  // Channel 0 means no lock saved
+}
+
+uint8_t ConfigManager::getWiFiChannel() {
+    if (!_initialized && !begin()) {
+        return 0;
+    }
+    
+    return _preferences.getUChar(PREF_WIFI_CHANNEL, 0);
+}
+
+void ConfigManager::getWiFiBSSID(uint8_t* bssid) {
+    if (!_initialized && !begin()) {
+        memset(bssid, 0, 6);
+        return;
+    }
+    
+    // Read 6 bytes from preferences
+    size_t len = _preferences.getBytes(PREF_WIFI_BSSID, bssid, 6);
+    
+    if (len != 6) {
+        // Invalid or missing BSSID, return zeros
+        memset(bssid, 0, 6);
+    }
+}
+
+void ConfigManager::setWiFiChannelLock(uint8_t channel, const uint8_t* bssid) {
+    if (!_initialized && !begin()) {
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putUChar(PREF_WIFI_CHANNEL, channel);
+    _preferences.putBytes(PREF_WIFI_BSSID, bssid, 6);
+    
+    // Format BSSID for logging
+    char bssidStr[18];
+    snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+    
+    LogBox::begin("WiFi Channel Lock Saved");
+    LogBox::linef("Channel: %d", channel);
+    LogBox::line("BSSID: " + String(bssidStr));
+    LogBox::line("Fast reconnection enabled for next wake");
+    LogBox::end();
+}
+
+void ConfigManager::clearWiFiChannelLock() {
+    if (!_initialized && !begin()) {
+        return;
+    }
+    
+    _preferences.putUChar(PREF_WIFI_CHANNEL, 0);
+    // No need to clear BSSID, channel=0 indicates no lock
 }
 

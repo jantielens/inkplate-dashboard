@@ -67,6 +67,9 @@ void setup() {
     // Initialize power manager first to detect wake reason
     powerManager.begin(WAKE_BUTTON_PIN);
     WakeupReason wakeReason = powerManager.getWakeupReason();
+    
+    // Wire up power manager to WiFi manager for smart connection strategy
+    wifiManager.setPowerManager(&powerManager);
 
     // Initialize configuration early to determine debug behavior and rotation
     bool configInitialized = configManager.begin();

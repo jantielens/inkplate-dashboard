@@ -4,6 +4,42 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-11-04
+
+### Added
+- **Static IP Assignment Support** (issue #64)
+  - User-configurable static IP assignment to reduce wake cycle latency by 0.5-2 seconds
+  - Configuration portal now includes "Network Configuration" section with DHCP/Static IP toggle
+  - Static IP fields include: IP address, gateway, subnet mask, primary DNS, and optional secondary DNS
+  - Client-side and server-side IPv4 format validation (0-255 per octet)
+  - Primary DNS defaults to Google DNS (8.8.8.8) for convenience
+  - Automatically falls back to DHCP mode for existing devices (backwards compatible)
+  - Static IP settings persist across all WiFi networks
+  - **Performance improvements**: 
+    - Download cycle: reduced from ~6s to ~4-5.5s
+    - CRC32-match cycle: reduced from ~1s to ~0.3-0.7s
+    - Greatest benefit on short, non-download cycles where connection time is the bottleneck
+
+- **WiFi Channel/BSSID Locking for Fast Wake Cycles**
+  - Automatic WiFi channel and BSSID optimization after first connection
+  - Smart connection strategy based on wake reason:
+    - Timer wakes (99% of cycles): Use channel lock for ~150ms connection (~45% faster)
+    - Button wakes, boot, reset: Perform full scan and update channel lock
+  - Automatic fallback: If channel lock fails (network moved/changed), falls back to full scan
+  - Configuration portal displays active optimization status with channel and BSSID info
+  - Channel lock automatically cleared on factory reset
+  - **Performance improvements**:
+    - Timer wake WiFi connection: ~150ms (down from ~274ms)
+    - ~50-100ms additional savings beyond static IP optimization
+    - No downside: maintains flexibility for network changes
+
+### Changed
+- WiFi connection logic now checks for static IP configuration before calling `WiFi.begin()`
+- WiFi connection polling interval reduced from 100ms to 10ms for faster response
+- WiFi connection timeout reduced from 10s to 5s for faster failure detection
+- Configuration portal UI enhanced with collapsible network settings section
+- Enhanced error messages for network connection failures with static IP
+
 ## [1.0.4] - 2025-11-03
 
 ### Fixed

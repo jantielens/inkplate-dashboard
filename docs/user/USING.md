@@ -255,6 +255,118 @@ Open browser to:
 - **Use case**: For mounting your display in portrait orientation or upside-down
 - **Example**: Set to 90° if your Inkplate is mounted vertically
 
+#### Network Configuration (Static IP)
+- **What it is**: Choose between automatic IP assignment (DHCP) or manual static IP configuration
+- **Required**: No (defaults to DHCP)
+- **Options**:
+  - **DHCP (Automatic)** - Default, lets your router assign an IP address automatically
+  - **Static IP (Manual)** - Manually configure a fixed IP address for faster connections
+- **Performance benefit**: Static IP reduces wake time by 0.5-2 seconds per cycle
+  - Download cycle: ~6s → ~4-5.5s
+  - CRC32-match cycle: ~1s → ~0.3-0.7s
+  - Greatest benefit on short cycles where connection time is the bottleneck
+- **When to use Static IP**:
+  - Battery-powered operation where every second counts
+  - Frequent updates (short intervals)
+  - You want predictable, consistent connection times
+- **When to use DHCP**:
+  - Device moves between networks
+  - Simple setup without network configuration knowledge
+  - Router doesn't support DHCP reservations
+
+**Static IP Configuration Fields** (all required if Static IP is selected):
+
+- **IP Address**
+  - Your device's fixed IP address
+  - Format: `xxx.xxx.xxx.xxx` (e.g., `192.168.1.100`)
+  - Must be outside your router's DHCP range to avoid conflicts
+  - Example: `192.168.1.100`
+
+- **Gateway**
+  - Your router's IP address
+  - Usually: `192.168.1.1` or `192.168.0.1`
+  - Check your router settings if unsure
+  - Example: `192.168.1.1`
+
+- **Subnet Mask**
+  - Network subnet mask
+  - Default: `255.255.255.0` (typical for home networks)
+  - Check your router settings for non-standard networks
+  - Example: `255.255.255.0`
+
+- **Primary DNS**
+  - Primary DNS server for resolving domain names
+  - Required for downloading images from URLs (not just IP addresses)
+  - Default: `8.8.8.8` (Google DNS)
+  - Alternatives: `1.1.1.1` (Cloudflare), `9.9.9.9` (Quad9)
+  - Example: `8.8.8.8`
+
+- **Secondary DNS** (Optional)
+  - Backup DNS server
+  - Used if primary DNS fails
+  - Not required but recommended
+  - Example: `8.8.4.4` (Google secondary) or `1.0.0.1` (Cloudflare secondary)
+
+**How to find your network settings**:
+1. **Windows**: Open Command Prompt, type `ipconfig`
+2. **Mac**: System Preferences → Network → Advanced → TCP/IP
+3. **Router**: Access your router's admin page (usually `192.168.1.1` or `192.168.0.1`)
+4. **Choose an IP**: Pick an address outside your router's DHCP range
+   - If DHCP range is `192.168.1.100-200`, use `192.168.1.50` or `192.168.1.250`
+
+**Important notes**:
+- Static IP settings apply to all WiFi networks (not per-network)
+- If connection fails with static IP, device will show error (no automatic DHCP fallback)
+- Settings persist after firmware updates (backwards compatible with DHCP)
+- Existing devices automatically default to DHCP when upgrading to v1.1.0+
+
+#### WiFi Optimization (Channel Locking)
+
+**Automatic Feature - No Configuration Required**
+
+Your Inkplate Dashboard automatically optimizes WiFi connections for maximum battery life. This feature works seamlessly in the background after your first successful connection.
+
+**How It Works**:
+1. **First Connection**: Device performs a full WiFi network scan (takes ~274ms with static IP)
+2. **Learning**: Device saves the WiFi channel and BSSID (router MAC address) for future connections
+3. **Fast Wake Cycles**: On timer-based updates (99% of wake cycles), device connects directly to the saved channel (~150ms, 45% faster!)
+4. **Automatic Updates**: On boot, reset, or button press, device performs a full scan and updates the saved channel/BSSID
+5. **Smart Fallback**: If the fast connection fails (e.g., router restarted on different channel), device automatically falls back to full scan
+
+**When It Activates**:
+- **Timer wakes** (scheduled updates): Uses channel lock for fastest connection
+- **Button wakes** (manual refresh): Performs full scan and updates channel lock
+- **First boot**: Performs full scan and saves channel lock for future use
+- **After reset**: Performs full scan and re-learns optimal channel
+
+**Performance Benefits**:
+- **WiFi connection time**: ~150ms (down from ~274ms with static IP alone)
+- **Additional savings**: ~50-100ms beyond static IP optimization
+- **Total improvement**: 45% faster WiFi connection on 99% of wake cycles
+- **Battery impact**: Shorter active time = longer battery life
+
+**Viewing Optimization Status**:
+When you access the configuration portal while connected to WiFi, you'll see:
+- **"WiFi Optimization: Active ✓"** - Channel locking is enabled and working
+- **Channel number** - The WiFi channel your device is locked to (1-14)
+- **BSSID** - Your router's MAC address (format: `XX:XX:XX:XX:XX:XX`)
+
+If you just configured WiFi and haven't powered off yet, you'll see:
+- **"WiFi Optimization: Will activate on next power cycle"**
+
+**Troubleshooting**:
+- **Network moved/changed**: Device automatically detects and re-learns on next button press or boot
+- **Different router**: Performs full scan and saves new channel/BSSID automatically
+- **Factory reset**: Channel lock is cleared, device will re-learn on first connection
+- **No downside**: If channel lock fails, device falls back to full scan instantly
+
+**Technical Details** (for advanced users):
+- Stores WiFi channel (1-14) and BSSID (6 bytes) in non-volatile storage
+- Uses ESP32 `WiFi.begin(ssid, password, channel, bssid)` for channel-locked connection
+- Falls back to `WiFi.begin(ssid, password)` if channel lock timeout (2 seconds)
+- Automatically updates on WAKEUP_FIRST_BOOT, WAKEUP_RESET_BUTTON, or WAKEUP_BUTTON
+- Preserved across firmware updates and configuration changes
+
 ### Battery Life Estimator
 
 The configuration portal includes a real-time battery life estimator that helps you understand how your settings impact battery life. This interactive tool updates instantly as you adjust your configuration, providing immediate feedback on your power consumption choices.
