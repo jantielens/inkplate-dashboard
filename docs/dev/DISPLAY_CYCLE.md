@@ -87,7 +87,8 @@ After setup the firmware branches according to configuration state and wake reas
 6. **Download & display** – `ImageManager::downloadAndDisplay()` streams the image (PNG or baseline JPEG) directly to the Inkplate. Success resets the retry counter and saves the new CRC32 (if enabled).
 7. **MQTT telemetry (single session)** – If MQTT is configured, a single session publishes all data at once:
    - **Discovery messages** (conditional): Published only on first boot and hardware reset, skipped on normal timer wakes.
-   - **State messages**: Battery voltage, WiFi signal, loop time, and optional log message.
+   - **State messages**: Battery voltage, battery percentage, WiFi signal, WiFi BSSID, loop time (total), loop time breakdown (WiFi, NTP, CRC, Image), image CRC32, and optional log message.
+   - Loop time breakdown sensors help diagnose bottlenecks (0.00s = skipped operation).
    - All publishing happens at the end of the cycle, after image display.
 8. **Deep sleep** – Device enters deep sleep for the configured refresh interval.
 

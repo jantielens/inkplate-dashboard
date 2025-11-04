@@ -194,7 +194,7 @@ Manages MQTT connectivity and Home Assistant integration with optimized battery-
 **Responsibilities:**
 - Connect to MQTT broker with authentication
 - Publish Home Assistant MQTT Discovery messages (conditional based on wake reason)
-- Publish telemetry (battery voltage, battery percentage, WiFi signal, loop time)
+- Publish telemetry (battery voltage, battery percentage, WiFi signal, WiFi BSSID, loop time, loop time breakdown)
 - Publish log messages for monitoring
 - Batch publishing for single-session efficiency
 
@@ -366,7 +366,7 @@ Normal operation mode (image refresh cycle).
 8. Save CRC32 after successful display (if enabled)
 9. **Publish all MQTT telemetry in single session** (if configured)
    - Discovery messages: Only on first boot and hardware reset
-   - State messages: Battery, WiFi signal, loop time, optional log message
+   - State messages: Battery (voltage, percentage), WiFi (signal, BSSID), loop timing (total, WiFi, NTP, CRC32, Image), optional log message
 10. **Disable watchdog timer** (before entering sleep)
 11. Enter deep sleep until next refresh
 
@@ -607,8 +607,15 @@ Image decoding (PNG) also requires temporary buffers.
 ### Adding MQTT Topics
 
 1. Add publish method to `MQTTManager`
-2. Add discovery message if Home Assistant integration desired
-3. Call from appropriate controller during update cycle
+2. Add discovery message if Home Assistant integration desired (with appropriate device_class, unit_of_measurement, force_update)
+3. Add parameter to `publishAllTelemetry()` to batch publish with other sensors
+4. Call from appropriate controller during update cycle (e.g., `NormalModeController::execute()`)
+
+**Example: Loop Time Breakdown (v1.2.0)**
+- Added `LoopTimings` struct in `NormalModeController` to track WiFi, NTP, CRC32, Image operation durations
+- Added timing parameters to `publishAllTelemetry()` signature
+- Added discovery messages for `loop_time_wifi`, `loop_time_ntp`, `loop_time_crc`, `loop_time_image` with device_class "duration", unit "s", and force_update true
+- All timing values always published (0 = operation skipped) for correlation via timestamps
 
 ### Adding UI Screens
 

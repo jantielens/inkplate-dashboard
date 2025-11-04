@@ -474,7 +474,12 @@ The estimator helps you make informed decisions without trial and error, setting
 - **What it is**: Address of your MQTT broker for Home Assistant
 - **Format**: `mqtt://hostname:port` or `mqtt://IP:port`
 - **Example**: `mqtt://192.168.1.50:1883`
-- **What it does**: Enables battery voltage and percentage reporting to Home Assistant with auto-discovery
+- **What it does**: Enables comprehensive telemetry reporting to Home Assistant with auto-discovery:
+  - Battery voltage and percentage
+  - WiFi signal strength and BSSID (which access point)
+  - Total loop time and breakdown (WiFi, NTP, CRC check, Image download)
+  - Image CRC32 and status log messages
+  - Useful for monitoring device health and diagnosing performance issues
 
 #### MQTT Username
 - **What it is**: Username for MQTT authentication
@@ -498,7 +503,7 @@ Your device follows a simple cycle that repeats automatically. When the device w
 
 Once connected, the device downloads the image (PNG or JPEG) from your configured URL. The download time varies based on your image size and network speed, but typically takes between 2 and 10 seconds for a dashboard image. After the download completes, the device clears the e-ink screen and renders the downloaded image. The e-ink refresh process takes a few seconds - this is normal behavior for e-ink displays as they physically move particles to create the image.
 
-If you have MQTT enabled for Home Assistant integration, the device will publish status information including battery voltage, battery percentage (calculated from voltage using Li-ion discharge curve), WiFi signal strength, and loop time (how long the entire update took). Finally, the device enters deep sleep mode to conserve power. During deep sleep, the device consumes almost no power - just 20 microamps - which is why battery life can extend for months. The device will wake automatically after the configured refresh interval and repeat the entire cycle.
+If you have MQTT enabled for Home Assistant integration, the device will publish comprehensive telemetry including battery voltage, battery percentage (calculated from voltage using Li-ion discharge curve), WiFi signal strength, WiFi BSSID, total loop time, and timing breakdown (WiFi connection, NTP sync, CRC check, image download). This telemetry helps you monitor device health and diagnose any performance issues. Finally, the device enters deep sleep mode to conserve power. During deep sleep, the device consumes almost no power - just 20 microamps - which is why battery life can extend for months. The device will wake automatically after the configured refresh interval and repeat the entire cycle.
 
 ### What You'll See
 

@@ -13,6 +13,10 @@ void NormalModeController::execute() {
     unsigned long loopStartTime = millis();
     powerManager->enableWatchdog();
     
+    // Initialize timing structure
+    LoopTimings timings;
+    uint32_t timerStart;
+    
     DashboardConfig config;
     if (!loadConfiguration(config)) {
         return;
@@ -30,16 +34,20 @@ void NormalModeController::execute() {
     int batteryPercentage = PowerManager::calculateBatteryPercentage(batteryVoltage);
     WakeupReason wakeReason = powerManager->getWakeupReason();
     
-    // Connect to WiFi to sync time via NTP
+    // Connect to WiFi to sync time via NTP (measure timing)
+    timerStart = millis();
     if (!wifiManager->connectToWiFi()) {
         handleWiFiFailure(config, loopStartTime);
         return;
     }
+    timings.wifi_ms = millis() - timerStart;
     
     int wifiRSSI = WiFi.RSSI();
+    String wifiBSSID = WiFi.BSSIDstr();
     
     // Sync time via NTP and check if current hour is enabled for updates
     // Configure timezone to UTC first (we'll apply offset manually)
+    timerStart = millis();
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
     
     // Wait for NTP sync with timeout (up to 15 seconds)
@@ -59,6 +67,7 @@ void NormalModeController::execute() {
         LogBox::line("Time synced via NTP");
         LogBox::end();
     }
+    timings.ntp_ms = millis() - timerStart;
     
     struct tm* timeinfo = localtime(&now);
     
@@ -139,19 +148,22 @@ void NormalModeController::execute() {
     bool shouldCheckCRC32 = config.useCRC32Check && !config.isCarouselMode();
     
     if (shouldCheckCRC32) {
-        if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI)) {
-            return;  // CRC32 matched and timer wake - already went to sleep
+        if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, wifiBSSID, timings)) {
+            return;  // CRC32 matched and timer wake - already went to sleep (timing already captured)
         }
+        // Timing already captured inside checkAndHandleCRC32
     } else if (config.isCarouselMode()) {
         LogBox::message("CRC32 Check", "CRC32 disabled in carousel mode");
     }
     
-    // Download and display image
+    // Download and display image (measure timing)
     if (config.debugMode) {
         uiStatus->showDownloading(currentImageUrl.c_str(), false);
     }
     
+    timerStart = millis();
     bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str());
+    timings.image_ms = millis() - timerStart;
     
     // Handle carousel mode vs single image mode
     if (config.isCarouselMode()) {
@@ -166,7 +178,7 @@ void NormalModeController::execute() {
             
             float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
             publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                               0, "Carousel image displayed successfully", "info");
+                               0, wifiBSSID, timings, "Carousel image displayed successfully", "info");
             
             // Sleep with current image's interval
             powerManager->disableWatchdog();
@@ -195,7 +207,7 @@ void NormalModeController::execute() {
                     float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
                     String errorMessage = "First carousel image failed: " + String(imageManager->getLastError());
                     publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                                       0, errorMessage.c_str(), "error");
+                                       0, wifiBSSID, timings, errorMessage.c_str(), "error");
                     
                     delay(3000);
                     powerManager->disableWatchdog();
@@ -212,7 +224,7 @@ void NormalModeController::execute() {
                 float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
                 String errorMessage = "Carousel image " + String(currentIndex + 1) + " failed, skipped: " + String(imageManager->getLastError());
                 publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                                   0, errorMessage.c_str(), "warning");
+                                   0, wifiBSSID, timings, errorMessage.c_str(), "warning");
                 
                 powerManager->disableWatchdog();
                 powerManager->prepareForSleep();
@@ -223,9 +235,9 @@ void NormalModeController::execute() {
     } else {
         // Single image mode - use existing handlers
         if (success) {
-            handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+            handleImageSuccess(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, wifiBSSID, timings);
         } else {
-            handleImageFailure(config, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI);
+            handleImageFailure(config, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, wifiBSSID, timings);
         }
     }
 }
@@ -321,10 +333,14 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
                                                bool& crc32WasChecked, bool& crc32Matched,
                                                unsigned long loopStartTime, time_t currentTime, const String& deviceId, 
                                                const String& deviceName, WakeupReason wakeReason,
-                                               float batteryVoltage, int batteryPercentage, int wifiRSSI) {
+                                               float batteryVoltage, int batteryPercentage, int wifiRSSI,
+                                               const String& wifiBSSID, LoopTimings& timings) {
     if (!config.useCRC32Check) {
         return true;  // Continue execution
     }
+    
+    // Measure CRC32 check timing
+    uint32_t crcStart = millis();
     
     crc32WasChecked = true;
     // Use first image URL for CRC32 check (only called in single image mode)
@@ -332,13 +348,16 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
     bool shouldDownload = imageManager->checkCRC32Changed(imageUrl.c_str(), &newCRC32);
     crc32Matched = !shouldDownload;
     
+    // Capture CRC timing (whether we continue or return early)
+    timings.crc_ms = millis() - crcStart;
+    
     // If CRC32 matched during timer wake, skip download and sleep
     if (wakeReason == WAKEUP_TIMER && !shouldDownload) {
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
         unsigned long loopTimeMs = millis() - loopStartTime;
         
         publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                           configManager->getLastCRC32(), "Image unchanged (CRC32 match)", "info");
+                           configManager->getLastCRC32(), wifiBSSID, timings, "Image unchanged (CRC32 match)", "info");
         
         powerManager->disableWatchdog();
         powerManager->prepareForSleep();
@@ -360,10 +379,14 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
 void NormalModeController::publishMQTTTelemetry(const String& deviceId, const String& deviceName, 
                                                 WakeupReason wakeReason, float batteryVoltage, 
                                                 int batteryPercentage, int wifiRSSI, float loopTimeSeconds,
-                                                uint32_t imageCRC32, const char* message, const char* severity) {
+                                                uint32_t imageCRC32, const String& wifiBSSID, 
+                                                const LoopTimings& timings, const char* message, const char* severity) {
     if (mqttManager->begin() && mqttManager->isConfigured()) {
         mqttManager->publishAllTelemetry(deviceId, deviceName, BOARD_NAME, wakeReason,
-                                        batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds, imageCRC32, message, severity);
+                                        batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds, imageCRC32, 
+                                        message, severity, wifiBSSID,
+                                        timings.wifiSeconds(), timings.ntpSeconds(), 
+                                        timings.crcSeconds(), timings.imageSeconds());
     }
 }
 
@@ -371,7 +394,8 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
                                               bool crc32WasChecked, bool crc32Matched,
                                               unsigned long loopStartTime, time_t currentTime, const String& deviceId,
                                               const String& deviceName, WakeupReason wakeReason,
-                                              float batteryVoltage, int batteryPercentage, int wifiRSSI) {
+                                              float batteryVoltage, int batteryPercentage, int wifiRSSI,
+                                              const String& wifiBSSID, const LoopTimings& timings) {
     // Save CRC32 only if it changed
     if (config.useCRC32Check && crc32WasChecked && !crc32Matched && newCRC32 != 0) {
         imageManager->saveCRC32(newCRC32);
@@ -390,7 +414,7 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
     }
     
     publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                       configManager->getLastCRC32(), logMessage, "info");
+                       configManager->getLastCRC32(), wifiBSSID, timings, logMessage, "info");
     
     enterSleep(config, currentTime, loopStartTime);
 }
@@ -398,7 +422,8 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
 void NormalModeController::handleImageFailure(const DashboardConfig& config,
                                               unsigned long loopStartTime, time_t currentTime, const String& deviceId,
                                               const String& deviceName, WakeupReason wakeReason,
-                                              float batteryVoltage, int batteryPercentage, int wifiRSSI) {
+                                              float batteryVoltage, int batteryPercentage, int wifiRSSI,
+                                              const String& wifiBSSID, const LoopTimings& timings) {
     // Retry logic for single image mode (state index tracks retry attempts)
     if (*imageStateIndex < 2) {
         (*imageStateIndex)++;
@@ -415,7 +440,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
         String errorMessage = "Image download failed: " + String(imageManager->getLastError());
         publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
-                           configManager->getLastCRC32(), errorMessage.c_str(), "error");
+                           configManager->getLastCRC32(), wifiBSSID, timings, errorMessage.c_str(), "error");
         
         delay(3000);
         enterSleep(config, currentTime, loopStartTime);
