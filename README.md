@@ -3,7 +3,7 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 
 ## Features
 
-- 📶 **Easy WiFi setup** via captive portal
+- 📶 **Easy WiFi setup** via captive portal, including support for static IP configuration
 - 🖼️ **Multi-image carousel** support (1-10 images with individual display intervals)
 - 🔄 **Configurable screen rotation** (portrait/landscape)
 - 🔋 **Power efficient**: deep sleep between updates

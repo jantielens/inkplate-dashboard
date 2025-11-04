@@ -280,6 +280,69 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   calculateBatteryLife();
 });
+
+// Toggle Static IP fields visibility
+function toggleStaticIPFields() {
+  const staticMode = document.getElementById('ip_mode_static');
+  const staticFields = document.getElementById('static_ip_fields');
+  
+  if (staticMode && staticFields) {
+    if (staticMode.checked) {
+      staticFields.style.display = 'block';
+      // Make fields required when static mode is selected
+      document.getElementById('static_ip').required = true;
+      document.getElementById('gateway').required = true;
+      document.getElementById('subnet').required = true;
+      document.getElementById('dns1').required = true;
+    } else {
+      staticFields.style.display = 'none';
+      // Remove required when DHCP mode is selected
+      document.getElementById('static_ip').required = false;
+      document.getElementById('gateway').required = false;
+      document.getElementById('subnet').required = false;
+      document.getElementById('dns1').required = false;
+    }
+  }
+}
+
+// Validate IPv4 format
+function validateIPv4(input) {
+  const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (!ipPattern.test(input.value)) {
+    return false;
+  }
+  
+  // Check each octet is 0-255
+  const octets = input.value.split('.');
+  for (let i = 0; i < 4; i++) {
+    const octet = parseInt(octets[i]);
+    if (octet < 0 || octet > 255) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+// Add validation listeners for static IP fields
+document.addEventListener('DOMContentLoaded', function() {
+  const staticIPFields = ['static_ip', 'gateway', 'subnet', 'dns1', 'dns2'];
+  staticIPFields.forEach(function(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('input', function() {
+        if (this.value.length > 0 && !validateIPv4(this)) {
+          this.setCustomValidity('Invalid IPv4 address (format: xxx.xxx.xxx.xxx, each part 0-255)');
+        } else {
+          this.setCustomValidity('');
+        }
+      });
+    }
+  });
+  
+  // Initialize static IP fields visibility on page load
+  toggleStaticIPFields();
+});
 </script>
 )";
 

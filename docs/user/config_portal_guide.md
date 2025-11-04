@@ -51,6 +51,70 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Description**: Password for your WiFi network (leave empty if open network)
 - **Security**: Stored securely in ESP32 NVS
 
+### Network Configuration
+- **Required**: No
+- **Default**: DHCP (Automatic)
+- **Type**: Radio selection (DHCP / Static IP)
+- **Description**: Choose between automatic IP assignment or manual static IP configuration
+- **Performance**: Static IP reduces wake time by 0.5-2 seconds per cycle
+
+#### DHCP Mode (Automatic)
+- **Default**: Yes
+- **Description**: Router automatically assigns IP address
+- **Use when**: Simple setup, device moves between networks, or no specific IP requirements
+
+#### Static IP Mode (Manual)
+- **Description**: Manually configure fixed IP address for faster, more consistent connections
+- **Use when**: Battery-powered operation, frequent updates, or predictable IP address needed
+- **All fields required** when Static IP is selected
+
+##### IP Address
+- **Required**: Yes (if Static IP selected)
+- **Type**: IPv4 address
+- **Format**: `xxx.xxx.xxx.xxx`
+- **Validation**: Each octet must be 0-255
+- **Example**: `192.168.1.100`
+- **Note**: Must be outside router's DHCP range to avoid conflicts
+
+##### Gateway
+- **Required**: Yes (if Static IP selected)
+- **Type**: IPv4 address
+- **Format**: `xxx.xxx.xxx.xxx`
+- **Validation**: Each octet must be 0-255
+- **Example**: `192.168.1.1`
+- **Description**: Your router's IP address
+- **Typical values**: `192.168.1.1`, `192.168.0.1`, `10.0.0.1`
+
+##### Subnet Mask
+- **Required**: Yes (if Static IP selected)
+- **Type**: IPv4 address
+- **Format**: `xxx.xxx.xxx.xxx`
+- **Validation**: Each octet must be 0-255
+- **Default**: `255.255.255.0`
+- **Example**: `255.255.255.0`
+- **Description**: Network subnet mask
+- **Note**: `255.255.255.0` is typical for home networks
+
+##### Primary DNS
+- **Required**: Yes (if Static IP selected)
+- **Type**: IPv4 address
+- **Format**: `xxx.xxx.xxx.xxx`
+- **Validation**: Each octet must be 0-255
+- **Default**: `8.8.8.8` (Google DNS)
+- **Example**: `8.8.8.8`
+- **Alternatives**: `1.1.1.1` (Cloudflare), `9.9.9.9` (Quad9)
+- **Description**: Primary DNS server for resolving domain names
+- **Important**: Required for fetching images from URLs
+
+##### Secondary DNS
+- **Required**: No
+- **Type**: IPv4 address
+- **Format**: `xxx.xxx.xxx.xxx`
+- **Validation**: Each octet must be 0-255 (if provided)
+- **Example**: `8.8.4.4` (Google secondary)
+- **Alternatives**: `1.0.0.1` (Cloudflare secondary)
+- **Description**: Backup DNS server (used if primary fails)
+
 ### Dashboard Images (Carousel Support)
 - **Required**: Yes (at least 1 image)
 - **Maximum**: 10 images
@@ -258,6 +322,11 @@ The portal validates:
 4. **Each image URL** must not exceed 250 characters
 5. **Display interval** must be provided for each image (minimum 1 minute)
 6. **Screen rotation** must be 0-3 (defaults to 0 if invalid)
+7. **Static IP fields** (if Static IP mode selected):
+   - IP Address, Gateway, Subnet, and Primary DNS are required
+   - All IP fields must match IPv4 format: `xxx.xxx.xxx.xxx`
+   - Each octet must be in range 0-255
+   - Secondary DNS is optional but validated if provided
 
 ## After Configuration
 

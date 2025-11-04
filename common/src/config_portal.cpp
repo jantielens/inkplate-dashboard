@@ -165,6 +165,21 @@ void ConfigPortal::handleSubmit() {
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
     
+    // Parse static IP configuration
+    String ipMode = _server->arg("ip_mode");
+    bool useStaticIP = (ipMode == "static");
+    String staticIP = _server->arg("static_ip");
+    String gateway = _server->arg("gateway");
+    String subnet = _server->arg("subnet");
+    String dns1 = _server->arg("dns1");
+    String dns2 = _server->arg("dns2");
+    
+    staticIP.trim();
+    gateway.trim();
+    subnet.trim();
+    dns1.trim();
+    dns2.trim();
+    
     // Parse carousel image configuration
     uint8_t imageCount = 0;
     String imageUrls[MAX_IMAGE_SLOTS];
@@ -235,16 +250,41 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
+    // Validate static IP configuration if enabled
+    if (useStaticIP) {
+        if (staticIP.length() == 0 || !validateIPv4Format(staticIP)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid static IP address format"));
+            return;
+        }
+        if (gateway.length() == 0 || !validateIPv4Format(gateway)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid gateway address format"));
+            return;
+        }
+        if (subnet.length() == 0 || !validateIPv4Format(subnet)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid subnet mask format"));
+            return;
+        }
+        if (dns1.length() == 0 || !validateIPv4Format(dns1)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid primary DNS format"));
+            return;
+        }
+        if (dns2.length() > 0 && !validateIPv4Format(dns2)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid secondary DNS format"));
+            return;
+        }
+    }
+    
     // In CONFIG_MODE, at least one image is required; in BOOT_MODE it's optional
     if (_mode == CONFIG_MODE && imageCount == 0) {
         _server->send(400, "text/html", generateErrorPage("At least one image URL is required"));
         return;
     }
     
-    // In BOOT_MODE, only save WiFi credentials
+    // In BOOT_MODE, only save WiFi credentials and static IP config
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
-        LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
+        _configManager->setStaticIPConfig(useStaticIP, staticIP, gateway, subnet, dns1, dns2);
+        LogBox::message("Config Saved", "WiFi credentials and network settings saved (boot mode)");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
         return;
@@ -262,6 +302,14 @@ void ConfigPortal::handleSubmit() {
     config.updateHours[2] = updateHours[2];
     config.timezoneOffset = timezoneOffset;
     config.screenRotation = screenRotation;
+    
+    // Save static IP configuration
+    config.useStaticIP = useStaticIP;
+    config.staticIP = staticIP;
+    config.gateway = gateway;
+    config.subnet = subnet;
+    config.primaryDNS = dns1;
+    config.secondaryDNS = dns2;
     
     // Save carousel configuration
     config.imageCount = imageCount;
@@ -335,6 +383,48 @@ String ConfigPortal::getCSS() {
     return String(CONFIG_PORTAL_CSS);
 }
 
+bool ConfigPortal::validateIPv4Format(const String& ip) {
+    // Simple IPv4 validation: check format and range
+    if (ip.length() == 0) {
+        return false;
+    }
+    
+    int octets[4];
+    int octetIndex = 0;
+    String currentOctet = "";
+    
+    for (unsigned int i = 0; i < ip.length(); i++) {
+        char c = ip.charAt(i);
+        
+        if (c == '.') {
+            if (currentOctet.length() == 0 || octetIndex >= 3) {
+                return false;
+            }
+            octets[octetIndex++] = currentOctet.toInt();
+            currentOctet = "";
+        } else if (c >= '0' && c <= '9') {
+            currentOctet += c;
+        } else {
+            return false;
+        }
+    }
+    
+    // Parse last octet
+    if (currentOctet.length() == 0 || octetIndex != 3) {
+        return false;
+    }
+    octets[octetIndex] = currentOctet.toInt();
+    
+    // Validate ranges (0-255)
+    for (int i = 0; i < 4; i++) {
+        if (octets[i] < 0 || octets[i] > 255) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 String ConfigPortal::generateConfigPage() {
     // Load current configuration if available
     DashboardConfig currentConfig;
@@ -400,6 +490,72 @@ String ConfigPortal::generateConfigPage() {
         html += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)'>";
     }
     html += "</div>";
+    
+    // Network Settings (Static IP) - always shown
+    html += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
+    html += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
+    html += "<div class='help-text' style='margin-bottom: 15px;'>Choose between automatic IP assignment (DHCP) or manual static IP configuration. Static IP can reduce wake time by 0.5-2 seconds per cycle.</div>";
+    
+    bool useStaticIP = (hasConfig || hasPartialConfig) && currentConfig.useStaticIP;
+    
+    html += "<div style='margin-bottom: 15px;'>";
+    html += "<label style='display: flex; align-items: center; gap: 8px; margin-bottom: 8px;'>";
+    html += "<input type='radio' name='ip_mode' value='dhcp' id='ip_mode_dhcp'" + String(!useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
+    html += "<span>DHCP (Automatic) - Default</span>";
+    html += "</label>";
+    html += "<label style='display: flex; align-items: center; gap: 8px;'>";
+    html += "<input type='radio' name='ip_mode' value='static' id='ip_mode_static'" + String(useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
+    html += "<span>Static IP (Manual)</span>";
+    html += "</label>";
+    html += "</div>";
+    
+    // Static IP fields container
+    String staticDisplay = useStaticIP ? "" : " style='display:none;'";
+    html += "<div id='static_ip_fields'" + staticDisplay + ">";
+    
+    // Static IP Address
+    html += "<div class='form-group'>";
+    html += "<label for='static_ip'>IP Address *</label>";
+    String staticIPValue = (hasConfig || hasPartialConfig) ? currentConfig.staticIP : "";
+    html += "<input type='text' id='static_ip' name='static_ip' placeholder='e.g., 192.168.1.100' value='" + staticIPValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    html += "<div class='help-text'>Enter the static IP address for this device</div>";
+    html += "</div>";
+    
+    // Gateway
+    html += "<div class='form-group'>";
+    html += "<label for='gateway'>Gateway *</label>";
+    String gatewayValue = (hasConfig || hasPartialConfig) ? currentConfig.gateway : "";
+    html += "<input type='text' id='gateway' name='gateway' placeholder='e.g., 192.168.1.1' value='" + gatewayValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    html += "<div class='help-text'>Usually your router's IP address</div>";
+    html += "</div>";
+    
+    // Subnet Mask
+    html += "<div class='form-group'>";
+    html += "<label for='subnet'>Subnet Mask *</label>";
+    String subnetValue = (hasConfig || hasPartialConfig) && currentConfig.subnet.length() > 0 ? currentConfig.subnet : "255.255.255.0";
+    html += "<input type='text' id='subnet' name='subnet' placeholder='e.g., 255.255.255.0' value='" + subnetValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    html += "<div class='help-text'>Typically 255.255.255.0 for home networks</div>";
+    html += "</div>";
+    
+    // Primary DNS
+    html += "<div class='form-group'>";
+    html += "<label for='dns1'>Primary DNS *</label>";
+    String dns1Value = (hasConfig || hasPartialConfig) && currentConfig.primaryDNS.length() > 0 ? currentConfig.primaryDNS : "8.8.8.8";
+    html += "<input type='text' id='dns1' name='dns1' placeholder='e.g., 8.8.8.8' value='" + dns1Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    html += "<div class='help-text'>Google DNS (8.8.8.8) or Cloudflare (1.1.1.1)</div>";
+    html += "</div>";
+    
+    // Secondary DNS (optional)
+    html += "<div class='form-group'>";
+    html += "<label for='dns2'>Secondary DNS (Optional)</label>";
+    String dns2Value = (hasConfig || hasPartialConfig) ? currentConfig.secondaryDNS : "";
+    html += "<input type='text' id='dns2' name='dns2' placeholder='e.g., 8.8.4.4' value='" + dns2Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    html += "<div class='help-text'>Backup DNS server (optional)</div>";
+    html += "</div>";
+    
+    html += "</div>"; // End static_ip_fields
+    html += "</div>"; // End form-group
+    
     html += SECTION_END();
     
     // Dashboard Image Section - only shown in CONFIG_MODE

@@ -23,6 +23,14 @@
 #define PREF_TIMEZONE_OFFSET "tz_offset"
 #define PREF_SCREEN_ROTATION "screen_rot"
 
+// Static IP configuration keys
+#define PREF_USE_STATIC_IP "use_static_ip"
+#define PREF_STATIC_IP "static_ip"
+#define PREF_GATEWAY "gateway"
+#define PREF_SUBNET "subnet"
+#define PREF_PRIMARY_DNS "dns1"
+#define PREF_SECONDARY_DNS "dns2"
+
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
@@ -51,6 +59,14 @@ struct DashboardConfig {
     int timezoneOffset;  // Timezone offset in hours (-12 to +14)
     uint8_t screenRotation;  // Screen rotation: 0, 1, 2, 3 (0°, 90°, 180°, 270°)
     
+    // Static IP configuration
+    bool useStaticIP;       // Use static IP instead of DHCP
+    String staticIP;        // Static IP address (e.g., "192.168.1.100")
+    String gateway;         // Gateway address (e.g., "192.168.1.1")
+    String subnet;          // Subnet mask (e.g., "255.255.255.0")
+    String primaryDNS;      // Primary DNS server (e.g., "8.8.8.8")
+    String secondaryDNS;    // Secondary DNS server (optional)
+    
     // Carousel configuration
     uint8_t imageCount;           // How many URLs provided (0-10)
     String imageUrls[MAX_IMAGE_SLOTS];    // Image URLs
@@ -68,6 +84,12 @@ struct DashboardConfig {
         useCRC32Check(false),
         timezoneOffset(0),
         screenRotation(DEFAULT_SCREEN_ROTATION),
+        useStaticIP(false),
+        staticIP(""),
+        gateway(""),
+        subnet(""),
+        primaryDNS(""),
+        secondaryDNS(""),
         imageCount(0) {
         // Initialize all hours enabled by default (0xFF = all bits set)
         updateHours[0] = 0xFF;  // Hours 0-7
@@ -133,12 +155,24 @@ public:
     bool getUseCRC32Check();
     uint8_t getScreenRotation();
     
+    // Static IP getters
+    bool getUseStaticIP();
+    String getStaticIP();
+    String getGateway();
+    String getSubnet();
+    String getPrimaryDNS();
+    String getSecondaryDNS();
+    
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
     void setUseCRC32Check(bool enabled);
     void setScreenRotation(uint8_t rotation);
+    
+    // Static IP setters
+    void setStaticIPConfig(bool useStatic, const String& ip, const String& gw, 
+                          const String& sn, const String& dns1, const String& dns2);
     
     // CRC32 storage management
     uint32_t getLastCRC32();

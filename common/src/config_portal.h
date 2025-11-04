@@ -74,6 +74,9 @@ private:
     
     // CSS styles
     String getCSS();
+    
+    // Validation helpers
+    bool validateIPv4Format(const String& ip);
 };
 
 #endif // CONFIG_PORTAL_H

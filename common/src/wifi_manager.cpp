@@ -92,6 +92,23 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     WiFi.persistent(true);
     WiFi.setAutoReconnect(true);
     
+    // Check if static IP is configured
+    if (_configManager && _configManager->getUseStaticIP()) {
+        String staticIP = _configManager->getStaticIP();
+        String gateway = _configManager->getGateway();
+        String subnet = _configManager->getSubnet();
+        String dns1 = _configManager->getPrimaryDNS();
+        String dns2 = _configManager->getSecondaryDNS();
+        
+        if (!configureStaticIP(staticIP, gateway, subnet, dns1, dns2)) {
+            LogBox::line("Failed to configure static IP, connection aborted");
+            LogBox::end();
+            return false;
+        }
+    } else {
+        LogBox::line("Network mode: DHCP");
+    }
+    
     WiFi.begin(ssid.c_str(), password.c_str());
     
     // Wait for connection with timeout
@@ -181,4 +198,58 @@ String WiFiManager::getStatusString() {
         default:
             return "Unknown";
     }
+}
+
+bool WiFiManager::configureStaticIP(const String& ip, const String& gateway, const String& subnet, 
+                                    const String& dns1, const String& dns2) {
+    LogBox::line("Network mode: Static IP");
+    
+    // Parse IP addresses
+    IPAddress ipAddr, gatewayAddr, subnetAddr, dns1Addr, dns2Addr;
+    
+    if (!ipAddr.fromString(ip)) {
+        LogBox::line("ERROR: Invalid static IP address: " + ip);
+        return false;
+    }
+    
+    if (!gatewayAddr.fromString(gateway)) {
+        LogBox::line("ERROR: Invalid gateway address: " + gateway);
+        return false;
+    }
+    
+    if (!subnetAddr.fromString(subnet)) {
+        LogBox::line("ERROR: Invalid subnet mask: " + subnet);
+        return false;
+    }
+    
+    if (!dns1Addr.fromString(dns1)) {
+        LogBox::line("ERROR: Invalid primary DNS: " + dns1);
+        return false;
+    }
+    
+    // Secondary DNS is optional
+    if (dns2.length() > 0) {
+        if (!dns2Addr.fromString(dns2)) {
+            LogBox::line("WARNING: Invalid secondary DNS: " + dns2 + ", ignoring");
+            dns2Addr = IPAddress(0, 0, 0, 0);
+        }
+    } else {
+        dns2Addr = IPAddress(0, 0, 0, 0);
+    }
+    
+    // Configure static IP
+    if (!WiFi.config(ipAddr, gatewayAddr, subnetAddr, dns1Addr, dns2Addr)) {
+        LogBox::line("ERROR: Failed to configure static IP");
+        return false;
+    }
+    
+    LogBox::line("Static IP: " + ip);
+    LogBox::line("Gateway: " + gateway);
+    LogBox::line("Subnet: " + subnet);
+    LogBox::line("Primary DNS: " + dns1);
+    if (dns2.length() > 0) {
+        LogBox::line("Secondary DNS: " + dns2);
+    }
+    
+    return true;
 }

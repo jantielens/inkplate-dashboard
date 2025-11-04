@@ -37,6 +37,10 @@ public:
     // Get WiFi status information
     String getStatusString();
     
+    // Static IP configuration
+    bool configureStaticIP(const String& ip, const String& gateway, const String& subnet, 
+                          const String& dns1, const String& dns2 = "");
+    
 private:
     ConfigManager* _configManager;
     String _apName;
