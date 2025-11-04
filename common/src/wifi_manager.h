@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include "config_manager.h"
+#include "power_manager.h"
 
 // Access Point configuration
 #define AP_SSID_PREFIX "inkplate-dashb-"
@@ -41,8 +42,12 @@ public:
     bool configureStaticIP(const String& ip, const String& gateway, const String& subnet, 
                           const String& dns1, const String& dns2 = "");
     
+    // Power management integration
+    void setPowerManager(PowerManager* powerManager);
+    
 private:
     ConfigManager* _configManager;
+    PowerManager* _powerManager;
     String _apName;
     bool _apActive;
     

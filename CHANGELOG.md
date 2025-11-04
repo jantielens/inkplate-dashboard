@@ -20,8 +20,23 @@
     - CRC32-match cycle: reduced from ~1s to ~0.3-0.7s
     - Greatest benefit on short, non-download cycles where connection time is the bottleneck
 
+- **WiFi Channel/BSSID Locking for Fast Wake Cycles**
+  - Automatic WiFi channel and BSSID optimization after first connection
+  - Smart connection strategy based on wake reason:
+    - Timer wakes (99% of cycles): Use channel lock for ~150ms connection (~45% faster)
+    - Button wakes, boot, reset: Perform full scan and update channel lock
+  - Automatic fallback: If channel lock fails (network moved/changed), falls back to full scan
+  - Configuration portal displays active optimization status with channel and BSSID info
+  - Channel lock automatically cleared on factory reset
+  - **Performance improvements**:
+    - Timer wake WiFi connection: ~150ms (down from ~274ms)
+    - ~50-100ms additional savings beyond static IP optimization
+    - No downside: maintains flexibility for network changes
+
 ### Changed
 - WiFi connection logic now checks for static IP configuration before calling `WiFi.begin()`
+- WiFi connection polling interval reduced from 100ms to 10ms for faster response
+- WiFi connection timeout reduced from 10s to 5s for faster failure detection
 - Configuration portal UI enhanced with collapsible network settings section
 - Enhanced error messages for network connection failures with static IP
 

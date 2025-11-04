@@ -561,3 +561,66 @@ void ConfigManager::setStaticIPConfig(bool useStatic, const String& ip, const St
     }
 }
 
+// WiFi channel locking methods
+bool ConfigManager::hasWiFiChannelLock() {
+    if (!_initialized && !begin()) {
+        return false;
+    }
+    
+    uint8_t channel = _preferences.getUChar(PREF_WIFI_CHANNEL, 0);
+    return channel != 0;  // Channel 0 means no lock saved
+}
+
+uint8_t ConfigManager::getWiFiChannel() {
+    if (!_initialized && !begin()) {
+        return 0;
+    }
+    
+    return _preferences.getUChar(PREF_WIFI_CHANNEL, 0);
+}
+
+void ConfigManager::getWiFiBSSID(uint8_t* bssid) {
+    if (!_initialized && !begin()) {
+        memset(bssid, 0, 6);
+        return;
+    }
+    
+    // Read 6 bytes from preferences
+    size_t len = _preferences.getBytes(PREF_WIFI_BSSID, bssid, 6);
+    
+    if (len != 6) {
+        // Invalid or missing BSSID, return zeros
+        memset(bssid, 0, 6);
+    }
+}
+
+void ConfigManager::setWiFiChannelLock(uint8_t channel, const uint8_t* bssid) {
+    if (!_initialized && !begin()) {
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putUChar(PREF_WIFI_CHANNEL, channel);
+    _preferences.putBytes(PREF_WIFI_BSSID, bssid, 6);
+    
+    // Format BSSID for logging
+    char bssidStr[18];
+    snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+    
+    LogBox::begin("WiFi Channel Lock Saved");
+    LogBox::linef("Channel: %d", channel);
+    LogBox::line("BSSID: " + String(bssidStr));
+    LogBox::line("Fast reconnection enabled for next wake");
+    LogBox::end();
+}
+
+void ConfigManager::clearWiFiChannelLock() {
+    if (!_initialized && !begin()) {
+        return;
+    }
+    
+    _preferences.putUChar(PREF_WIFI_CHANNEL, 0);
+    // No need to clear BSSID, channel=0 indicates no lock
+}
+

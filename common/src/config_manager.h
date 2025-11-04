@@ -31,6 +31,10 @@
 #define PREF_PRIMARY_DNS "dns1"
 #define PREF_SECONDARY_DNS "dns2"
 
+// WiFi channel locking keys (for fast reconnection)
+#define PREF_WIFI_CHANNEL "wifi_ch"
+#define PREF_WIFI_BSSID "wifi_bssid"
+
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
@@ -173,6 +177,13 @@ public:
     // Static IP setters
     void setStaticIPConfig(bool useStatic, const String& ip, const String& gw, 
                           const String& sn, const String& dns1, const String& dns2);
+    
+    // WiFi channel locking (for fast reconnection)
+    bool hasWiFiChannelLock();
+    uint8_t getWiFiChannel();
+    void getWiFiBSSID(uint8_t* bssid);  // Copies 6 bytes to provided array
+    void setWiFiChannelLock(uint8_t channel, const uint8_t* bssid);
+    void clearWiFiChannelLock();
     
     // CRC32 storage management
     uint32_t getLastCRC32();

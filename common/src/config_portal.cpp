@@ -459,7 +459,21 @@ String ConfigPortal::generateConfigPage() {
     
     // Show appropriate IP address
     if (_wifiManager->isConnected()) {
-        html += "<strong>IP:</strong> " + _wifiManager->getLocalIP();
+        html += "<strong>IP:</strong> " + _wifiManager->getLocalIP() + "<br>";
+        
+        // Show WiFi optimization info
+        if (_configManager->hasWiFiChannelLock()) {
+            uint8_t channel = _configManager->getWiFiChannel();
+            uint8_t bssid[6];
+            _configManager->getWiFiBSSID(bssid);
+            char bssidStr[18];
+            snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+                    bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+            html += "<strong>WiFi Optimization:</strong> Active ✓<br>";
+            html += "<small>Channel " + String(channel) + ", BSSID " + String(bssidStr) + "</small>";
+        } else {
+            html += "<strong>WiFi Optimization:</strong> Will activate on next power cycle";
+        }
     } else {
         html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress();
     }

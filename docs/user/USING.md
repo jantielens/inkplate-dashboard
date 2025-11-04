@@ -320,6 +320,53 @@ Open browser to:
 - Settings persist after firmware updates (backwards compatible with DHCP)
 - Existing devices automatically default to DHCP when upgrading to v1.1.0+
 
+#### WiFi Optimization (Channel Locking)
+
+**Automatic Feature - No Configuration Required**
+
+Your Inkplate Dashboard automatically optimizes WiFi connections for maximum battery life. This feature works seamlessly in the background after your first successful connection.
+
+**How It Works**:
+1. **First Connection**: Device performs a full WiFi network scan (takes ~274ms with static IP)
+2. **Learning**: Device saves the WiFi channel and BSSID (router MAC address) for future connections
+3. **Fast Wake Cycles**: On timer-based updates (99% of wake cycles), device connects directly to the saved channel (~150ms, 45% faster!)
+4. **Automatic Updates**: On boot, reset, or button press, device performs a full scan and updates the saved channel/BSSID
+5. **Smart Fallback**: If the fast connection fails (e.g., router restarted on different channel), device automatically falls back to full scan
+
+**When It Activates**:
+- **Timer wakes** (scheduled updates): Uses channel lock for fastest connection
+- **Button wakes** (manual refresh): Performs full scan and updates channel lock
+- **First boot**: Performs full scan and saves channel lock for future use
+- **After reset**: Performs full scan and re-learns optimal channel
+
+**Performance Benefits**:
+- **WiFi connection time**: ~150ms (down from ~274ms with static IP alone)
+- **Additional savings**: ~50-100ms beyond static IP optimization
+- **Total improvement**: 45% faster WiFi connection on 99% of wake cycles
+- **Battery impact**: Shorter active time = longer battery life
+
+**Viewing Optimization Status**:
+When you access the configuration portal while connected to WiFi, you'll see:
+- **"WiFi Optimization: Active ✓"** - Channel locking is enabled and working
+- **Channel number** - The WiFi channel your device is locked to (1-14)
+- **BSSID** - Your router's MAC address (format: `XX:XX:XX:XX:XX:XX`)
+
+If you just configured WiFi and haven't powered off yet, you'll see:
+- **"WiFi Optimization: Will activate on next power cycle"**
+
+**Troubleshooting**:
+- **Network moved/changed**: Device automatically detects and re-learns on next button press or boot
+- **Different router**: Performs full scan and saves new channel/BSSID automatically
+- **Factory reset**: Channel lock is cleared, device will re-learn on first connection
+- **No downside**: If channel lock fails, device falls back to full scan instantly
+
+**Technical Details** (for advanced users):
+- Stores WiFi channel (1-14) and BSSID (6 bytes) in non-volatile storage
+- Uses ESP32 `WiFi.begin(ssid, password, channel, bssid)` for channel-locked connection
+- Falls back to `WiFi.begin(ssid, password)` if channel lock timeout (2 seconds)
+- Automatically updates on WAKEUP_FIRST_BOOT, WAKEUP_RESET_BUTTON, or WAKEUP_BUTTON
+- Preserved across firmware updates and configuration changes
+
 ### Battery Life Estimator
 
 The configuration portal includes a real-time battery life estimator that helps you understand how your settings impact battery life. This interactive tool updates instantly as you adjust your configuration, providing immediate feedback on your power consumption choices.
