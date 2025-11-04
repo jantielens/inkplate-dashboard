@@ -75,10 +75,19 @@ public:
     // imageCRC32: CRC32 of currently displayed image (0 if none)
     // lastLogMessage: optional log message (empty to skip)
     // lastLogSeverity: "info", "warning", or "error"
+    // wifiBSSID: WiFi access point BSSID/MAC address (empty to skip)
+    // Loop time breakdown (0.0 to skip individual timings):
+    // wifiTimeSeconds: WiFi connection time
+    // ntpTimeSeconds: NTP sync time
+    // crcTimeSeconds: CRC32 check time
+    // imageTimeSeconds: Image download and display time
     bool publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
                              WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
                              int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32 = 0,
-                             const String& lastLogMessage = "", const String& lastLogSeverity = "info");
+                             const String& lastLogMessage = "", const String& lastLogSeverity = "info",
+                             const String& wifiBSSID = "",
+                             float wifiTimeSeconds = 0, float ntpTimeSeconds = 0, 
+                             float crcTimeSeconds = 0, float imageTimeSeconds = 0);
     
     // Check if MQTT is configured
     bool isConfigured();

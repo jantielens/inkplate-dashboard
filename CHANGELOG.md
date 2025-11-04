@@ -4,6 +4,32 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-11-04
+
+### Added
+- **Loop Time Breakdown Telemetry** (MQTT diagnostics enhancement)
+  - Added 5 new MQTT sensors for detailed loop timing analysis:
+    - `loop_time_wifi` - WiFi connection time (seconds)
+    - `loop_time_ntp` - NTP sync time (seconds)
+    - `loop_time_crc` - CRC32 check time (seconds, 0 if disabled/skipped)
+    - `loop_time_image` - Image download & display time (seconds, 0 if skipped)
+    - `wifi_bssid` - WiFi access point BSSID/MAC address
+  - All timing sensors published together for easy correlation in Home Assistant
+  - Timing values always reported (0 = skipped operation) for consistent data sets
+  - Sensors grouped with "Loop Time -" prefix for easy identification in Home Assistant
+  - `force_update: true` on all timing sensors ensures Home Assistant updates "last seen" even with identical values
+  - **Use cases**:
+    - Identify bottlenecks in wake cycles (WiFi, NTP, image download)
+    - Diagnose slow loops (typically 6s, sometimes 20s+)
+    - Track which access point was used (helps with mesh networks)
+    - Monitor NTP timeout issues
+    - Analyze CRC check performance
+
+### Changed
+- MQTT discovery messages include `force_update: true` for timing sensors
+- `LoopTimings` struct added to organize timing measurements
+- All MQTT telemetry timing values published in single session (no additional overhead)
+
 ## [1.1.0] - 2025-11-04
 
 ### Added

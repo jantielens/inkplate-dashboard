@@ -546,6 +546,16 @@ bool MQTTManager::publishSensorDiscovery(const String& discoveryTopic, const Str
         payload += "\"icon\":\"mdi:message-text\",";
     }
     
+    // Force update for timing sensors so Home Assistant updates "last seen" even with same value
+    // This is important for monitoring device health and understanding update frequency
+    if (sensorType == "loop_time" || 
+        sensorType == "loop_time_wifi" || 
+        sensorType == "loop_time_ntp" || 
+        sensorType == "loop_time_crc" || 
+        sensorType == "loop_time_image") {
+        payload += "\"force_update\":true,";
+    }
+    
     payload += "\"value_template\":\"{{ value }}\",";
     payload += buildDeviceInfoJSON(deviceId, deviceName, modelName, includeFullDevice);
     payload += "}";
@@ -587,7 +597,10 @@ bool MQTTManager::shouldPublishDiscovery(WakeupReason wakeReason) {
 bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
                                       WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
                                       int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32,
-                                      const String& lastLogMessage, const String& lastLogSeverity) {
+                                      const String& lastLogMessage, const String& lastLogSeverity,
+                                      const String& wifiBSSID,
+                                      float wifiTimeSeconds, float ntpTimeSeconds, 
+                                      float crcTimeSeconds, float imageTimeSeconds) {
     if (!_isConfigured) {
         LogBox::message("MQTT", "MQTT not configured - skipping");
         return true;  // Not an error
@@ -640,6 +653,28 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         // Image CRC32 sensor discovery
         publishSensorDiscovery(getDiscoveryTopic(deviceId, "image_crc32"), deviceId, "image_crc32",
                               "Image CRC32", "", "", deviceName, modelName, false);
+        publishCount++;
+        
+        // WiFi BSSID sensor discovery
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "wifi_bssid"), deviceId, "wifi_bssid",
+                              "WiFi BSSID", "", "", deviceName, modelName, false);
+        publishCount++;
+        
+        // Loop time breakdown sensor discoveries
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_wifi"), deviceId, "loop_time_wifi",
+                              "Loop Time - WiFi", "duration", "s", deviceName, modelName, false);
+        publishCount++;
+        
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_ntp"), deviceId, "loop_time_ntp",
+                              "Loop Time - NTP", "duration", "s", deviceName, modelName, false);
+        publishCount++;
+        
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_crc"), deviceId, "loop_time_crc",
+                              "Loop Time - CRC", "duration", "s", deviceName, modelName, false);
+        publishCount++;
+        
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_image"), deviceId, "loop_time_image",
+                              "Loop Time - Image", "duration", "s", deviceName, modelName, false);
         publishCount++;
         
         LogBox::linef("Published %d discovery messages", publishCount);
@@ -712,6 +747,47 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Image CRC32: " + payload);
+        publishCount++;
+    }
+    
+    // Publish WiFi BSSID state (if provided)
+    if (wifiBSSID.length() > 0) {
+        String stateTopic = getStateTopic(deviceId, "wifi_bssid");
+        _mqttClient->publish(stateTopic.c_str(), wifiBSSID.c_str(), true);
+        LogBox::line("WiFi BSSID: " + wifiBSSID);
+        publishCount++;
+    }
+    
+    // Publish loop time breakdown states (always publish for correlation, 0 = skipped)
+    if (wifiTimeSeconds >= 0) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_wifi");
+        String payload = String(wifiTimeSeconds, 2);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - WiFi: " + payload + " s");
+        publishCount++;
+    }
+    
+    if (ntpTimeSeconds >= 0) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_ntp");
+        String payload = String(ntpTimeSeconds, 2);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - NTP: " + payload + " s");
+        publishCount++;
+    }
+    
+    if (crcTimeSeconds >= 0) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_crc");
+        String payload = String(crcTimeSeconds, 2);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - CRC: " + payload + " s");
+        publishCount++;
+    }
+    
+    if (imageTimeSeconds >= 0) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_image");
+        String payload = String(imageTimeSeconds, 2);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - Image: " + payload + " s");
         publishCount++;
     }
     
