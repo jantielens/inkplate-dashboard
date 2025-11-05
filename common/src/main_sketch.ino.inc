@@ -241,7 +241,7 @@ void loop() {
             
             // Publish log message for settings updated (if MQTT is configured)
             if (mqttManager.begin() && mqttManager.isConfigured()) {
-                String deviceId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+                String deviceId = wifiManager.getDeviceIdentifier();
                 if (mqttManager.connect()) {
                     mqttManager.publishLastLog(deviceId, "Settings updated", "info");
                     mqttManager.disconnect();

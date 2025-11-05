@@ -28,8 +28,21 @@ void NormalModeController::execute() {
     }
     
     // Collect telemetry data early
-    String deviceId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-    String deviceName = "Inkplate Dashboard " + String((uint32_t)ESP.getEfuseMac(), HEX);
+    String deviceId = wifiManager->getDeviceIdentifier();
+    
+    // For device name: use the friendly name directly if set, otherwise use "Inkplate Dashboard <MAC>"
+    String deviceName;
+    if (config.friendlyName.length() > 0) {
+        // Use the original friendly name for display (keeps spaces, capitalization)
+        deviceName = config.friendlyName;
+    } else {
+        // Fallback: use MAC-based name with "Inkplate Dashboard" prefix
+        String deviceNameSuffix = deviceId;
+        if (deviceNameSuffix.startsWith("inkplate-")) {
+            deviceNameSuffix = deviceNameSuffix.substring(9);  // Remove "inkplate-" prefix
+        }
+        deviceName = "Inkplate Dashboard " + deviceNameSuffix;
+    }
     float batteryVoltage = powerManager->readBatteryVoltage(display);
     int batteryPercentage = PowerManager::calculateBatteryPercentage(batteryVoltage);
     WakeupReason wakeReason = powerManager->getWakeupReason();

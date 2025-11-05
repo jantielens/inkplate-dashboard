@@ -35,6 +35,9 @@
 #define PREF_WIFI_CHANNEL "wifi_ch"
 #define PREF_WIFI_BSSID "wifi_bssid"
 
+// Device identification
+#define PREF_FRIENDLY_NAME "friendly_name"
+
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
@@ -53,6 +56,7 @@
 struct DashboardConfig {
     String wifiSSID;
     String wifiPassword;
+    String friendlyName;  // User-friendly device name (optional, for MQTT/HA/hostname)
     String mqttBroker;  // MQTT broker URL (e.g., mqtt://broker.example.com:1883)
     String mqttUsername;
     String mqttPassword;
@@ -80,6 +84,7 @@ struct DashboardConfig {
     DashboardConfig() : 
         wifiSSID(""),
         wifiPassword(""),
+        friendlyName(""),
         mqttBroker(""),
         mqttUsername(""),
         mqttPassword(""),
@@ -152,6 +157,7 @@ public:
     // Individual getters
     String getWiFiSSID();
     String getWiFiPassword();
+    String getFriendlyName();
     String getMQTTBroker();
     String getMQTTUsername();
     String getMQTTPassword();
@@ -169,6 +175,7 @@ public:
     
     // Individual setters
     void setWiFiCredentials(const String& ssid, const String& password);
+    void setFriendlyName(const String& name);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
     void setDebugMode(bool enabled);
     void setUseCRC32Check(bool enabled);
@@ -198,6 +205,11 @@ public:
     // Timezone offset
     int getTimezoneOffset();
     void setTimezoneOffset(int offset);  // offset: -12 to +14 hours
+    
+    // Friendly name validation and sanitization
+    // Returns true if sanitization successful, false if input completely invalid
+    // Rules: lowercase a-z, digits 0-9, hyphens; max 24 chars; no leading/trailing hyphens
+    static bool sanitizeFriendlyName(const String& input, String& output);
     
     // Mark device as configured
     void markAsConfigured();

@@ -163,6 +163,21 @@ Open browser to:
 - **Case sensitive**: Yes
 - **Example**: `MySecurePassword123`
 
+#### Device Name (Friendly Name)
+- **What it is**: Optional custom name for your device
+- **Required**: No (defaults to `Inkplate Dashboard <MAC>` format)
+- **Used for**: 
+  - **Home Assistant device name**: Shows your input as-is (e.g., "Bedroom Lis")
+  - **MQTT topics & entity IDs**: Uses sanitized version (e.g., `bedroomlis`)
+  - **Network hostname**: Uses sanitized version
+- **Validation**: Automatically sanitized to lowercase letters (a-z), digits (0-9), and hyphens (-)
+- **Max length**: 24 characters
+- **Real-time preview**: Shows sanitized result as you type
+- **Examples**: 
+  - Input: `Bedroom Lis` → Device name: "Bedroom Lis", Entity IDs: `sensor.bedroomlis_*`
+  - Input: `living-room` → Device name: "living-room", Entity IDs: `sensor.living-room_*`
+- **⚠️ Important**: Changing this creates a new device in Home Assistant (old entities need manual cleanup)
+
 #### Dashboard Images (Carousel Support)
 - **What it is**: Configure 1-10 image URLs with individual display intervals
 - **Required**: Yes (at least 1 image in Step 2)

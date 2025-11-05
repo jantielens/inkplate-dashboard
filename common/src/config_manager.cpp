@@ -74,6 +74,7 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     
     config.wifiSSID = _preferences.getString(PREF_WIFI_SSID, "");
     config.wifiPassword = _preferences.getString(PREF_WIFI_PASS, "");
+    config.friendlyName = _preferences.getString(PREF_FRIENDLY_NAME, "");
     config.mqttBroker = _preferences.getString(PREF_MQTT_BROKER, "");
     config.mqttUsername = _preferences.getString(PREF_MQTT_USER, "");
     config.mqttPassword = _preferences.getString(PREF_MQTT_PASS, "");
@@ -170,6 +171,7 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     // Save all configuration values
     _preferences.putString(PREF_WIFI_SSID, config.wifiSSID);
     _preferences.putString(PREF_WIFI_PASS, config.wifiPassword);
+    _preferences.putString(PREF_FRIENDLY_NAME, config.friendlyName);
     _preferences.putString(PREF_MQTT_BROKER, config.mqttBroker);
     _preferences.putString(PREF_MQTT_USER, config.mqttUsername);
     _preferences.putString(PREF_MQTT_PASS, config.mqttPassword);
@@ -259,6 +261,13 @@ String ConfigManager::getWiFiPassword() {
     return _preferences.getString(PREF_WIFI_PASS, "");
 }
 
+String ConfigManager::getFriendlyName() {
+    if (!_initialized && !begin()) {
+        return "";
+    }
+    return _preferences.getString(PREF_FRIENDLY_NAME, "");
+}
+
 String ConfigManager::getMQTTBroker() {
     if (!_initialized && !begin()) {
         return "";
@@ -296,6 +305,16 @@ void ConfigManager::setWiFiCredentials(const String& ssid, const String& passwor
     _preferences.putString(PREF_WIFI_SSID, ssid);
     _preferences.putString(PREF_WIFI_PASS, password);
     LogBox::message("Config Update", "WiFi credentials updated");
+}
+
+void ConfigManager::setFriendlyName(const String& name) {
+    if (!_initialized && !begin()) {
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putString(PREF_FRIENDLY_NAME, name);
+    LogBox::message("Config Update", "Friendly name updated");
 }
 
 void ConfigManager::setMQTTConfig(const String& broker, const String& username, const String& password) {
@@ -622,5 +641,46 @@ void ConfigManager::clearWiFiChannelLock() {
     
     _preferences.putUChar(PREF_WIFI_CHANNEL, 0);
     // No need to clear BSSID, channel=0 indicates no lock
+}
+
+bool ConfigManager::sanitizeFriendlyName(const String& input, String& output) {
+    output = "";
+    
+    if (input.length() == 0) {
+        return true;  // Empty input is valid (means no friendly name)
+    }
+    
+    // Convert to lowercase and filter valid characters
+    for (unsigned int i = 0; i < input.length() && output.length() < 24; i++) {
+        char c = input.charAt(i);
+        
+        // Convert uppercase to lowercase
+        if (c >= 'A' && c <= 'Z') {
+            c = c + ('a' - 'A');
+        }
+        
+        // Only allow lowercase letters, digits, and hyphens
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+            output += c;
+        }
+        // Skip any other characters (spaces, underscores, special chars)
+    }
+    
+    // Remove leading hyphens
+    while (output.length() > 0 && output.charAt(0) == '-') {
+        output = output.substring(1);
+    }
+    
+    // Remove trailing hyphens
+    while (output.length() > 0 && output.charAt(output.length() - 1) == '-') {
+        output = output.substring(0, output.length() - 1);
+    }
+    
+    // If result is empty after sanitization, return false (invalid)
+    if (output.length() == 0 && input.length() > 0) {
+        return false;
+    }
+    
+    return true;
 }
 
