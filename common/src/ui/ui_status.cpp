@@ -49,18 +49,6 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
     displayManager->refresh();
 }
 
-void UIStatus::showAPModeStarting() {
-    // Enable rotation for AP mode starting message
-    // First boot scenario - user is looking at device
-    displayManager->enableRotation();
-    
-    int y = 240;
-    displayManager->showMessage("Status: First Boot", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage("Starting AP Mode...", MARGIN, y, FONT_NORMAL);
-    displayManager->refresh();
-}
-
 void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes) {
     // Enable rotation for essential setup screen (user needs to read URL)
     displayManager->enableRotation();
@@ -105,7 +93,21 @@ void UIStatus::showConfigModePartialSetup(const char* localIP) {
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = MARGIN;
+    // Center logo horizontally and leave space for text
+    int screenWidth = displayManager->getWidth();
+    int minLogoX = MARGIN;
+    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
+    int logoX;
+    if (maxLogoX <= minLogoX) {
+        logoX = minLogoX;
+    } else {
+        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
+    }
+    int logoY = MARGIN;
+#ifndef DISPLAY_MODE_INKPLATE2
+    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+#endif
+    int y = logoY + LOGO_HEIGHT + MARGIN;
     
     displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
@@ -142,9 +144,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
 
     if (isPartialConfig) {
         displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
-        y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-        displayManager->showMessage("Configure Dashboard", MARGIN, y, FONT_HEADING2);
-        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
     } else {
         displayManager->showMessage("Config Mode", MARGIN, y, FONT_HEADING1);
         y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
@@ -152,7 +152,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
         y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     }
 
-    displayManager->showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Connecting to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     displayManager->showMessage(ssid, INDENT_MARGIN, y, FONT_NORMAL);
 

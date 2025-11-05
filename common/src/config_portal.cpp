@@ -251,40 +251,43 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // Sanitize and validate friendly name (if provided)
-    String sanitizedFriendlyName;
-    if (friendlyName.length() > 0) {
-        if (!ConfigManager::sanitizeFriendlyName(friendlyName, sanitizedFriendlyName)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid device name: no valid characters after sanitization"));
-            return;
+    // In CONFIG_MODE, validate friendly name and static IP configuration
+    if (_mode == CONFIG_MODE) {
+        // Sanitize and validate friendly name (if provided)
+        String sanitizedFriendlyName;
+        if (friendlyName.length() > 0) {
+            if (!ConfigManager::sanitizeFriendlyName(friendlyName, sanitizedFriendlyName)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid device name: no valid characters after sanitization"));
+                return;
+            }
+            if (sanitizedFriendlyName.length() == 0) {
+                _server->send(400, "text/html", generateErrorPage("Invalid device name: must contain at least one valid character (a-z, 0-9, -)"));
+                return;
+            }
         }
-        if (sanitizedFriendlyName.length() == 0) {
-            _server->send(400, "text/html", generateErrorPage("Invalid device name: must contain at least one valid character (a-z, 0-9, -)"));
-            return;
-        }
-    }
-    
-    // Validate static IP configuration if enabled
-    if (useStaticIP) {
-        if (staticIP.length() == 0 || !validateIPv4Format(staticIP)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid static IP address format"));
-            return;
-        }
-        if (gateway.length() == 0 || !validateIPv4Format(gateway)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid gateway address format"));
-            return;
-        }
-        if (subnet.length() == 0 || !validateIPv4Format(subnet)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid subnet mask format"));
-            return;
-        }
-        if (dns1.length() == 0 || !validateIPv4Format(dns1)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid primary DNS format"));
-            return;
-        }
-        if (dns2.length() > 0 && !validateIPv4Format(dns2)) {
-            _server->send(400, "text/html", generateErrorPage("Invalid secondary DNS format"));
-            return;
+        
+        // Validate static IP configuration if enabled
+        if (useStaticIP) {
+            if (staticIP.length() == 0 || !validateIPv4Format(staticIP)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid static IP address format"));
+                return;
+            }
+            if (gateway.length() == 0 || !validateIPv4Format(gateway)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid gateway address format"));
+                return;
+            }
+            if (subnet.length() == 0 || !validateIPv4Format(subnet)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid subnet mask format"));
+                return;
+            }
+            if (dns1.length() == 0 || !validateIPv4Format(dns1)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid primary DNS format"));
+                return;
+            }
+            if (dns2.length() > 0 && !validateIPv4Format(dns2)) {
+                _server->send(400, "text/html", generateErrorPage("Invalid secondary DNS format"));
+                return;
+            }
         }
     }
     
@@ -294,12 +297,10 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // In BOOT_MODE, only save WiFi credentials, friendly name, and static IP config
+    // In BOOT_MODE, only save WiFi credentials
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
-        _configManager->setFriendlyName(friendlyName);  // Save original input
-        _configManager->setStaticIPConfig(useStaticIP, staticIP, gateway, subnet, dns1, dns2);
-        LogBox::message("Config Saved", "WiFi credentials and network settings saved (boot mode)");
+        LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
         return;
@@ -521,26 +522,28 @@ String ConfigPortal::generateConfigPage() {
     }
     html += "</div>";
     
-    // Friendly Name (Device Name) - optional
-    html += "<div class='form-group'>";
-    html += "<label for='friendlyname'>Device Name (optional)</label>";
-    String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
-    html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
-    html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
-    html += "<div class='help-text'>";
-    html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname. ";
-    html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
-    html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
-    html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
-    html += "</div>";
-    html += "</div>";
-    
-    // Network Settings (Static IP) - always shown
-    html += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
-    html += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
-    html += "<div class='help-text' style='margin-bottom: 15px;'>Choose between automatic IP assignment (DHCP) or manual static IP configuration. Static IP can reduce wake time by 0.5-2 seconds per cycle.</div>";
-    
-    bool useStaticIP = (hasConfig || hasPartialConfig) && currentConfig.useStaticIP;
+    // Friendly Name and IP config only shown in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        // Friendly Name (Device Name) - optional
+        html += "<div class='form-group'>";
+        html += "<label for='friendlyname'>Device Name (optional)</label>";
+        String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
+        html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
+        html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
+        html += "<div class='help-text'>";
+        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname. ";
+        html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
+        html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
+        html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
+        html += "</div>";
+        html += "</div>";
+        
+        // Network Settings (Static IP)
+        html += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
+        html += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Choose between automatic IP assignment (DHCP) or manual static IP configuration. Static IP can reduce wake time by 0.5-2 seconds per cycle.</div>";
+        
+        bool useStaticIP = (hasConfig || hasPartialConfig) && currentConfig.useStaticIP;
     
     html += "<div style='margin-bottom: 15px;'>";
     html += "<label style='display: flex; align-items: center; gap: 8px; margin-bottom: 8px;'>";
@@ -597,8 +600,9 @@ String ConfigPortal::generateConfigPage() {
     html += "<div class='help-text'>Backup DNS server (optional)</div>";
     html += "</div>";
     
-    html += "</div>"; // End static_ip_fields
-    html += "</div>"; // End form-group
+        html += "</div>"; // End static_ip_fields
+        html += "</div>"; // End form-group
+    } // End CONFIG_MODE check for friendly name and IP config
     
     html += SECTION_END();
     
@@ -815,8 +819,10 @@ String ConfigPortal::generateConfigPage() {
         html += CONFIG_PORTAL_BADGE_SCRIPT;
     }
     
-    // Friendly Name Sanitization JavaScript - always included
-    html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
+    // Friendly Name Sanitization JavaScript - only in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
+        html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
+    }
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
