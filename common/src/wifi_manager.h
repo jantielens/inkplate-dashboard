@@ -45,14 +45,15 @@ public:
     // Power management integration
     void setPowerManager(PowerManager* powerManager);
     
+    // Device identification
+    String generateDeviceID();  // Generate MAC-based ID (e.g., "AABBCC")
+    String getDeviceIdentifier();  // Get friendly name if set, else "inkplate-XXXXXX"
+    
 private:
     ConfigManager* _configManager;
     PowerManager* _powerManager;
     String _apName;
     bool _apActive;
-    
-    // Generate unique device identifier for AP name
-    String generateDeviceID();
 };
 
 #endif // WIFI_MANAGER_H

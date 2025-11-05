@@ -580,4 +580,65 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 )";
 
+// Friendly Name Sanitization Preview JavaScript
+const char* CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT = R"(
+<script>
+function sanitizeFriendlyName(input) {
+  let output = '';
+  
+  // Convert to lowercase and filter valid characters
+  for (let i = 0; i < input.length && output.length < 24; i++) {
+    let c = input.charAt(i);
+    
+    // Convert uppercase to lowercase
+    if (c >= 'A' && c <= 'Z') {
+      c = c.toLowerCase();
+    }
+    
+    // Only allow lowercase letters, digits, and hyphens
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c === '-') {
+      output += c;
+    }
+  }
+  
+  // Remove leading hyphens
+  while (output.length > 0 && output.charAt(0) === '-') {
+    output = output.substring(1);
+  }
+  
+  // Remove trailing hyphens
+  while (output.length > 0 && output.charAt(output.length - 1) === '-') {
+    output = output.substring(0, output.length - 1);
+  }
+  
+  return output;
+}
+
+function sanitizeFriendlyNamePreview() {
+  const input = document.getElementById('friendlyname');
+  const preview = document.getElementById('friendlyname-preview');
+  
+  if (!input || !preview) return;
+  
+  const inputValue = input.value;
+  const sanitized = sanitizeFriendlyName(inputValue);
+  
+  if (inputValue.length === 0) {
+    preview.innerHTML = '';
+  } else if (sanitized.length === 0) {
+    preview.innerHTML = '<span style="color: #d32f2f;">❌ Invalid: No valid characters remaining</span>';
+  } else if (inputValue !== sanitized) {
+    preview.innerHTML = '<span style="color: #1976d2;">✓ Your input will be used as device name. Internally used as <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">' + sanitized + '</code> for MQTT topics, entity IDs, and hostname.</span>';
+  } else {
+    preview.innerHTML = '<span style="color: #388e3c;">✓ Valid device name (will be used for MQTT topics, entity IDs, and hostname)</span>';
+  }
+}
+
+// Initialize preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+  sanitizeFriendlyNamePreview();
+});
+</script>
+)";
+
 #endif // CONFIG_PORTAL_JS_H

@@ -157,6 +157,7 @@ void ConfigPortal::handleSubmit() {
     // Get form data
     String ssid = _server->arg("ssid");
     String password = _server->arg("password");
+    String friendlyName = _server->arg("friendlyname");
     String mqttBroker = _server->arg("mqttbroker");
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
@@ -250,6 +251,19 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
+    // Sanitize and validate friendly name (if provided)
+    String sanitizedFriendlyName;
+    if (friendlyName.length() > 0) {
+        if (!ConfigManager::sanitizeFriendlyName(friendlyName, sanitizedFriendlyName)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid device name: no valid characters after sanitization"));
+            return;
+        }
+        if (sanitizedFriendlyName.length() == 0) {
+            _server->send(400, "text/html", generateErrorPage("Invalid device name: must contain at least one valid character (a-z, 0-9, -)"));
+            return;
+        }
+    }
+    
     // Validate static IP configuration if enabled
     if (useStaticIP) {
         if (staticIP.length() == 0 || !validateIPv4Format(staticIP)) {
@@ -280,9 +294,10 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // In BOOT_MODE, only save WiFi credentials and static IP config
+    // In BOOT_MODE, only save WiFi credentials, friendly name, and static IP config
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
+        _configManager->setFriendlyName(friendlyName);  // Save original input
         _configManager->setStaticIPConfig(useStaticIP, staticIP, gateway, subnet, dns1, dns2);
         LogBox::message("Config Saved", "WiFi credentials and network settings saved (boot mode)");
         _configReceived = true;
@@ -293,6 +308,7 @@ void ConfigPortal::handleSubmit() {
     // In CONFIG_MODE, save all configuration
     DashboardConfig config;
     config.wifiSSID = ssid;
+    config.friendlyName = friendlyName;  // Save original input (with spaces, capitals, etc)
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
     config.debugMode = debugMode;
@@ -503,6 +519,20 @@ String ConfigPortal::generateConfigPage() {
     } else {
         html += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)'>";
     }
+    html += "</div>";
+    
+    // Friendly Name (Device Name) - optional
+    html += "<div class='form-group'>";
+    html += "<label for='friendlyname'>Device Name (optional)</label>";
+    String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
+    html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
+    html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
+    html += "<div class='help-text'>";
+    html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname. ";
+    html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
+    html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
+    html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
+    html += "</div>";
     html += "</div>";
     
     // Network Settings (Static IP) - always shown
@@ -784,6 +814,9 @@ String ConfigPortal::generateConfigPage() {
         html += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
         html += CONFIG_PORTAL_BADGE_SCRIPT;
     }
+    
+    // Friendly Name Sanitization JavaScript - always included
+    html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {

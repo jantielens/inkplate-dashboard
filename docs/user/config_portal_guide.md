@@ -30,6 +30,7 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 3. **Fill out the configuration form**:
    - WiFi Network Name (SSID) - Required
    - WiFi Password - Optional (leave empty for open networks)
+   - Device Name - Optional (custom friendly name for MQTT/Home Assistant)
    - Dashboard Images - Required (at least 1 image URL with display interval)
    - Additional images - Optional (add up to 10 images total for carousel mode)
 
@@ -50,6 +51,21 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Type**: Password
 - **Description**: Password for your WiFi network (leave empty if open network)
 - **Security**: Stored securely in ESP32 NVS
+
+### Device Name (Friendly Name)
+- **Required**: No
+- **Type**: Text (max 24 characters)
+- **Description**: Optional custom name for your device
+- **Display behavior**: 
+  - Your input is used as-is for the Home Assistant device name (preserves spaces and capitalization)
+  - A sanitized version is used for MQTT topics, entity IDs, and hostname
+- **Validation**: Automatically sanitized to: lowercase a-z, digits 0-9, hyphens (-)
+- **Real-time feedback**: Preview shows sanitized result as you type
+- **Default**: If empty, uses `Inkplate Dashboard <MAC>` format (e.g., `Inkplate Dashboard a886e694`)
+- **Examples**: 
+  - Input: `Bedroom Lis` → Device: "Bedroom Lis", Entities: `sensor.bedroomlis_*`
+  - Input: `living-room` → Device: "living-room", Entities: `sensor.living-room_*`
+- **⚠️ Warning**: Changing this creates a new device in Home Assistant (old entities stop updating)
 
 ### Network Configuration
 - **Required**: No

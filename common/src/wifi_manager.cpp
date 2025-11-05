@@ -26,6 +26,25 @@ String WiFiManager::generateDeviceID() {
     return String(deviceID);
 }
 
+String WiFiManager::getDeviceIdentifier() {
+    // Try to get friendly name from config
+    if (_configManager) {
+        String friendlyName = _configManager->getFriendlyName();
+        
+        // Validate the friendly name using sanitization
+        String sanitized;
+        if (friendlyName.length() > 0 && 
+            ConfigManager::sanitizeFriendlyName(friendlyName, sanitized) && 
+            sanitized.length() > 0) {
+            return sanitized;
+        }
+    }
+    
+    // Fallback to MAC-based identifier (use full 32-bit MAC for backward compatibility)
+    // This matches the old format: "inkplate-" + 8 hex chars from ESP.getEfuseMac()
+    return "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+}
+
 bool WiFiManager::startAccessPoint() {
     LogBox::begin("Starting Access Point");
     LogBox::line("AP Name: " + _apName);
@@ -88,8 +107,8 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
     // Switch to station mode
     WiFi.mode(WIFI_STA);
     
-    // Set hostname for network identification
-    String hostname = "inkplate-" + generateDeviceID();
+    // Set hostname for network identification (uses friendly name if set)
+    String hostname = getDeviceIdentifier();
     WiFi.setHostname(hostname.c_str());
     
     // Enable persistent credentials and auto-reconnect for faster connections

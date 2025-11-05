@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-11-05
+
+### Added
+- **Friendly Device Name Support** (issue #67)
+  - Optional user-configurable device name for personalized identification
+  - Replaces MAC-based ID in MQTT topics, Home Assistant device names, and network hostname
+  - Sanitization rules: lowercase a-z, digits 0-9, hyphens; max 24 characters; no leading/trailing hyphens
+  - Real-time preview in config portal shows sanitized result as you type
+  - Fully backward compatible: empty or invalid friendly name falls back to MAC-based ID (e.g., `inkplate-AABBCC`)
+  - **Note**: Changing friendly name creates a new device in Home Assistant (old entities need manual cleanup)
+
 ## [1.2.0] - 2025-11-04
 
 ### Added
