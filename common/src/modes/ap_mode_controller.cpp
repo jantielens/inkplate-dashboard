@@ -5,8 +5,6 @@ APModeController::APModeController(WiFiManager* wifi, ConfigPortal* portal, UISt
 }
 
 bool APModeController::begin() {
-    uiStatus->showAPModeStarting();
-    
     if (wifiManager->startAccessPoint()) {
         String apName = wifiManager->getAPName();
         String apIP = wifiManager->getAPIPAddress();

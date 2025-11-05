@@ -7,7 +7,10 @@ param(
     [string]$Board = "inkplate5v2",
     
     [Parameter(Mandatory=$false)]
-    [string]$Port = ""
+    [string]$Port = "",
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$Erase
 )
 
 # Board configurations
@@ -68,6 +71,21 @@ if (!$Port) {
 
 Write-Host "`nPort: $Port" -ForegroundColor Cyan
 Write-Host "Board: $($config.Name)" -ForegroundColor Cyan
+
+# Handle erase flash if requested
+if ($Erase) {
+    Write-Host "`n⚠️  ERASING FLASH MEMORY..." -ForegroundColor Yellow
+    Write-Host "This will delete all stored configuration and firmware." -ForegroundColor Yellow
+    arduino-cli burn-bootloader --fqbn $BOARD_FQBN --port $Port --programmer esptool
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "✓ Flash erased successfully!" -ForegroundColor Green
+        Write-Host "Now uploading fresh firmware..." -ForegroundColor Cyan
+    } else {
+        Write-Host "`n✗ Flash erase failed!" -ForegroundColor Red
+        exit 1
+    }
+}
 
 # Check if build exists
 $binaryFile = "$BUILD_DIR\$Board.ino.bin"

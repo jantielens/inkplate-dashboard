@@ -15,7 +15,6 @@ public:
     
     // AP Mode screens
     void showAPModeSetup(const char* apName, const char* apIP);
-    void showAPModeStarting();
     
     // Config Mode screens
     void showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes);

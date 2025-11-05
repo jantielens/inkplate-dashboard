@@ -793,6 +793,14 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     
     LogBox::linef("Published %d state messages", publishCount);
     
+    // Give MQTT client time to transmit all queued messages
+    // PubSubClient needs loop() calls to actually send queued data
+    // 20-30ms is typically sufficient for transmission
+    for (int i = 0; i < 3; i++) {
+        _mqttClient->loop();
+        delay(10);
+    }
+    
     // Disconnect
     disconnect();
     

@@ -4,6 +4,28 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2025-11-05
+
+### Fixed
+- **Config Portal**: Friendly name and static IP fields now only shown in CONFIG_MODE (not in AP/BOOT_MODE)
+  - Simplified first-boot AP mode to show only WiFi credentials (SSID and password)
+  - Friendly name and network configuration moved to Step 2 (config mode after WiFi is connected)
+  - Prevents confusion and keeps AP mode streamlined
+- **MQTT Publishing**: Fixed missing MQTT updates after device reboot from config mode
+  - Added message flush loop before disconnecting to ensure all queued messages are transmitted
+  - Calls `loop()` for up to 30ms to process outgoing MQTT packets before sleep
+  - Resolves issue where first MQTT update was lost after initial configuration
+- **Display**: Removed intermediate "Starting AP Mode..." screen
+  - Device now goes directly from splash screen to "Setup - Step 1" instructions
+  - Cleaner user experience with one less screen refresh
+- **Display**: Optimized config mode screens for better clarity
+  - Removed redundant "Configure Dashboard" subheading from WiFi connecting screen
+  - Added Inkplate logo to "Setup - Step 2" screen for consistency
+  - Changed "Connecting to WiFi..." to "Connecting to:" for cleaner presentation
+- **Upload Script**: Added `-Erase` parameter to `upload.ps1` for easy flash erase and firmware upload
+  - Usage: `.\upload.ps1 -board inkplate6flick -port com7 -Erase`
+  - Uses `arduino-cli burn-bootloader` to erase flash before uploading new firmware
+
 ## [1.3.0] - 2025-11-05
 
 ### Added
