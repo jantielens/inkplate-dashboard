@@ -55,6 +55,10 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 // For Inkplate 2: Use DISPLAY_MODE_INKPLATE2 (no parameter in constructor)
 #define DISPLAY_MODE INKPLATE_3BIT
 
+// Display performance optimization flags
+#define DISPLAY_FAST_REFRESH true    // true = fast refresh (<5s), false = slow refresh (20+s)
+#define DISPLAY_MINIMAL_UI false     // true = skip logos and reduce intermediate screens
+
 // Board-specific features
 #define HAS_TOUCHSCREEN false
 #define HAS_FRONTLIGHT false
@@ -92,9 +96,18 @@ Create `boards/inkplate-newboard/board_config.h` with the following template:
 - `BOARD_ROTATION` default value (0-3) is defined but rotation is user-configurable via web portal
 - `BOARD_TYPE` should match the constant from the Inkplate library (e.g., `INKPLATE_2`, `INKPLATE_5V2`, `INKPLATE_10`, `INKPLATE_6FLICK`)
 - For Inkplate 2, use `DISPLAY_MODE_INKPLATE2` instead of `DISPLAY_MODE`
+- **Display Optimization Flags** (new in v1.3.2):
+  - `DISPLAY_FAST_REFRESH`: Set to `false` for slow displays (20+ seconds refresh), `true` for fast displays
+  - `DISPLAY_MINIMAL_UI`: Set to `true` to skip logos and intermediate screens on small/slow displays
+  - Example: Inkplate 2 uses `DISPLAY_FAST_REFRESH=false` and `DISPLAY_MINIMAL_UI=true` for optimal UX
 - Scale `FONT_HEADING1`, `FONT_HEADING2`, and `FONT_NORMAL` appropriately for the screen size
 - Smaller screens should use smaller fonts and tighter `LINE_SPACING`
 - Set `MARGIN` to 0 for very small screens to maximize display space
+
+**Display Optimization Guidelines:**
+- **Fast displays (5-10 second refresh)**: `DISPLAY_FAST_REFRESH=true`, `DISPLAY_MINIMAL_UI=false`
+- **Slow displays (20+ second refresh)**: `DISPLAY_FAST_REFRESH=false`, `DISPLAY_MINIMAL_UI=true` 
+- **Small screens (<300px width)**: Consider `DISPLAY_MINIMAL_UI=true` regardless of refresh speed
 
 **Font Scaling Guidelines:**
 - **Large screens (10", 9.7")**: HEADING1=6-8, HEADING2=4-5, NORMAL=2-3

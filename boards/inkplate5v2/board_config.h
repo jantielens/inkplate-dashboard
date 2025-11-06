@@ -13,6 +13,10 @@
 // Display mode
 #define DISPLAY_MODE INKPLATE_3BIT
 
+// Display performance optimization flags
+#define DISPLAY_FAST_REFRESH true    // Inkplate 5 V2 has reasonably fast refresh
+#define DISPLAY_MINIMAL_UI false     // Show full UI with logos and intermediate screens
+
 // Board-specific features
 #define HAS_TOUCHSCREEN false
 #define HAS_FRONTLIGHT false

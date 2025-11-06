@@ -54,10 +54,12 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height) 
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-    int textStartY = logoY + LOGO_HEIGHT + MARGIN; // spacing below logo uses MARGIN
 
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
+    int textStartY = logoY + LOGO_HEIGHT + MARGIN; // spacing below logo uses MARGIN
+#else
+    int textStartY = logoY;  // Start at top when logo is skipped
 #endif
 
     int y = textStartY;
@@ -75,7 +77,7 @@ void UIMessages::showConfigInitError() {
     displayManager->enableRotation();
     
     displayManager->clear();
-    int y = 240;
+    int y = MARGIN;
     showNormalText("ERROR: Config Init Failed", y);
     displayManager->refresh();
 }

@@ -33,8 +33,10 @@ bool ConfigModeController::begin() {
         // No need to set refreshRate anymore
     }
     
-    // Show config mode message
+    // Show config mode message (skip on slow displays to reduce screen updates)
+#if DISPLAY_FAST_REFRESH
     uiStatus->showConfigModeConnecting(config.wifiSSID.c_str(), hasPartialConfig);
+#endif
     
     // Connect to configured WiFi
     if (wifiManager->connectToWiFi()) {
@@ -57,8 +59,11 @@ bool ConfigModeController::begin() {
         LogBox::line("Falling back to AP mode");
         LogBox::end();
         
+        // Show WiFi failed message (skip on slow displays to reduce screen updates)
+#if DISPLAY_FAST_REFRESH
         uiStatus->showConfigModeWiFiFailed(config.wifiSSID.c_str());
         delay(2000);
+#endif
         
         return startConfigPortalWithAP();
     }
