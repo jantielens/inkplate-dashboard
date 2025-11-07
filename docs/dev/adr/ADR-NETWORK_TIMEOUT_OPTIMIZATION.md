@@ -32,6 +32,23 @@ Implement progressive timeout strategies with retry telemetry for all network op
 const int crcTimeouts[] = {300, 700, 1500};  // Progressive timeouts (ms)
 const int crcRetryDelay = 100;  // ms between retries
 // Total max time: 300 + 100 + 700 + 100 + 1500 = 2700ms
+
+// Enforce deadline - track actual elapsed time
+unsigned long startTime = millis();
+unsigned long deadline = crcTimeouts[attempt];
+
+httpCode = http.GET();
+
+unsigned long elapsed = millis() - startTime;
+
+// Force timeout if we exceeded our deadline, even if request "succeeded"
+if (elapsed > deadline) {
+    LogBox::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
+    http.end();
+    httpCode = -1;  // Force retry
+    // ... retry logic ...
+    continue;
+}
 ```
 
 **Rationale:**
@@ -40,6 +57,12 @@ const int crcRetryDelay = 100;  // ms between retries
 - 3 attempts handle transient network glitches
 - Total 2.7s is 73% faster than original 10s timeout
 - Still allows fallback to full image download if all attempts fail
+
+**Critical Fix (Post-Implementation):**
+- **Issue**: `HTTPClient::setTimeout()` only controls TCP connection and inactivity timeouts, NOT total request duration
+- **Impact**: Slow servers responding continuously could exceed timeout limits (observed: 3.67s and 7.17s responses)
+- **Solution**: Added explicit deadline enforcement using `millis()` to measure elapsed time
+- **Result**: Hard deadline now enforced - requests exceeding timeout are treated as failures and trigger retries
 
 **Retry Semantics:**
 - Attempt 0 succeeds: 0 retries

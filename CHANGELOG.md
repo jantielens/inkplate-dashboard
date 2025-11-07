@@ -33,6 +33,13 @@
   - Based on real-world timing data analysis from 890 production samples
   - Progressive timeout strategies handle 99%+ of normal operations while recovering faster on failures
 
+### Fixed
+- **CRC32 Timeout Enforcement** (Critical bug fix)
+  - **Issue**: `HTTPClient::setTimeout()` only controls TCP connection/inactivity timeouts, not total request duration
+  - **Impact**: Slow servers could exceed intended timeout limits (observed: 3.67s and 7.17s responses despite 300-1500ms timeouts)
+  - **Solution**: Added explicit deadline enforcement using `millis()` to measure elapsed time and force retries when exceeded
+  - **Result**: Hard deadline now enforced - progressive timeout strategy working as designed (max 2.7s total)
+
 ## [1.3.2] - 2025-11-06
 
 ### Added

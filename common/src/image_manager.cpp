@@ -76,7 +76,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     int httpCode = -1;
     String crc32Content = "";
     
-    // Try with progressive timeouts
+    // Try with progressive timeouts and deadline enforcement
     for (int attempt = 0; attempt < maxRetries; attempt++) {
         HTTPClient http;
         WiFiClient client;
@@ -89,14 +89,34 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.begin(client, crc32Url);
         }
         
-        // Set progressive timeout
+        // Set progressive timeout (for connection/inactivity)
         http.setTimeout(crcTimeouts[attempt]);
         http.setUserAgent("InkplateDashboard/1.0");
         
         LogBox::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, crcTimeouts[attempt]);
         
+        // Enforce deadline - track actual elapsed time
+        unsigned long startTime = millis();
+        unsigned long deadline = crcTimeouts[attempt];
+        
         // Send GET request
         httpCode = http.GET();
+        
+        unsigned long elapsed = millis() - startTime;
+        
+        // Force timeout if we exceeded our deadline, even if request "succeeded"
+        if (elapsed > deadline) {
+            LogBox::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
+            http.end();
+            httpCode = -1;  // Force retry
+            
+            // If this attempt failed and not the last attempt, increment retry count and delay
+            if (attempt < maxRetries - 1) {
+                retryCount++;
+                delay(crcRetryDelay);
+            }
+            continue;  // Try next attempt
+        }
         
         if (httpCode == HTTP_CODE_OK) {
             // Read CRC32 content
@@ -104,7 +124,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.end();
             
             if (crc32Content.length() > 0) {
-                LogBox::linef("CRC32 fetched successfully (attempt %d)", attempt + 1);
+                LogBox::linef("CRC32 fetched successfully in %lums (attempt %d)", elapsed, attempt + 1);
                 break;  // Success - exit loop without incrementing retry count
             } else {
                 LogBox::line("CRC32 file is empty");
