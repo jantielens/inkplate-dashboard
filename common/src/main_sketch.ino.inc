@@ -79,7 +79,11 @@ void setup() {
         debugModeEnabled = configManager.getDebugMode();
         screenRotation = configManager.getScreenRotation();
     }
-    bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled;
+    bool shouldShowSplash = ((wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled);
+#if !DISPLAY_FAST_REFRESH
+    // Skip splash screen on slow displays to reduce boot time
+    shouldShowSplash = false;
+#endif
     
     // Set config manager for image manager (for CRC32 storage)
     imageManager.setConfigManager(&configManager);
@@ -224,8 +228,12 @@ void loop() {
             LogBox::line("Restarting to configure dashboard");
             LogBox::end();
             
+#if DISPLAY_FAST_REFRESH
             uiStatus.showWiFiConfigured();
             delay(3000);
+#else
+            delay(1000);  // Brief delay on slow displays
+#endif
             ESP.restart();
         }
     } else if (configModeActive) {
@@ -248,8 +256,12 @@ void loop() {
                 }
             }
             
+#if DISPLAY_FAST_REFRESH
             uiStatus.showSettingsUpdated();
             delay(3000);
+#else
+            delay(1000);  // Brief delay on slow displays
+#endif
             ESP.restart();
         }
         

@@ -4,6 +4,30 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2025-11-06
+
+### Added
+- **Board-Specific Display Optimization** (Major UX improvement for Inkplate 2)
+  - Added `DISPLAY_FAST_REFRESH` and `DISPLAY_MINIMAL_UI` flags to all board configurations
+  - Inkplate 2: `DISPLAY_FAST_REFRESH=false`, `DISPLAY_MINIMAL_UI=true` (20+ second refresh optimization)
+  - Other boards: `DISPLAY_FAST_REFRESH=true`, `DISPLAY_MINIMAL_UI=false` (unchanged behavior)
+  - Replaced hardcoded `#ifdef DISPLAY_MODE_INKPLATE2` checks with flexible board-agnostic flags
+
+### Fixed
+- **Inkplate 2 Display Issues**: Fixed all screens showing only version label or blank content
+  - **Root Cause**: Text positioned off-screen due to logo space calculation (y=200 on 104px screen)
+  - Fixed conditional Y-coordinate calculation for logo-based screens (8 screens)
+  - Fixed hardcoded Y positions in error/status screens (5 screens)
+  - All 13 UI screens now display correctly on Inkplate 2's small 212×104 display
+- **Inkplate 2 Performance Optimization**: Dramatically reduced boot and configuration time
+  - Skipped splash screen on slow displays (saves 20+ seconds on boot)
+  - Skipped intermediate connecting/status screens during config mode (saves 40-60 seconds)
+  - Reduced WiFi/settings confirmation screens before reboot (saves 20+ seconds each)
+  - **Total time savings: 80-100+ seconds** in common setup workflows
+- **UI Layout**: All screens now properly start at top of display when logos are skipped
+  - Affects: AP setup, config mode, manual refresh, splash screen, and error screens
+  - Ensures content is visible and readable on small displays
+
 ## [1.3.1] - 2025-11-05
 
 ### Fixed

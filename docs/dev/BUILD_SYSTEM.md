@@ -271,10 +271,12 @@ build/inkplate5v2/
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 #define DISPLAY_MODE INKPLATE_3BIT
+#define DISPLAY_FAST_REFRESH true    // Fast refresh display
+#define DISPLAY_MINIMAL_UI false     // Show full UI with logos
 #define HAS_TOUCHSCREEN false
 ```
 
-These constants are used by shared code to adapt behavior.
+These constants are used by shared code to adapt behavior for different hardware capabilities and optimize user experience.
 
 ### Shared Implementation
 

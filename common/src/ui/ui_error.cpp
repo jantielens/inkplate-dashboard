@@ -75,7 +75,8 @@ void UIError::showAPStartError() {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
-    int y = 300;
+    displayManager->clear();
+    int y = MARGIN;
     displayManager->showMessage("ERROR: AP Start Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }
@@ -84,7 +85,8 @@ void UIError::showPortalError() {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
-    int y = 400;
+    displayManager->clear();
+    int y = MARGIN;
     displayManager->showMessage("ERROR: Portal Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }
@@ -93,7 +95,8 @@ void UIError::showConfigLoadError() {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
-    int y = 240;
+    displayManager->clear();
+    int y = MARGIN;
     displayManager->showMessage("ERROR: Config Load Failed", MARGIN, y, FONT_NORMAL);
     displayManager->refresh();
 }

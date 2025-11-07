@@ -22,10 +22,12 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
     int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    int y = logoY;  // Start at top when logo is skipped
+#endif
     
     displayManager->showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
@@ -65,10 +67,12 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
     int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    int y = logoY;  // Start at top when logo is skipped
+#endif
 
     displayManager->showMessage("Config Mode Active", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
@@ -104,10 +108,12 @@ void UIStatus::showConfigModePartialSetup(const char* localIP) {
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
     int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    int y = logoY;  // Start at top when logo is skipped
+#endif
     
     displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
@@ -137,10 +143,12 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
     int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    int y = logoY;  // Start at top when logo is skipped
+#endif
 
     if (isPartialConfig) {
         displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
@@ -222,7 +230,7 @@ void UIStatus::showConfigModeTimeout() {
 void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes) {
     // Transient debug message - skip rotation for performance
     // This screen appears briefly before image download in debug mode
-    int y = 240;
+    int y = MARGIN;
     displayManager->showMessage("Status: Configured", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     
@@ -273,10 +281,12 @@ void UIStatus::showManualRefresh() {
         logoX = minLogoX + (maxLogoX - minLogoX) / 2;
     }
     int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
     displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
     int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    int y = logoY;  // Start at top when logo is skipped
+#endif
     
     displayManager->showMessage("Manual Refresh", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;

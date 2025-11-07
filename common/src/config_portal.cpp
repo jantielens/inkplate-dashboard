@@ -65,10 +65,12 @@ bool ConfigPortal::begin(PortalMode mode) {
                             logoX = minLogoX + (maxLogoX - minLogoX) / 2;
                         }
                         int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
                         _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
                         int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+                        int y = logoY;  // Start at top when logo is skipped
+#endif
                         _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
                         y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
                         _displayManager->showMessage("Installing firmware...", MARGIN, y, FONT_NORMAL);
@@ -1092,10 +1094,12 @@ void ConfigPortal::handleOTAInstall() {
             logoX = minLogoX + (maxLogoX - minLogoX) / 2;
         }
         int logoY = MARGIN;
-#ifndef DISPLAY_MODE_INKPLATE2
+#if !DISPLAY_MINIMAL_UI
         _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-#endif
         int y = logoY + LOGO_HEIGHT + MARGIN;
+#else
+        int y = logoY;  // Start at top when logo is skipped
+#endif
         _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
         y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
         _displayManager->showMessage("Downloading from GitHub...", MARGIN, y, FONT_NORMAL);

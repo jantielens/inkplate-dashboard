@@ -15,6 +15,10 @@
 // The display mode is set automatically by the hardware
 #define DISPLAY_MODE_INKPLATE2  // Special flag for Inkplate 2
 
+// Display performance optimization flags
+#define DISPLAY_FAST_REFRESH false   // Inkplate 2 has slow refresh (~20+ seconds)
+#define DISPLAY_MINIMAL_UI true      // Skip logos and reduce intermediate screens for small display
+
 // Board-specific features
 #define HAS_TOUCHSCREEN false
 #define HAS_FRONTLIGHT false
