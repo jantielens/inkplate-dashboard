@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.3.3] - 2025-11-07
+
 ### Added
 - **Network Timeout Optimizations and Retry Telemetry** (Issue #71 - Battery Life Improvement)
   - **CRC32 Check Optimization**:
