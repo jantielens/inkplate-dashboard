@@ -22,10 +22,15 @@ void NormalModeController::execute() {
         return;
     }
     
-    // Capture image retry count from RTC memory (imageStateIndex tracks retry attempts in single image mode)
-    // In carousel mode, this represents the current carousel position
-    // For single image mode: 0 = first attempt, 1 = first retry, 2 = second retry
-    timings.image_retry_count = *imageStateIndex;
+    // Capture image retry count from RTC memory (only for single image mode)
+    // In single image mode: imageStateIndex tracks retry attempts (0 = first attempt, 1-2 = retries)
+    // In carousel mode: imageStateIndex tracks carousel position, so we report 0 retries
+    if (config.imageCount == 1) {
+        timings.image_retry_count = *imageStateIndex;
+    } else {
+        // Carousel mode - retry count not applicable (report 0)
+        timings.image_retry_count = 0;
+    }
     
     if (config.debugMode) {
         int debugInterval = config.getAverageInterval();

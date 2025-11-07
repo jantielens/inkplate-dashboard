@@ -105,7 +105,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             
             if (crc32Content.length() > 0) {
                 LogBox::linef("CRC32 fetched successfully (attempt %d)", attempt + 1);
-                break;  // Success
+                break;  // Success - exit loop without incrementing retry count
             } else {
                 LogBox::line("CRC32 file is empty");
                 http.end();
@@ -116,12 +116,13 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.end();
         }
         
-        // Track retry count (attempt 0 = 0 retries, attempt 1 = 1 retry, etc.)
-        retryCount = attempt;
-        
-        // If not last attempt, delay before retry
+        // If this attempt failed and not the last attempt, delay before retry
         if (attempt < maxRetries - 1) {
+            retryCount++;  // Increment retry count for each failed attempt
             delay(crcRetryDelay);
+        } else {
+            // Last attempt also failed
+            retryCount++;
         }
     }
     
@@ -131,7 +132,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     }
     
     if (httpCode != HTTP_CODE_OK || crc32Content.length() == 0) {
-        LogBox::linef("CRC32 file not found or error after %d attempts", retryCount + 1);
+        LogBox::linef("CRC32 file not found or error after %d attempts (%d retries)", retryCount + 1, retryCount);
         LogBox::line("Falling back to full image download");
         LogBox::end();
         return true;  // Fallback to download

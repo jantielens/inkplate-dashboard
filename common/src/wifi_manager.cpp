@@ -183,16 +183,16 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
             LogBox::line("IP Address: " + WiFi.localIP().toString());
             LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
             LogBox::end();
-            if (outRetryCount) *outRetryCount = retryCount;  // 0 retries for channel lock success
+            if (outRetryCount) *outRetryCount = 0;  // Channel lock success = 0 retries
             return true;
         }
         
         // Channel lock failed - fall back to full scan
+        // This counts as the first retry (fallback to full scan)
         LogBox::line("Channel lock failed (network moved/changed) - falling back to full scan");
         WiFi.disconnect();
         delay(100);
         shouldSaveChannel = true;  // Save new channel after successful full scan
-        retryCount = 1;  // Channel lock failed counts as 1 retry
     }
     
     // Full scan connection (slower but more reliable)
@@ -204,22 +204,30 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     
     // Wait for connection with optimized timeout
     unsigned long startTime = millis();
-    int retries = 0;
+    int fullScanRetries = 0;  // Track full scan retry attempts
     const int maxRetries = 4;  // Increased from 3 to 4
     const unsigned long timeout = 3000;  // Reduced from 5000ms to 3000ms
     const unsigned long retryDelay = 300;  // Reduced from 1000ms to 300ms
     
-    while (WiFi.status() != WL_CONNECTED && retries < maxRetries) {
+    while (WiFi.status() != WL_CONNECTED && fullScanRetries < maxRetries) {
         if (millis() - startTime > timeout) {
             LogBox::line("Connection timeout, retrying...");
             WiFi.disconnect();
             delay(retryDelay);
             WiFi.begin(ssid.c_str(), password.c_str());
             startTime = millis();
-            retries++;
-            retryCount++;  // Increment retry count
+            fullScanRetries++;
         }
         delay(10);  // Reduced polling interval
+    }
+    
+    // Calculate total retry count:
+    // - If channel lock was used and failed: +1 for the fallback to full scan
+    // - Plus the number of full scan retries (not counting the first full scan attempt)
+    if (useChannelLock) {
+        retryCount = fullScanRetries;  // Channel lock fail + full scan retries
+    } else {
+        retryCount = (fullScanRetries > 0) ? fullScanRetries - 1 : 0;  // Full scan retries only (first attempt doesn't count)
     }
     
     if (WiFi.status() == WL_CONNECTED) {
