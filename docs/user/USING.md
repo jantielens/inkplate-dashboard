@@ -493,6 +493,7 @@ The estimator helps you make informed decisions without trial and error, setting
   - Battery voltage and percentage
   - WiFi signal strength and BSSID (which access point)
   - Total loop time and breakdown (WiFi, NTP, CRC check, Image download)
+  - **Network retry counts** (WiFi, CRC32, Image) - new in v1.3.3
   - Image CRC32 and status log messages
   - Useful for monitoring device health and diagnosing performance issues
 
@@ -1041,6 +1042,100 @@ If your router is in a congested area with many WiFi networks, choosing less cro
 While the MQTT integration with Home Assistant is completely optional, many users find it useful for monitoring their device's health. The setup process is remarkably simple - you just enter your MQTT broker URL in the configuration page, and the device handles the rest through auto-discovery. This means you don't need to manually configure any YAML files in Home Assistant.
 
 Once configured, your device will automatically appear in Home Assistant as "Inkplate Dashboard XXXXXX" with a battery voltage sensor. You can monitor battery voltage trends over time to track your battery's health and predict when it might need replacement. The integration also opens up automation possibilities, such as sending notifications when battery voltage drops below a certain threshold or tracking how long your updates take to complete.
+
+#### MQTT Sensors Available
+
+When MQTT is configured, your device publishes the following sensors to Home Assistant:
+
+**Battery Monitoring:**
+- `sensor.inkplate_battery_voltage` - Battery voltage in volts (e.g., 4.2V when fully charged)
+- `sensor.inkplate_battery_percentage` - Battery percentage calculated from Li-ion discharge curve (0-100%)
+
+**Performance Monitoring:**
+- `sensor.inkplate_loop_time` - Total time for complete update cycle in seconds
+- `sensor.inkplate_loop_time_wifi` - WiFi connection time in seconds
+- `sensor.inkplate_loop_time_ntp` - NTP time sync duration in seconds
+- `sensor.inkplate_loop_time_crc` - CRC32 check time in seconds (if enabled)
+- `sensor.inkplate_loop_time_image` - Image download and display time in seconds
+
+**Network Health (new in v1.3.3):**
+- `sensor.inkplate_loop_time_wifi_retries` - Number of WiFi connection retries (0-5)
+  - 0 = Normal fast connection via channel lock (90% of wakes)
+  - 1+ = Required full scan or multiple attempts (network issue or router changes)
+- `sensor.inkplate_loop_time_crc_retries` - Number of CRC32 check retries (0-2)
+  - 0 = Server responded quickly (normal)
+  - 1-2 = Server was slow or network had delays (indicates server performance issue)
+- `sensor.inkplate_loop_time_image_retries` - Number of image download retries (0-2, single image mode only)
+  - 0 = Download succeeded on first attempt
+  - 1-2 = Required retry attempts (network or server issue)
+
+**Network Information:**
+- `sensor.inkplate_wifi_signal` - WiFi signal strength in dBm (e.g., -45 dBm is excellent, -70 dBm is weak)
+- `sensor.inkplate_wifi_bssid` - MAC address of connected WiFi access point (useful if you have multiple APs)
+
+**Status Information:**
+- `sensor.inkplate_image_crc32` - CRC32 checksum of currently displayed image (hexadecimal)
+- `sensor.inkplate_last_log` - Most recent status/error message from device
+
+#### Example Home Assistant Automations
+
+**Battery Low Alert:**
+```yaml
+- alias: "Inkplate Battery Low"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.inkplate_battery_percentage
+      below: 20
+  action:
+    - service: notify.mobile_app
+      data:
+        message: "Inkplate battery is low ({{ states('sensor.inkplate_battery_percentage') }}%)"
+```
+
+**Network Health Alert:**
+```yaml
+- alias: "Inkplate Network Issues"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.inkplate_loop_time_wifi_retries
+      above: 2
+  condition:
+    - condition: template
+      value_template: "{{ states('sensor.inkplate_loop_time_wifi_retries') | int > 2 }}"
+  action:
+    - service: notify.mobile_app
+      data:
+        message: "Inkplate having WiFi issues ({{ states('sensor.inkplate_loop_time_wifi_retries') }} retries)"
+```
+
+**Server Performance Monitoring:**
+```yaml
+- alias: "Inkplate Server Slow"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.inkplate_loop_time_crc_retries
+      above: 0
+  action:
+    - service: notify.mobile_app
+      data:
+        message: "Inkplate image server responding slowly"
+```
+
+#### Understanding Retry Counts
+
+The retry count sensors (added in v1.3.3) help you monitor network and server health:
+
+- **WiFi Retries**: Normally 0 for fast channel-locked connections. A value of 1 means the router moved channels and required a full network scan. Higher values indicate network issues.
+
+- **CRC32 Retries**: Normally 0 when your image server responds quickly. Retries indicate your server is slow or experiencing network delays. This is particularly useful for diagnosing performance issues with your image generation service.
+
+- **Image Retries**: Only applicable in single image mode. Tracks how many times the device had to retry downloading the full image across sleep cycles. Useful for identifying persistent download issues.
+
+**Normal vs. Problem Patterns:**
+- All zeros = Healthy network and servers ✓
+- Occasional 1s = Normal network variance (router channel changes, etc.) ✓
+- Frequent 2s or higher = Network or server performance issue that needs attention ⚠️
+- Consistent maximum values = Serious connectivity problem requiring investigation ❌
 
 ---
 
