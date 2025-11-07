@@ -222,12 +222,13 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     }
     
     // Calculate total retry count:
-    // - If channel lock was used and failed: +1 for the fallback to full scan
-    // - Plus the number of full scan retries (not counting the first full scan attempt)
+    // - If channel lock was used and failed: 1 for the fallback + full scan timeout retries
+    // - If no channel lock: only full scan timeout retries
+    // fullScanRetries is incremented each time we timeout in the full scan loop
     if (useChannelLock) {
-        retryCount = fullScanRetries;  // Channel lock fail + full scan retries
+        retryCount = 1 + fullScanRetries;  // Channel lock fallback (1) + full scan timeouts
     } else {
-        retryCount = (fullScanRetries > 0) ? fullScanRetries - 1 : 0;  // Full scan retries only (first attempt doesn't count)
+        retryCount = fullScanRetries;  // Only full scan timeout retries
     }
     
     if (WiFi.status() == WL_CONNECTED) {

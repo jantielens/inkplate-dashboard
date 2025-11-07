@@ -116,14 +116,13 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.end();
         }
         
-        // If this attempt failed and not the last attempt, delay before retry
+        // If this attempt failed and not the last attempt, increment retry count and delay
         if (attempt < maxRetries - 1) {
-            retryCount++;  // Increment retry count for each failed attempt
+            retryCount++;  // This failed attempt becomes a retry
             delay(crcRetryDelay);
-        } else {
-            // Last attempt also failed
-            retryCount++;
         }
+        // Note: Last attempt failure doesn't increment retry count because it's still an "attempt", not a "retry"
+        // Result: attempt 0 fails = 0 retries, attempt 1 fails = 1 retry, attempt 2 fails = 2 retries
     }
     
     // Report final retry count
