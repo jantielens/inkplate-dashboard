@@ -50,9 +50,10 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
     return result;
 }
 
-bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
+bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uint8_t* outRetryCount) {
     if (!_configManager) {
         LogBox::message("CRC32 Check", "ConfigManager not set - cannot check CRC32");
+        if (outRetryCount) *outRetryCount = 0;
         return true;  // Fallback to download
     }
     
@@ -65,38 +66,72 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32) {
     // Determine if HTTPS or HTTP
     bool useHttps = isHttps(crc32Url.c_str());
     
-    HTTPClient http;
-    WiFiClient client;
-    WiFiClientSecure secureClient;
+    // Progressive timeout strategy: {300ms, 700ms, 1500ms}
+    // Total max time: 300 + 100 + 700 + 100 + 1500 = 2700ms (~2.7s)
+    const int crcTimeouts[] = {300, 700, 1500};  // Progressive timeouts (ms)
+    const int crcRetryDelay = 100;  // ms between retries
+    const int maxRetries = 3;
     
-    if (useHttps) {
-        secureClient.setInsecure();
-        http.begin(secureClient, crc32Url);
-    } else {
-        http.begin(client, crc32Url);
+    uint8_t retryCount = 0;
+    int httpCode = -1;
+    String crc32Content = "";
+    
+    // Try with progressive timeouts
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+        HTTPClient http;
+        WiFiClient client;
+        WiFiClientSecure secureClient;
+        
+        if (useHttps) {
+            secureClient.setInsecure();
+            http.begin(secureClient, crc32Url);
+        } else {
+            http.begin(client, crc32Url);
+        }
+        
+        // Set progressive timeout
+        http.setTimeout(crcTimeouts[attempt]);
+        http.setUserAgent("InkplateDashboard/1.0");
+        
+        LogBox::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, crcTimeouts[attempt]);
+        
+        // Send GET request
+        httpCode = http.GET();
+        
+        if (httpCode == HTTP_CODE_OK) {
+            // Read CRC32 content
+            crc32Content = http.getString();
+            http.end();
+            
+            if (crc32Content.length() > 0) {
+                LogBox::linef("CRC32 fetched successfully (attempt %d)", attempt + 1);
+                break;  // Success
+            } else {
+                LogBox::line("CRC32 file is empty");
+                http.end();
+                httpCode = -1;  // Treat as failure
+            }
+        } else {
+            LogBox::linef("CRC32 fetch failed (code: %d)", httpCode);
+            http.end();
+        }
+        
+        // Track retry count (attempt 0 = 0 retries, attempt 1 = 1 retry, etc.)
+        retryCount = attempt;
+        
+        // If not last attempt, delay before retry
+        if (attempt < maxRetries - 1) {
+            delay(crcRetryDelay);
+        }
     }
     
-    // Set timeout (shorter for CRC32 file)
-    http.setTimeout(10000);  // 10 seconds
-    http.setUserAgent("InkplateDashboard/1.0");
-    
-    // Send GET request
-    int httpCode = http.GET();
-    
-    if (httpCode != HTTP_CODE_OK) {
-        LogBox::linef("CRC32 file not found or error (code: %d)", httpCode);
-        LogBox::line("Falling back to full image download");
-        LogBox::end();
-        http.end();
-        return true;  // Fallback to download
+    // Report final retry count
+    if (outRetryCount) {
+        *outRetryCount = retryCount;
     }
     
-    // Read CRC32 content
-    String crc32Content = http.getString();
-    http.end();
-    
-    if (crc32Content.length() == 0) {
-        LogBox::line("CRC32 file is empty");
+    if (httpCode != HTTP_CODE_OK || crc32Content.length() == 0) {
+        LogBox::linef("CRC32 file not found or error after %d attempts", retryCount + 1);
         LogBox::line("Falling back to full image download");
         LogBox::end();
         return true;  // Fallback to download

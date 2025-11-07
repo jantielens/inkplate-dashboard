@@ -95,9 +95,12 @@ bool WiFiManager::isAPActive() {
     return _apActive;
 }
 
-bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
+bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount) {
     LogBox::begin("Connecting to WiFi");
     LogBox::line("SSID: " + ssid);
+    
+    // Initialize retry count
+    uint8_t retryCount = 0;
     
     // Stop AP mode if active
     if (_apActive) {
@@ -126,6 +129,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
         if (!configureStaticIP(staticIP, gateway, subnet, dns1, dns2)) {
             LogBox::line("Failed to configure static IP, connection aborted");
             LogBox::end();
+            if (outRetryCount) *outRetryCount = retryCount;
             return false;
         }
     } else {
@@ -179,6 +183,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
             LogBox::line("IP Address: " + WiFi.localIP().toString());
             LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
             LogBox::end();
+            if (outRetryCount) *outRetryCount = retryCount;  // 0 retries for channel lock success
             return true;
         }
         
@@ -187,26 +192,32 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
         WiFi.disconnect();
         delay(100);
         shouldSaveChannel = true;  // Save new channel after successful full scan
+        retryCount = 1;  // Channel lock failed counts as 1 retry
     }
     
     // Full scan connection (slower but more reliable)
+    // Optimized timeouts: 3s per attempt (down from 5s), 300ms retry delay (down from 1s)
+    // Max retries: 4 (up from 3) to compensate for shorter timeout
+    // Total max time: 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s = 16.2s (vs 23s previously)
     LogBox::line("Performing full network scan...");
     WiFi.begin(ssid.c_str(), password.c_str());
     
-    // Wait for connection with standard timeout
+    // Wait for connection with optimized timeout
     unsigned long startTime = millis();
     int retries = 0;
-    const int maxRetries = 3;
-    const unsigned long timeout = 5000;  // 5 seconds per attempt
+    const int maxRetries = 4;  // Increased from 3 to 4
+    const unsigned long timeout = 3000;  // Reduced from 5000ms to 3000ms
+    const unsigned long retryDelay = 300;  // Reduced from 1000ms to 300ms
     
     while (WiFi.status() != WL_CONNECTED && retries < maxRetries) {
         if (millis() - startTime > timeout) {
             LogBox::line("Connection timeout, retrying...");
             WiFi.disconnect();
-            delay(1000);
+            delay(retryDelay);
             WiFi.begin(ssid.c_str(), password.c_str());
             startTime = millis();
             retries++;
+            retryCount++;  // Increment retry count
         }
         delay(10);  // Reduced polling interval
     }
@@ -228,17 +239,20 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password) {
         }
         
         LogBox::end();
+        if (outRetryCount) *outRetryCount = retryCount;
         return true;
     } else {
         LogBox::linef("Failed to connect to WiFi after %d retries", maxRetries);
         LogBox::end();
+        if (outRetryCount) *outRetryCount = retryCount;
         return false;
     }
 }
 
-bool WiFiManager::connectToWiFi() {
+bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
     if (!_configManager) {
         LogBox::message("WiFi Connection", "ConfigManager not set");
+        if (outRetryCount) *outRetryCount = 0;
         return false;
     }
     
@@ -247,10 +261,11 @@ bool WiFiManager::connectToWiFi() {
     
     if (ssid.length() == 0) {
         LogBox::message("WiFi Connection", "No WiFi credentials stored");
+        if (outRetryCount) *outRetryCount = 0;
         return false;
     }
     
-    return connectToWiFi(ssid, password);
+    return connectToWiFi(ssid, password, outRetryCount);
 }
 
 void WiFiManager::disconnect() {

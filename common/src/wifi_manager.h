@@ -28,8 +28,8 @@ public:
     bool isAPActive();
     
     // WiFi Client Mode
-    bool connectToWiFi(const String& ssid, const String& password);
-    bool connectToWiFi();  // Uses stored credentials
+    bool connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount = nullptr);
+    bool connectToWiFi(uint8_t* outRetryCount = nullptr);  // Uses stored credentials
     void disconnect();
     bool isConnected();
     String getLocalIP();

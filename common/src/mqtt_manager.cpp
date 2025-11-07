@@ -600,7 +600,8 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
                                       const String& lastLogMessage, const String& lastLogSeverity,
                                       const String& wifiBSSID,
                                       float wifiTimeSeconds, float ntpTimeSeconds, 
-                                      float crcTimeSeconds, float imageTimeSeconds) {
+                                      float crcTimeSeconds, float imageTimeSeconds,
+                                      uint8_t wifiRetryCount, uint8_t crcRetryCount, uint8_t imageRetryCount) {
     if (!_isConfigured) {
         LogBox::message("MQTT", "MQTT not configured - skipping");
         return true;  // Not an error
@@ -675,6 +676,19 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         
         publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_image"), deviceId, "loop_time_image",
                               "Loop Time - Image", "duration", "s", deviceName, modelName, false);
+        publishCount++;
+        
+        // Retry count sensor discoveries
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_wifi_retries"), deviceId, "loop_time_wifi_retries",
+                              "Loop Time - WiFi Retries", "", "", deviceName, modelName, false);
+        publishCount++;
+        
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_crc_retries"), deviceId, "loop_time_crc_retries",
+                              "Loop Time - CRC Retries", "", "", deviceName, modelName, false);
+        publishCount++;
+        
+        publishSensorDiscovery(getDiscoveryTopic(deviceId, "loop_time_image_retries"), deviceId, "loop_time_image_retries",
+                              "Loop Time - Image Retries", "", "", deviceName, modelName, false);
         publishCount++;
         
         LogBox::linef("Published %d discovery messages", publishCount);
@@ -788,6 +802,31 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String payload = String(imageTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
         LogBox::line("Loop Time - Image: " + payload + " s");
+        publishCount++;
+    }
+    
+    // Publish retry counts (255 means skip)
+    if (wifiRetryCount != 255) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_wifi_retries");
+        String payload = String(wifiRetryCount);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - WiFi Retries: " + payload);
+        publishCount++;
+    }
+    
+    if (crcRetryCount != 255) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_crc_retries");
+        String payload = String(crcRetryCount);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - CRC Retries: " + payload);
+        publishCount++;
+    }
+    
+    if (imageRetryCount != 255) {
+        String stateTopic = getStateTopic(deviceId, "loop_time_image_retries");
+        String payload = String(imageRetryCount);
+        _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
+        LogBox::line("Loop Time - Image Retries: " + payload);
         publishCount++;
     }
     
