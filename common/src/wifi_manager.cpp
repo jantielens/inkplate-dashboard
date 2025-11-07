@@ -183,7 +183,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
             LogBox::line("IP Address: " + WiFi.localIP().toString());
             LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
             LogBox::end();
-            if (outRetryCount) *outRetryCount = 0;  // Channel lock success = 0 retries
+            if (outRetryCount) *outRetryCount = retryCount;  // 0 retries for channel lock success
             return true;
         }
         
