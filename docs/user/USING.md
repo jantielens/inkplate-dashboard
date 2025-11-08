@@ -206,11 +206,18 @@ Open browser to:
 - **What it is**: How long to display each image before moving to the next (or refreshing in single image mode)
 - **Required**: Yes (for each image)
 - **Default**: 5 minutes (auto-filled when URL entered)
-- **Minimum**: 1 minute
+- **Minimum**: 0 minutes (button-only mode - see below)
 - **Unit**: Minutes
 - **Example**: Image 1 for 10 minutes, Image 2 for 5 minutes, Image 3 for 15 minutes
 - **Carousel behavior**: Device cycles through all images using each image's individual interval
 - **Single image**: Device refreshes the same image after the specified interval
+- **Button-only mode (0 minutes)**: Set interval to 0 to disable automatic refresh completely
+  - Device only wakes when you press the button (no timer wake)
+  - Maximum battery life - device stays in deep sleep until button press
+  - Deep sleep consumes only ~20µA (0.48 mAh/day)
+  - Ideal for displays that only need manual updates
+  - **Note**: Requires a board with a physical button (Inkplate 5 V2, Inkplate 6 Flick, Inkplate 10)
+  - Inkplate 2 does not have a button, so interval 0 would prevent device from ever waking
 
 #### Update Hours
 - **What it is**: Select which hours (0-23) the device should perform scheduled updates
@@ -467,6 +474,14 @@ The estimator uses these assumptions (clearly disclosed in the portal):
 - **Result**: ~300 days (10.0 months) - EXCELLENT status
 - **Daily power**: 4.0 mAh
 - **Wake-ups**: 102 per day
+
+**Button-Only Mode** (0-min interval, no automatic refresh, 1200mAh):
+- **Result**: ∞ (unlimited) - BUTTON ONLY status
+- **Daily power**: 0.48 mAh (deep sleep only)
+- **Wake-ups**: 0 automatic (manual button press only)
+- **Battery life**: Months to years depending on button press frequency
+- **Use case**: Displays that only need occasional manual updates (e.g., shelf labels, static dashboards)
+- **Note**: Requires board with physical button (Inkplate 5 V2, 6 Flick, 10)
 
 **Without CRC32** (5-min refresh, CRC32 off, 17h active, 1200mAh):
 - **Result**: ~35 days (1.2 months) - POOR status
