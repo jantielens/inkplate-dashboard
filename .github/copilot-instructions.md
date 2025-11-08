@@ -408,6 +408,8 @@ UI components are in `common/src/ui/`:
 
 ### Pre-Commit Checklist
 
+**CRITICAL:** Do NOT claim work is complete or ready for review until ALL steps are verified:
+
 1. ✅ **Re-check main branch version** to avoid conflicts:
    - `git fetch origin main`
    - `git show origin/main:common/src/version.h | grep FIRMWARE_VERSION`
@@ -419,11 +421,20 @@ UI components are in `common/src/ui/`:
    - Check if changes affect developer docs in `docs/dev/`
    - Create new ADR in `docs/dev/adr/` for architectural decisions
    - Update README.md files to index new documentation
-5. ✅ Built all boards: `./build.sh all`
-6. ✅ No compilation errors
-7. ✅ Firmware sizes reasonable (<1.5MB per board)
+5. ✅ **MANDATORY: Built all boards successfully**
+   - Run: `./build.sh all` (Linux/macOS) or `.\build.ps1 all` (Windows)
+   - **ALL 4 boards MUST compile without errors**
+   - If Arduino CLI not installed: Use setup scripts OR clearly state build not tested
+   - **DO NOT** claim "implementation complete" without successful builds
+6. ✅ **No compilation errors** in build output
+7. ✅ **Firmware sizes reasonable** (<1.5MB per board - check build output)
 
 **NOTE:** Do NOT create or push git tags. Release tagging is a manual user action only.
+
+**If you cannot build locally:**
+- Clearly state in PR description: "⚠️ Local build not tested (Arduino CLI not available)"
+- CI/CD will validate builds, but expect potential compilation failures
+- Do NOT claim work is "complete" or "ready" without successful builds
 
 ### CI/CD Validation
 
