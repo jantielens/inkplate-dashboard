@@ -137,7 +137,7 @@ void NormalModeController::execute() {
         unsigned long loopTimeMs = millis() - loopStartTime;
         
         // Sleep for 60 minutes in dormant mode
-        powerManager->enterDeepSleep(60.0, loopTimeMs);
+        powerManager->enterDeepSleep((float)60.0, loopTimeMs);
         return;
     }
     
