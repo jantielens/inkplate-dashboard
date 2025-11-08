@@ -1,7 +1,7 @@
 # Architecture Decision Record: MQTT Sensor force_update Logic Refactoring
 
 ## Status
-Accepted and Implemented (v1.3.4)
+Accepted and Implemented (v1.3.5)
 
 ## Context
 
@@ -82,7 +82,7 @@ From Home Assistant documentation:
 
 Refactor `publishSensorDiscovery()` to use a **blacklist approach**: apply `force_update: true` to **all sensors** except those representing **discrete events** (currently only `last_log`).
 
-### Implementation (v1.3.4)
+### Implementation (v1.3.5)
 
 ```cpp
 // Force update for all sensors EXCEPT event-like sensors (last_log)
@@ -224,7 +224,7 @@ If a device is reporting the same error every cycle, that's a separate issue tha
 ### Code Location
 - **File**: `common/src/mqtt_manager.cpp`
 - **Function**: `MQTTManager::publishSensorDiscovery()`
-- **Lines**: 549-559 (v1.3.4)
+- **Lines**: 549-559 (v1.3.5)
 
 ### Discovery vs State Messages
 This change only affects **discovery messages** (Home Assistant auto-discovery configuration). State messages (actual sensor values) are published regardless of `force_update`.
@@ -270,13 +270,14 @@ This minimizes MQTT traffic and retained message count (see `shouldPublishDiscov
 
 ## Related Documentation
 
-- **CHANGELOG**: v1.3.4 entry documents user-visible changes
+- **CHANGELOG**: v1.3.5 entry documents user-visible changes
 - **ADR-NETWORK_TIMEOUT_OPTIMIZATION.md**: Documents retry telemetry sensors (v1.3.3)
 - **User Guide** (`docs/user/USING.md`): MQTT broker configuration
 
 ## Version History
 
-- **v1.3.4** (2025-11-08): Refactored to blacklist approach
+- **v1.3.5** (2025-11-08): Refactored to blacklist approach
+- **v1.3.4** (2025-11-08): Skip NTP Sync Optimization (unrelated feature)
 - **v1.3.3** (2025-11-07): Added retry telemetry sensors (still whitelist)
 - **v1.3.0 and earlier**: Original whitelist for timing sensors only
 
