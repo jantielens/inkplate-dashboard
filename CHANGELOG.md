@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [1.3.5] - 2025-11-08
+
+### Changed
+- **MQTT Sensor `force_update` Logic Refactored** (Issue: Improved Home Assistant diagnostics)
+  - **Changed**: Now applies `force_update: true` to **all** MQTT sensors except `last_log`
+  - **Previously**: Only timing sensors (`loop_time*`) had `force_update: true`
+  - **Affected sensors**: `battery_voltage`, `battery_percentage`, `wifi_signal`, `wifi_bssid`, `image_crc32`, `loop_time_wifi_retries`, `loop_time_crc_retries`, `loop_time_image_retries` now update HA "last seen" timestamp on every report
+  - **Benefits**:
+    - Reliable device health reporting in Home Assistant - even for stable values
+    - Retry fields (often zero) are now visible as successful states
+    - Reduces confusion when stable sensors seem inactive but are actually reporting
+    - Simplifies logic for future diagnostic sensors (default behavior is now correct)
+  - **Rationale**: Event-like sensors (`last_log`) excluded because repeating the same event message is not useful for discrete events
+
 ## [1.3.4] - 2025-11-08
 
 ### Added

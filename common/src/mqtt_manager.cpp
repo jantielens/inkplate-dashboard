@@ -546,13 +546,15 @@ bool MQTTManager::publishSensorDiscovery(const String& discoveryTopic, const Str
         payload += "\"icon\":\"mdi:message-text\",";
     }
     
-    // Force update for timing sensors so Home Assistant updates "last seen" even with same value
-    // This is important for monitoring device health and understanding update frequency
-    if (sensorType == "loop_time" || 
-        sensorType == "loop_time_wifi" || 
-        sensorType == "loop_time_ntp" || 
-        sensorType == "loop_time_crc" || 
-        sensorType == "loop_time_image") {
+    // Force update for all sensors EXCEPT event-like sensors (last_log)
+    // This ensures Home Assistant updates "last seen" timestamp even when values don't change
+    // Benefits:
+    // - Reliable device health monitoring (stable battery/WiFi values still show device is alive)
+    // - Retry fields (often zero) are visible as successful states
+    // - Reduces confusion when stable sensors appear inactive but are actively reporting
+    // Event sensors like last_log are excluded because they represent discrete events,
+    // not continuous telemetry, and repeating the same event message is not useful
+    if (sensorType != "last_log") {
         payload += "\"force_update\":true,";
     }
     
