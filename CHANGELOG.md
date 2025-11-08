@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [1.3.4] - 2025-11-08
+
+### Added
+- **Skip NTP Sync Optimization** (Issue - Performance improvement)
+  - Skip NTP synchronization when all 24 hours are enabled in sleep configuration
+  - Added `ConfigManager::areAllHoursEnabled()` helper method to check if hourly scheduling is disabled
+  - Reduces unnecessary network traffic and improves startup time when sleep scheduling is not needed
+  - NTP sync timing metric reports 0ms when skipped
+  - Behavior unchanged when fewer than 24 hours are enabled (NTP sync still occurs for scheduling)
+
 ## [1.3.3] - 2025-11-07
 
 ### Added

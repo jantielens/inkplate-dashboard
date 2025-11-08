@@ -243,6 +243,16 @@ public:
         return localHour;
     }
     
+    /**
+     * Check if all 24 hours are enabled in the update schedule bitmask
+     * @param updateHours Bitmask array (3 bytes for 24 hours)
+     * @return true if all 24 hours are enabled, false otherwise
+     */
+    static bool areAllHoursEnabled(const uint8_t updateHours[3]) {
+        // All 24 hours are enabled when all bits in all 3 bytes are set (0xFF)
+        return (updateHours[0] == 0xFF && updateHours[1] == 0xFF && updateHours[2] == 0xFF);
+    }
+    
 private:
     Preferences _preferences;
     bool _initialized;
