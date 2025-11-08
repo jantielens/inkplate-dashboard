@@ -96,7 +96,7 @@ const int TIMEZONE_COUNT = sizeof(TIMEZONE_MAPPINGS) / sizeof(TimezoneMapping);
 
 // Helper function to find POSIX TZ string by display name
 // Returns nullptr if not found
-const char* findPosixTzByName(const String& displayName) {
+inline const char* findPosixTzByName(const String& displayName) {
     for (int i = 0; i < TIMEZONE_COUNT; i++) {
         if (displayName.equals(TIMEZONE_MAPPINGS[i].displayName)) {
             return TIMEZONE_MAPPINGS[i].posixTz;
@@ -107,7 +107,7 @@ const char* findPosixTzByName(const String& displayName) {
 
 // Helper function to validate timezone name
 // Returns true if the timezone exists in the mapping table
-bool isValidTimezoneName(const String& displayName) {
+inline bool isValidTimezoneName(const String& displayName) {
     return findPosixTzByName(displayName) != nullptr;
 }
 
