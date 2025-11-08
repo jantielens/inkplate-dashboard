@@ -68,31 +68,45 @@ void NormalModeController::execute() {
     int wifiRSSI = WiFi.RSSI();
     String wifiBSSID = WiFi.BSSIDstr();
     
-    // Sync time via NTP and check if current hour is enabled for updates
-    // Configure timezone to UTC first (we'll apply offset manually)
-    timerStart = millis();
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+    // Check if NTP sync is needed
+    // Skip NTP sync if all 24 hours are enabled (no hourly scheduling needed)
+    bool allHoursEnabled = ConfigManager::areAllHoursEnabled(config.updateHours);
+    time_t now;
     
-    // Wait for NTP sync with timeout (up to 7 seconds)
-    // Reduced from 15s (30 × 500ms) to 7s (70 × 100ms)
-    // Real-world data shows normal syncs: 0-0.01s, first boot: ~4s, rare spike: 3.5s
-    LogBox::begin("NTP Time Sync");
-    time_t now = time(nullptr);
-    int ntpRetries = 0;
-    while (now < 24 * 3600 && ntpRetries < 70) {  // 24*3600 = 1970-01-01 00:40:00 (minimal valid time)
-        delay(100);  // Reduced from 500ms to 100ms for more responsive polling
-        now = time(nullptr);
-        ntpRetries++;
-    }
-    
-    if (now < 24 * 3600) {
-        LogBox::line("WARNING: NTP sync timeout, using last known time");
+    if (allHoursEnabled) {
+        // All hours enabled - skip NTP sync for scheduling optimization
+        LogBox::begin("NTP Time Sync");
+        LogBox::line("Skipped - all 24 hours enabled");
         LogBox::end();
+        now = time(nullptr);  // Use last known time
+        timings.ntp_ms = 0;
     } else {
-        LogBox::line("Time synced via NTP");
-        LogBox::end();
+        // Sync time via NTP to check if current hour is enabled for updates
+        // Configure timezone to UTC first (we'll apply offset manually)
+        timerStart = millis();
+        configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+        
+        // Wait for NTP sync with timeout (up to 7 seconds)
+        // Reduced from 15s (30 × 500ms) to 7s (70 × 100ms)
+        // Real-world data shows normal syncs: 0-0.01s, first boot: ~4s, rare spike: 3.5s
+        LogBox::begin("NTP Time Sync");
+        now = time(nullptr);
+        int ntpRetries = 0;
+        while (now < 24 * 3600 && ntpRetries < 70) {  // 24*3600 = 1970-01-01 00:40:00 (minimal valid time)
+            delay(100);  // Reduced from 500ms to 100ms for more responsive polling
+            now = time(nullptr);
+            ntpRetries++;
+        }
+        
+        if (now < 24 * 3600) {
+            LogBox::line("WARNING: NTP sync timeout, using last known time");
+            LogBox::end();
+        } else {
+            LogBox::line("Time synced via NTP");
+            LogBox::end();
+        }
+        timings.ntp_ms = millis() - timerStart;
     }
-    timings.ntp_ms = millis() - timerStart;
     
     struct tm* timeinfo = localtime(&now);
     
