@@ -255,11 +255,15 @@ void PowerManager::prepareForSleep() {
 }
 
 void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs) {
-    // Calculate sleep duration
-    uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+    // Configure wake sources based on refresh interval
+    // If interval is 0, only button wake is enabled (button-only mode)
+    bool buttonOnlyMode = (refreshRateMinutes == 0);
     
-    // Configure timer wake source
-    esp_sleep_enable_timer_wakeup(sleepDuration);
+    if (!buttonOnlyMode) {
+        // Calculate sleep duration and configure timer wake source
+        uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+        esp_sleep_enable_timer_wakeup(sleepDuration);
+    }
     
     // Re-configure button wake source (if available)
     // Must be set again because esp_sleep_enable_* doesn't accumulate
@@ -271,14 +275,27 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loo
     rtc_was_running = true;
     
     LogBox::begin("Entering Deep Sleep");
-    LogBox::linef("Duration: %u minutes", refreshRateMinutes);
+    if (buttonOnlyMode) {
+        LogBox::line("Button-only mode (interval = 0)");
+        LogBox::line("No automatic refresh - wake by button press only");
+    } else {
+        LogBox::linef("Duration: %u minutes", refreshRateMinutes);
+    }
     if (loopTimeMs > 0) {
         LogBox::linef("Full loop time: %lums", loopTimeMs);
     }
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
-    LogBox::line("Wake sources: TIMER + BUTTON");
+    if (buttonOnlyMode) {
+        LogBox::line("Wake sources: BUTTON only");
+    } else {
+        LogBox::line("Wake sources: TIMER + BUTTON");
+    }
     #else
-    LogBox::line("Wake sources: TIMER only");
+    if (buttonOnlyMode) {
+        LogBox::line("Wake sources: NONE (board has no button - will not wake!)");
+    } else {
+        LogBox::line("Wake sources: TIMER only");
+    }
     #endif
     LogBox::end();
     
@@ -286,18 +303,22 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loo
     Serial.flush();
     
     // Enter deep sleep
-    // The device will wake up either from:
-    // 1. Timer (after refreshRateMinutes)
-    // 2. Button press (ext0 wake source configured in begin())
+    // The device will wake up from:
+    // - Button-only mode (interval=0): Button press only (if board has button)
+    // - Normal mode (interval>0): Timer OR Button press (if board has button)
     esp_deep_sleep_start();
 }
 
 void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs) {
-    // Calculate sleep duration
-    uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+    // Configure wake sources based on refresh interval
+    // If interval is 0, only button wake is enabled (button-only mode)
+    bool buttonOnlyMode = (refreshRateMinutes == 0.0f);
     
-    // Configure timer wake source
-    esp_sleep_enable_timer_wakeup(sleepDuration);
+    if (!buttonOnlyMode) {
+        // Calculate sleep duration and configure timer wake source
+        uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+        esp_sleep_enable_timer_wakeup(sleepDuration);
+    }
     
     // Re-configure button wake source (if available)
     // Must be set again because esp_sleep_enable_* doesn't accumulate
@@ -309,14 +330,27 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTi
     rtc_was_running = true;
     
     LogBox::begin("Entering Deep Sleep");
-    LogBox::linef("Duration: %.2f minutes", refreshRateMinutes);
+    if (buttonOnlyMode) {
+        LogBox::line("Button-only mode (interval = 0)");
+        LogBox::line("No automatic refresh - wake by button press only");
+    } else {
+        LogBox::linef("Duration: %.2f minutes", refreshRateMinutes);
+    }
     if (loopTimeMs > 0) {
         LogBox::linef("Full loop time: %lums", loopTimeMs);
     }
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
-    LogBox::line("Wake sources: TIMER + BUTTON");
+    if (buttonOnlyMode) {
+        LogBox::line("Wake sources: BUTTON only");
+    } else {
+        LogBox::line("Wake sources: TIMER + BUTTON");
+    }
     #else
-    LogBox::line("Wake sources: TIMER only");
+    if (buttonOnlyMode) {
+        LogBox::line("Wake sources: NONE (board has no button - will not wake!)");
+    } else {
+        LogBox::line("Wake sources: TIMER only");
+    }
     #endif
     LogBox::end();
     
@@ -324,9 +358,9 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTi
     Serial.flush();
     
     // Enter deep sleep
-    // The device will wake up either from:
-    // 1. Timer (after refreshRateMinutes)
-    // 2. Button press (ext0 wake source configured in begin())
+    // The device will wake up from:
+    // - Button-only mode (interval=0): Button press only (if board has button)
+    // - Normal mode (interval>0): Timer OR Button press (if board has button)
     esp_deep_sleep_start();
 }
 

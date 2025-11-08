@@ -46,7 +46,7 @@
 // Carousel constraints
 #define MAX_IMAGE_SLOTS 10
 #define MAX_URL_LENGTH 250
-#define MIN_INTERVAL_MINUTES 1
+#define MIN_INTERVAL_MINUTES 0  // 0 = button-only mode (no automatic refresh)
 #define DEFAULT_INTERVAL_MINUTES 5
 
 // Default values
