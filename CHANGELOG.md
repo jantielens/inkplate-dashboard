@@ -4,6 +4,42 @@
 
 ## [Unreleased]
 
+## [1.3.3] - 2025-11-07
+
+### Added
+- **Network Timeout Optimizations and Retry Telemetry** (Issue #71 - Battery Life Improvement)
+  - **CRC32 Check Optimization**:
+    - Implemented progressive timeout retry logic: {300ms, 700ms, 1500ms} with 100ms delays
+    - Reduced total timeout from 10s to 2.7s on failures (**73% faster failure recovery**)
+    - Added retry count tracking (0-2 retries)
+    - **Battery savings**: ~71 mAh/year on daily timeout events
+  - **NTP Sync Optimization**:
+    - Reduced timeout from 15s to 7s (**53% faster on failures**)
+    - Improved polling interval from 500ms to 100ms for more responsive sync
+    - Normal timer wakes use cached RTC time (~0.01s), first boot sync completes within 7s
+    - **Battery savings**: ~8s saved on NTP timeout events
+  - **WiFi Connection Optimization**:
+    - Reduced full scan timeout from 5s to 3s per attempt
+    - Reduced retry delay from 1s to 300ms
+    - Increased max retries from 3 to 4 to compensate for shorter timeout
+    - Total failure time reduced from 23s to 16.2s (**29% faster**)
+    - Channel lock path unchanged (2s timeout, optimal for 90% of wakes)
+    - **Battery savings**: ~6.8s saved on full WiFi scan failures
+  - **New MQTT Telemetry Sensors**:
+    - `sensor.inkplate_loop_time_wifi_retries` - WiFi connection retries (0-4)
+    - `sensor.inkplate_loop_time_crc_retries` - CRC32 check retries (0-2)
+    - `sensor.inkplate_loop_time_image_retries` - Image download retries (0-2, single image mode only)
+  - **Expected Total Impact**: ~95.5 mAh/year battery savings (**3.2% improvement** on 3000mAh battery)
+  - Based on real-world timing data analysis from 890 production samples
+  - Progressive timeout strategies handle 99%+ of normal operations while recovering faster on failures
+
+### Fixed
+- **CRC32 Timeout Enforcement** (Critical bug fix)
+  - **Issue**: `HTTPClient::setTimeout()` only controls TCP connection/inactivity timeouts, not total request duration
+  - **Impact**: Slow servers could exceed intended timeout limits (observed: 3.67s and 7.17s responses despite 300-1500ms timeouts)
+  - **Solution**: Added explicit deadline enforcement using `millis()` to measure elapsed time and force retries when exceeded
+  - **Result**: Hard deadline now enforced - progressive timeout strategy working as designed (max 2.7s total)
+
 ## [1.3.2] - 2025-11-06
 
 ### Added

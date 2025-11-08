@@ -81,13 +81,18 @@ public:
     // ntpTimeSeconds: NTP sync time
     // crcTimeSeconds: CRC32 check time
     // imageTimeSeconds: Image download and display time
+    // Retry counts (255 to skip):
+    // wifiRetryCount: WiFi connection retries (0-4)
+    // crcRetryCount: CRC32 check retries (0-2)
+    // imageRetryCount: Image download retries (0-2)
     bool publishAllTelemetry(const String& deviceId, const String& deviceName, const String& modelName,
                              WakeupReason wakeReason, float batteryVoltage, int batteryPercentage,
                              int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32 = 0,
                              const String& lastLogMessage = "", const String& lastLogSeverity = "info",
                              const String& wifiBSSID = "",
                              float wifiTimeSeconds = 0, float ntpTimeSeconds = 0, 
-                             float crcTimeSeconds = 0, float imageTimeSeconds = 0);
+                             float crcTimeSeconds = 0, float imageTimeSeconds = 0,
+                             uint8_t wifiRetryCount = 255, uint8_t crcRetryCount = 255, uint8_t imageRetryCount = 255);
     
     // Check if MQTT is configured
     bool isConfigured();

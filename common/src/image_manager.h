@@ -16,8 +16,9 @@ public:
     // Returns true if changed or check failed (should download)
     // Returns false if unchanged (skip download)
     // If outNewCRC32 is provided, outputs the new CRC32 value fetched from server
+    // If outRetryCount is provided, outputs the number of retry attempts made (0-2)
     // Note: Does NOT save the CRC32 - caller must call saveCRC32() after successful display
-    bool checkCRC32Changed(const char* url, uint32_t* outNewCRC32 = nullptr);
+    bool checkCRC32Changed(const char* url, uint32_t* outNewCRC32 = nullptr, uint8_t* outRetryCount = nullptr);
     
     // Save CRC32 value (deferred until after successful image display)
     void saveCRC32(uint32_t crc32Value);

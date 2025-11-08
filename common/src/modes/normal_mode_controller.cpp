@@ -22,6 +22,16 @@ void NormalModeController::execute() {
         return;
     }
     
+    // Capture image retry count from RTC memory (only for single image mode)
+    // In single image mode: imageStateIndex tracks retry attempts (0 = first attempt, 1-2 = retries)
+    // In carousel mode: imageStateIndex tracks carousel position, so we report 0 retries
+    if (config.imageCount == 1) {
+        timings.image_retry_count = *imageStateIndex;
+    } else {
+        // Carousel mode - retry count not applicable (report 0)
+        timings.image_retry_count = 0;
+    }
+    
     if (config.debugMode) {
         int debugInterval = config.getAverageInterval();
         uiStatus->showDebugStatus(config.wifiSSID.c_str(), debugInterval);
@@ -49,7 +59,7 @@ void NormalModeController::execute() {
     
     // Connect to WiFi to sync time via NTP (measure timing)
     timerStart = millis();
-    if (!wifiManager->connectToWiFi()) {
+    if (!wifiManager->connectToWiFi(&timings.wifi_retry_count)) {
         handleWiFiFailure(config, loopStartTime);
         return;
     }
@@ -63,12 +73,14 @@ void NormalModeController::execute() {
     timerStart = millis();
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
     
-    // Wait for NTP sync with timeout (up to 15 seconds)
+    // Wait for NTP sync with timeout (up to 7 seconds)
+    // Reduced from 15s (30 × 500ms) to 7s (70 × 100ms)
+    // Real-world data shows normal syncs: 0-0.01s, first boot: ~4s, rare spike: 3.5s
     LogBox::begin("NTP Time Sync");
     time_t now = time(nullptr);
     int ntpRetries = 0;
-    while (now < 24 * 3600 && ntpRetries < 30) {  // 24*3600 = 1970-01-01 00:40:00 (minimal valid time)
-        delay(500);
+    while (now < 24 * 3600 && ntpRetries < 70) {  // 24*3600 = 1970-01-01 00:40:00 (minimal valid time)
+        delay(100);  // Reduced from 500ms to 100ms for more responsive polling
         now = time(nullptr);
         ntpRetries++;
     }
@@ -358,7 +370,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
     crc32WasChecked = true;
     // Use first image URL for CRC32 check (only called in single image mode)
     String imageUrl = (config.imageCount > 0) ? config.imageUrls[0] : "";
-    bool shouldDownload = imageManager->checkCRC32Changed(imageUrl.c_str(), &newCRC32);
+    bool shouldDownload = imageManager->checkCRC32Changed(imageUrl.c_str(), &newCRC32, &timings.crc_retry_count);
     crc32Matched = !shouldDownload;
     
     // Capture CRC timing (whether we continue or return early)
@@ -399,7 +411,8 @@ void NormalModeController::publishMQTTTelemetry(const String& deviceId, const St
                                         batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds, imageCRC32, 
                                         message, severity, wifiBSSID,
                                         timings.wifiSeconds(), timings.ntpSeconds(), 
-                                        timings.crcSeconds(), timings.imageSeconds());
+                                        timings.crcSeconds(), timings.imageSeconds(),
+                                        timings.wifi_retry_count, timings.crc_retry_count, timings.image_retry_count);
     }
 }
 

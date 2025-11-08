@@ -20,6 +20,11 @@ struct LoopTimings {
     uint32_t crc_ms = 0;
     uint32_t image_ms = 0;
     
+    // Retry counts for telemetry
+    uint8_t wifi_retry_count = 0;   // WiFi connection retries (0-4)
+    uint8_t crc_retry_count = 0;    // CRC32 check retries (0-2)
+    uint8_t image_retry_count = 0;  // Image download retries (0-2, cross-sleep)
+    
     // Convert to seconds for MQTT publishing
     float wifiSeconds() const { return wifi_ms / 1000.0; }
     float ntpSeconds() const { return ntp_ms / 1000.0; }
