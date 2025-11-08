@@ -246,15 +246,20 @@ Open browser to:
   - If you're using [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) which automatically generates CRC32 files
 - **When to disable**: If using carousel mode, if your server doesn't provide `.crc32` files, or if your image changes frequently
 
-#### Timezone Offset
-- **What it is**: Your timezone offset from UTC for adjusting hourly schedule times
-- **Required**: No (defaults to 0 = UTC/GMT)
-- **Range**: -12 to +14 hours
-- **Format**: Enter as a number: `0` for UTC, `-5` for EST, `+1` for CET, `+9` for JST, etc.
-- **Important note**: Daylight Saving Time changes require manual offset update when DST begins/ends in your region
-- **Used by**: The hourly update schedule to convert UTC time to your local time
-- **Example**: If you're in Eastern Time (EST = -5), enter `-5`. When DST begins (EDT = -4), remember to update it
-- **Tip**: If you're unsure of your offset, search "my timezone offset UTC" or check a time zone website
+#### Timezone
+- **What it is**: Your timezone for adjusting hourly schedule times (automatic DST handling)
+- **Required**: No (defaults to UTC)
+- **How it works**: Select your timezone from a dropdown of 60+ common timezones
+- **Examples**: "Europe/Berlin", "America/New_York", "Asia/Tokyo", "Australia/Sydney"
+- **Benefits**: 
+  - Daylight Saving Time (DST) is applied automatically
+  - No manual updates needed when DST changes
+  - Eliminates schedule errors from forgotten DST adjustments
+- **Used by**: The hourly update schedule to determine your local time
+- **Version**: Requires firmware v1.4.0 or later
+- **See**: [Timezone Configuration Guide](timezone_guide.md) for complete details
+
+**Note for legacy devices**: Devices configured before v1.4.0 with numeric timezone offsets (-12 to +14) will continue to work but are recommended to upgrade to named timezones for automatic DST handling.
 
 #### Screen Rotation
 - **What it is**: The orientation of your display

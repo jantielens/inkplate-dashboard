@@ -6,6 +6,7 @@ This section contains documentation for developers, contributors, and maintainer
 |------|-------------|
 | [BUILD_SYSTEM.md](BUILD_SYSTEM.md) | Documentation for the custom build system and workflow |
 | [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) | Complete release workflow from feature development to production deployment |
+| [TIMEZONE_TESTING.md](TIMEZONE_TESTING.md) | Testing guide for timezone feature with automatic DST |
 | [WEB_FLASHER.md](WEB_FLASHER.md) | Web-based firmware flasher implementation using ESP Web Tools |
 | [DISPLAY_CYCLE.md](DISPLAY_CYCLE.md) | Overview of the device's display cycle and runtime flow |
 
