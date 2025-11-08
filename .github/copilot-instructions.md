@@ -96,12 +96,23 @@ Binaries are in `build/{board}/`:
 
 **ALWAYS update version when making code changes:**
 
-1. Edit `common/src/version.h`:
+1. **Before starting work:** Check current version on main branch in `common/src/version.h`
+
+2. **Before finalizing PR:** Re-check main branch version to avoid conflicts:
+   ```bash
+   git fetch origin main
+   git show origin/main:common/src/version.h | grep FIRMWARE_VERSION
+   ```
+   - If version changed since you started, increment from the NEW version
+   - If your version conflicts, bump to next appropriate version
+   - Update your PR branch: `git rebase origin/main` or `git merge origin/main`
+
+3. Edit `common/src/version.h`:
    ```cpp
    #define FIRMWARE_VERSION "1.3.2"  // Update this
    ```
 
-2. Update `CHANGELOG.md` with new version section:
+4. Update `CHANGELOG.md` with new version section:
    ```markdown
    ## [1.3.2] - 2025-11-06
    
@@ -112,12 +123,25 @@ Binaries are in `build/{board}/`:
    - Bug fix description
    ```
 
-3. Follow **semantic versioning**:
+5. Follow **semantic versioning**:
    - **MAJOR**: Breaking changes (config format changes, API incompatibility)
    - **MINOR**: New features (backward compatible)
    - **PATCH**: Bug fixes (backward compatible)
 
-**The version-check.yml workflow will validate this on PRs.**
+**The version-check.yml workflow will validate this on PRs and detect conflicts.**
+
+### Handling Version Conflicts
+
+If the version-check workflow fails with "version already exists":
+
+1. Fetch latest main: `git fetch origin main`
+2. Check current version: `git show origin/main:common/src/version.h | grep FIRMWARE_VERSION`
+3. Rebase or merge main into your branch: `git rebase origin/main`
+4. Increment to the next version beyond what's now on main
+5. Update `CHANGELOG.md` accordingly
+6. Push updated changes
+
+**CRITICAL:** Never push a version that already exists on main. Always increment from the latest version.
 
 ## GitHub Workflows & CI/CD
 
@@ -325,16 +349,20 @@ UI components are in `common/src/ui/`:
 
 ### Pre-Commit Checklist
 
-1. ✅ Updated `common/src/version.h`
-2. ✅ Updated `CHANGELOG.md`
-3. ✅ Reviewed and updated documentation:
+1. ✅ **Re-check main branch version** to avoid conflicts:
+   - `git fetch origin main`
+   - `git show origin/main:common/src/version.h | grep FIRMWARE_VERSION`
+   - If version changed, rebase/merge main and increment from NEW version
+2. ✅ Updated `common/src/version.h`
+3. ✅ Updated `CHANGELOG.md`
+4. ✅ Reviewed and updated documentation:
    - Check if changes affect user guides in `docs/user/`
    - Check if changes affect developer docs in `docs/dev/`
    - Create new ADR in `docs/dev/adr/` for architectural decisions
    - Update README.md files to index new documentation
-4. ✅ Built all boards: `./build.sh all`
-5. ✅ No compilation errors
-6. ✅ Firmware sizes reasonable (<1.5MB per board)
+5. ✅ Built all boards: `./build.sh all`
+6. ✅ No compilation errors
+7. ✅ Firmware sizes reasonable (<1.5MB per board)
 
 **NOTE:** Do NOT create or push git tags. Release tagging is a manual user action only.
 
