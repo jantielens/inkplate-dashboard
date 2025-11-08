@@ -143,6 +143,33 @@ If the version-check workflow fails with "version already exists":
 
 **CRITICAL:** Never push a version that already exists on main. Always increment from the latest version.
 
+**Resolving CHANGELOG.md conflicts during rebase:**
+
+When rebasing, CHANGELOG.md conflicts are common. Resolve by keeping BOTH version entries:
+
+```markdown
+## [Unreleased]
+
+## [1.3.5] - 2025-11-08    # Your PR version (newer)
+### Changed
+- Your changes here
+
+## [1.3.4] - 2025-11-08    # Version from main (older)
+### Added
+- Changes from main here
+```
+
+**Steps:**
+1. Edit CHANGELOG.md to include both versions (yours first, then main's)
+2. Remove conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+3. `git add CHANGELOG.md`
+4. `git rebase --continue`
+
+**IMPORTANT:** If you cannot force-push (due to tool limitations), clearly document the rebase in a PR comment and ask the user to complete the force-push manually:
+```bash
+git push --force-with-lease origin <branch-name>
+```
+
 ## GitHub Workflows & CI/CD
 
 ### Pull Request Workflows
