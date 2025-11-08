@@ -1,9 +1,9 @@
-#include "normal_mode_controller.h"
-#include "../logger.h"
-#include "../ui/ui_status.h"
-#include "../ui/ui_error.h"
-#include "../ui/ui_messages.h"
-#include "../timezones.h"
+#include <src/modes/normal_mode_controller.h>
+#include <src/logger.h>
+#include <src/ui/ui_status.h>
+#include <src/ui/ui_error.h>
+#include <src/ui/ui_messages.h>
+#include <src/timezones.h>
 #include <WiFi.h>
 #include <time.h>
 
