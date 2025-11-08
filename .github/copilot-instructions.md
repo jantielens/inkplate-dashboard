@@ -164,11 +164,43 @@ When rebasing, CHANGELOG.md conflicts are common. Resolve by keeping BOTH versio
 2. Remove conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
 3. `git add CHANGELOG.md`
 4. `git rebase --continue`
+5. **VERIFY the rebase completed successfully:**
+   ```bash
+   git log --oneline -5
+   # Should show your commits AFTER main's latest commit
+   ```
+6. **VERIFY branch is ready to push:**
+   ```bash
+   git status
+   # Should say "Your branch and 'origin/<branch>' have diverged"
+   # Should NOT say "rebase in progress" or show conflicts
+   ```
 
-**IMPORTANT:** If you cannot force-push (due to tool limitations), clearly document the rebase in a PR comment and ask the user to complete the force-push manually:
+**CRITICAL - Completing the rebase:**
+
+If you **CAN** force-push:
 ```bash
 git push --force-with-lease origin <branch-name>
 ```
+
+If you **CANNOT** force-push (due to tool limitations):
+1. **VERIFY** the rebase succeeded locally: `git log --oneline -5`
+2. **DO NOT** claim the rebase is complete until the push succeeds
+3. Create a PR comment with **EXACT COMMANDS** for the user:
+   ```markdown
+   Rebase completed locally but I cannot force-push. Please run:
+   
+   ```bash
+   git fetch origin
+   git checkout <branch-name>
+   git log --oneline -5  # Verify rebase looks correct
+   git push --force-with-lease origin <branch-name>
+   ```
+   
+   Current HEAD commit: <commit-sha>
+   Expected to replace: <old-sha>
+   ```
+4. **DO NOT** update the PR description claiming success until push is verified
 
 ## GitHub Workflows & CI/CD
 
@@ -463,6 +495,30 @@ python3 -m http.server 8000
 **Issue: Slow boot on Inkplate 2**
 - Cause: Too many intermediate screens
 - Solution: Skip screens when `DISPLAY_MINIMAL_UI=true`
+
+### Rebase/Merge Conflict Issues
+
+**Issue: Agent claims rebase succeeded but PR still shows conflicts**
+- Cause: Agent completed rebase locally but failed to push, or push didn't succeed
+- Solution: 
+  1. Check branch history: `git log --oneline origin/<branch> -5`
+  2. If commits don't show rebase, the push never succeeded
+  3. Agent must either: (a) successfully push, OR (b) provide user with exact commands and NOT claim success
+
+**Issue: CHANGELOG.md conflicts during rebase**
+- Cause: Multiple versions added to CHANGELOG between PR start and rebase
+- Solution: Keep BOTH version entries, newer version first (see "Handling Version Conflicts" section)
+
+**Issue: PR shows "mergeable_state: dirty" after claimed rebase**
+- Cause: Rebase was attempted but not completed or pushed
+- Solution: Re-run the rebase process:
+  1. `git fetch origin`
+  2. `git checkout <branch>`
+  3. `git rebase origin/main`
+  4. Resolve conflicts
+  5. `git rebase --continue`
+  6. Verify: `git log --oneline -5` (should show PR commits AFTER main's latest)
+  7. `git push --force-with-lease origin <branch>`
 
 ## Documentation Requirements
 
