@@ -21,6 +21,7 @@
 #define PREF_UPDATE_HOURS_1 "upd_hours_1"
 #define PREF_UPDATE_HOURS_2 "upd_hours_2"
 #define PREF_TIMEZONE_OFFSET "tz_offset"
+#define PREF_TIMEZONE_NAME "tz_name"
 #define PREF_SCREEN_ROTATION "screen_rot"
 
 // Static IP configuration keys
@@ -64,7 +65,8 @@ struct DashboardConfig {
     bool debugMode;
     bool useCRC32Check;  // Enable CRC32-based change detection
     uint8_t updateHours[3];  // 24-bit bitmask: bit i = hour i enabled (0-23)
-    int timezoneOffset;  // Timezone offset in hours (-12 to +14)
+    int timezoneOffset;  // Timezone offset in hours (-12 to +14) - LEGACY, kept for backward compatibility
+    String timezoneName;  // Named timezone (e.g., "Europe/Berlin", "America/New_York") - preferred over numeric offset
     uint8_t screenRotation;  // Screen rotation: 0, 1, 2, 3 (0°, 90°, 180°, 270°)
     
     // Static IP configuration
@@ -92,6 +94,7 @@ struct DashboardConfig {
         debugMode(false),
         useCRC32Check(false),
         timezoneOffset(0),
+        timezoneName("UTC"),
         screenRotation(DEFAULT_SCREEN_ROTATION),
         useStaticIP(false),
         staticIP(""),
@@ -202,9 +205,13 @@ public:
     void getUpdateHours(uint8_t hours[3]);  // Get entire bitmask
     void setUpdateHours(const uint8_t hours[3]);  // Set entire bitmask
     
-    // Timezone offset
+    // Timezone offset (legacy - kept for backward compatibility)
     int getTimezoneOffset();
     void setTimezoneOffset(int offset);  // offset: -12 to +14 hours
+    
+    // Timezone name (preferred method)
+    String getTimezoneName();
+    void setTimezoneName(const String& timezoneName);
     
     // Friendly name validation and sanitization
     // Returns true if sanitization successful, false if input completely invalid

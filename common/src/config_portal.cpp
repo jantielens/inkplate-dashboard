@@ -4,6 +4,7 @@
 #include "config_portal_js.h"
 #include "version.h"
 #include "config.h"
+#include "timezones.h"
 #include <src/logo_bitmap.h>
 #include "logger.h"
 #include "github_ota.h"
@@ -164,6 +165,7 @@ void ConfigPortal::handleSubmit() {
     String mqttUser = _server->arg("mqttuser");
     String mqttPass = _server->arg("mqttpass");
     String timezoneStr = _server->arg("timezone");
+    String timezoneNameStr = _server->arg("timezonename");  // NEW: named timezone parameter
     String rotationStr = _server->arg("rotation");
     bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
@@ -224,10 +226,22 @@ void ConfigPortal::handleSubmit() {
         }
     }
     
-    // Parse timezone offset
-    int timezoneOffset = timezoneStr.toInt();
-    if (timezoneOffset < -12 || timezoneOffset > 14) {
-        timezoneOffset = 0;  // Default to UTC on invalid input
+    // Parse timezone - prefer named timezone over numeric offset
+    String selectedTimezoneName = "UTC";  // Default to UTC
+    int timezoneOffset = 0;
+    
+    if (timezoneNameStr.length() > 0) {
+        // Named timezone provided - use this (preferred method)
+        selectedTimezoneName = timezoneNameStr;
+        LogBox::line("Using named timezone: " + selectedTimezoneName);
+    } else if (timezoneStr.length() > 0) {
+        // Legacy numeric offset provided
+        timezoneOffset = timezoneStr.toInt();
+        if (timezoneOffset < -12 || timezoneOffset > 14) {
+            timezoneOffset = 0;  // Default to UTC on invalid input
+        }
+        selectedTimezoneName = "UTC";  // Use UTC as fallback for numeric offset
+        LogBox::linef("Using legacy numeric offset: %+d", timezoneOffset);
     }
     
     // Parse screen rotation
@@ -319,7 +333,8 @@ void ConfigPortal::handleSubmit() {
     config.updateHours[0] = updateHours[0];
     config.updateHours[1] = updateHours[1];
     config.updateHours[2] = updateHours[2];
-    config.timezoneOffset = timezoneOffset;
+    config.timezoneOffset = timezoneOffset;  // Legacy - kept for backward compatibility
+    config.timezoneName = selectedTimezoneName;  // Preferred method
     config.screenRotation = screenRotation;
     
     // Save static IP configuration
@@ -442,6 +457,19 @@ bool ConfigPortal::validateIPv4Format(const String& ip) {
     }
     
     return true;
+}
+
+String ConfigPortal::generateTimezoneOptions(const String& selectedTimezone) {
+    String options = "";
+    
+    // Generate dropdown options from timezone mapping table
+    for (int i = 0; i < TIMEZONE_COUNT; i++) {
+        String displayName = String(TIMEZONE_MAPPINGS[i].displayName);
+        String selected = (displayName.equals(selectedTimezone)) ? " selected" : "";
+        options += "<option value='" + displayName + "'" + selected + ">" + displayName + "</option>";
+    }
+    
+    return options;
 }
 
 String ConfigPortal::generateConfigPage() {
@@ -654,15 +682,19 @@ String ConfigPortal::generateConfigPage() {
         String buttonDisplay = existingCount >= MAX_IMAGE_SLOTS ? " style='display:none;'" : "";
         html += "<button type='button' id='addImageBtn' onclick='addImageSlot()'" + buttonDisplay + ">➕ Add Another Image (up to 10 total)</button>";
         
-        // Timezone Offset
+        // Timezone
         html += "<div class='form-group'>";
-        html += "<label for='timezone'>Timezone Offset (UTC)</label>";
+        html += "<label for='timezone'>Timezone</label>";
         if (hasConfig) {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
+            html += "<select id='timezone' name='timezonename'>";
+            html += generateTimezoneOptions(currentConfig.timezoneName);
+            html += "</select>";
         } else {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
+            html += "<select id='timezone' name='timezonename'>";
+            html += generateTimezoneOptions("UTC");
+            html += "</select>";
         }
-        html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
+        html += "<div class='help-text'>Select your timezone. Daylight Saving Time (DST) will be applied automatically.</div>";
         html += "</div>";
         
         // Screen Rotation

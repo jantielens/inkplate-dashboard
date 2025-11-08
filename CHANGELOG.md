@@ -4,6 +4,31 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-11-08
+
+### Added
+- **Named Timezone Support with Automatic DST Calculation** (Issue #33 - Major UX Enhancement)
+  - Replaced manual numeric timezone offset (-12 to +14) with named timezone selection
+  - Added dropdown of 60+ common timezones (Europe, Americas, Asia, Pacific, Africa)
+  - Automatic Daylight Saving Time (DST) handling using POSIX TZ strings
+  - Users no longer need to manually update timezone offset twice per year
+  - Examples: "Europe/Berlin", "America/New_York", "Asia/Tokyo", "Australia/Sydney"
+  - Timezone database includes proper DST transition rules for each region
+  - Added `timezones.h` with curated IANA timezone mappings to POSIX TZ strings
+  - Added `PREF_TIMEZONE_NAME` NVS key for storing timezone name
+  - Added `timezoneName` field to `DashboardConfig` struct
+  - Updated config portal UI with timezone dropdown and live preview
+  - Updated NTP sync logic to use `setenv("TZ")` and `tzset()` for automatic DST
+  - Backward compatible: devices with legacy numeric offset still work (defaults to UTC)
+  - **User Impact**: Eliminates DST-related schedule errors and improves usability
+
+### Changed
+- Config portal now shows "Timezone" dropdown instead of "Timezone Offset (UTC)" numeric input
+- Help text updated to indicate automatic DST handling
+- Timezone offset field marked as legacy (kept for backward compatibility)
+- NTP time sync now respects named timezone for local hour calculation
+- `calculateSleepMinutesToNextEnabledHour()` uses timezone-aware `localtime()` directly
+
 ## [1.3.5] - 2025-11-08
 
 ### Changed

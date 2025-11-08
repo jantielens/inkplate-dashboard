@@ -1,5 +1,11 @@
-#include <src/modes/normal_mode_controller.h>
+#include "normal_mode_controller.h"
+#include "../logger.h"
+#include "../ui/ui_status.h"
+#include "../ui/ui_error.h"
+#include "../ui/ui_messages.h"
+#include "../timezones.h"
 #include <WiFi.h>
+#include <time.h>
 
 NormalModeController::NormalModeController(Inkplate* disp, ConfigManager* config, WiFiManager* wifi,
                                            ImageManager* image, PowerManager* power, MQTTManager* mqtt,
@@ -73,6 +79,38 @@ void NormalModeController::execute() {
     bool allHoursEnabled = ConfigManager::areAllHoursEnabled(config.updateHours);
     time_t now;
     
+    // Apply timezone setting before NTP sync
+    // Prefer named timezone over legacy numeric offset
+    if (config.timezoneName.length() > 0) {
+        // Named timezone - look up POSIX TZ string and apply it
+        const char* posixTz = findPosixTzByName(config.timezoneName);
+        if (posixTz != nullptr) {
+            setenv("TZ", posixTz, 1);  // Set TZ environment variable (1 = overwrite if exists)
+            tzset();  // Apply timezone
+            LogBox::begin("Timezone Configuration");
+            LogBox::line("Mode: Named timezone");
+            LogBox::line("Name: " + config.timezoneName);
+            LogBox::line("POSIX: " + String(posixTz));
+            LogBox::end();
+        } else {
+            // Invalid timezone name - fall back to UTC
+            LogBox::begin("Timezone Configuration");
+            LogBox::line("WARNING: Invalid timezone name: " + config.timezoneName);
+            LogBox::line("Falling back to UTC");
+            LogBox::end();
+            setenv("TZ", "UTC0", 1);
+            tzset();
+        }
+    } else {
+        // Legacy numeric offset mode - apply UTC (we'll apply offset manually later for backward compatibility)
+        setenv("TZ", "UTC0", 1);
+        tzset();
+        LogBox::begin("Timezone Configuration");
+        LogBox::line("Mode: Legacy numeric offset");
+        LogBox::linef("Offset: UTC%+d", config.timezoneOffset);
+        LogBox::end();
+    }
+    
     if (allHoursEnabled) {
         // All hours enabled - skip NTP sync for scheduling optimization
         LogBox::begin("NTP Time Sync");
@@ -81,10 +119,9 @@ void NormalModeController::execute() {
         now = time(nullptr);  // Use last known time
         timings.ntp_ms = 0;
     } else {
-        // Sync time via NTP to check if current hour is enabled for updates
-        // Configure timezone to UTC first (we'll apply offset manually)
+        // Sync time via NTP
         timerStart = millis();
-        configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+        configTime(0, 0, "pool.ntp.org", "time.nist.gov");  // gmtOffset=0, daylightOffset=0 (TZ already set)
         
         // Wait for NTP sync with timeout (up to 7 seconds)
         // Reduced from 15s (30 × 500ms) to 7s (70 × 100ms)
@@ -110,15 +147,28 @@ void NormalModeController::execute() {
     
     struct tm* timeinfo = localtime(&now);
     
-    // Apply timezone offset
-    int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, config.timezoneOffset);
+    // Determine current local hour
+    int currentHour;
+    if (config.timezoneName.length() > 0) {
+        // Named timezone - localtime() already returns local time with DST applied
+        currentHour = timeinfo->tm_hour;
+    } else {
+        // Legacy numeric offset mode - apply offset manually
+        currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, config.timezoneOffset);
+    }
     
     // Log current time
     LogBox::begin("Hourly Schedule Check");
     LogBox::linef("Current time (UTC): %04d-%02d-%02d %02d:%02d:%02d",
                   timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
                   timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    LogBox::linef("Timezone offset: %+d, Local hour: %d", config.timezoneOffset, currentHour);
+    if (config.timezoneName.length() > 0) {
+        LogBox::line("Timezone: " + config.timezoneName + " (automatic DST)");
+        LogBox::linef("Local hour: %d", currentHour);
+    } else {
+        LogBox::linef("Timezone offset: %+d (legacy mode)", config.timezoneOffset);
+        LogBox::linef("Local hour: %d", currentHour);
+    }
     
     // Only enforce hourly schedule for timer-based wakeups from deep sleep
     // Skip enforcement for button presses, config mode, first boot, and other manual triggers
@@ -324,7 +374,9 @@ float NormalModeController::calculateSleepMinutesToNextEnabledHour(time_t curren
     struct tm* timeinfo = localtime(&currentTime);
     
     // Calculate current local hour and minutes
-    int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, timezoneOffset);
+    // localtime() already returns local time (with DST) when TZ is set via setenv/tzset
+    // For legacy mode (numeric offset), we need to apply the offset manually
+    int currentHour = timeinfo->tm_hour;  // Use hour from localtime() directly
     int currentMinute = timeinfo->tm_min;
     int currentSecond = timeinfo->tm_sec;
     

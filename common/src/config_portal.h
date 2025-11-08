@@ -75,6 +75,9 @@ private:
     // CSS styles
     String getCSS();
     
+    // Helper functions
+    String generateTimezoneOptions(const String& selectedTimezone);
+    
     // Validation helpers
     bool validateIPv4Format(const String& ip);
 };

@@ -89,6 +89,9 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     // Load timezone offset
     config.timezoneOffset = _preferences.getInt(PREF_TIMEZONE_OFFSET, 0);
     
+    // Load timezone name (preferred over numeric offset)
+    config.timezoneName = _preferences.getString(PREF_TIMEZONE_NAME, "UTC");
+    
     // Load screen rotation
     config.screenRotation = _preferences.getUChar(PREF_SCREEN_ROTATION, DEFAULT_SCREEN_ROTATION);
     
@@ -184,8 +187,11 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putUChar(PREF_UPDATE_HOURS_1, config.updateHours[1]);
     _preferences.putUChar(PREF_UPDATE_HOURS_2, config.updateHours[2]);
     
-    // Save timezone offset
+    // Save timezone offset (legacy - kept for backward compatibility)
     _preferences.putInt(PREF_TIMEZONE_OFFSET, config.timezoneOffset);
+    
+    // Save timezone name (preferred method)
+    _preferences.putString(PREF_TIMEZONE_NAME, config.timezoneName);
     
     // Save screen rotation
     _preferences.putUChar(PREF_SCREEN_ROTATION, config.screenRotation);
@@ -506,6 +512,24 @@ void ConfigManager::setTimezoneOffset(int offset) {
     _preferences.putInt(PREF_TIMEZONE_OFFSET, offset);
     LogBox::messagef("Config Update", "Timezone offset set to UTC%s%d", offset >= 0 ? "+" : "", offset);
 }
+
+String ConfigManager::getTimezoneName() {
+    if (!_initialized && !begin()) {
+        return "UTC";  // Default to UTC
+    }
+    return _preferences.getString(PREF_TIMEZONE_NAME, "UTC");
+}
+
+void ConfigManager::setTimezoneName(const String& timezoneName) {
+    if (!_initialized && !begin()) {
+        LogBox::message("ConfigManager Error", "ConfigManager not initialized");
+        return;
+    }
+    
+    _preferences.putString(PREF_TIMEZONE_NAME, timezoneName);
+    LogBox::message("Config Update", "Timezone name set to: " + timezoneName);
+}
+
 
 // Static IP getters
 bool ConfigManager::getUseStaticIP() {
