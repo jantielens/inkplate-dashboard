@@ -330,6 +330,37 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTi
     esp_deep_sleep_start();
 }
 
+void PowerManager::enterDeepSleepIndefinitely(unsigned long loopTimeMs) {
+    // No timer wake source configured - only button wake
+    // Re-configure button wake source (if available)
+    #if defined(HAS_BUTTON) && HAS_BUTTON == true
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)_buttonPin, 0);  // 0 = LOW
+    #endif
+    
+    // Mark that we were running (for reset button detection)
+    rtc_was_running = true;
+    
+    LogBox::begin("Entering Deep Sleep");
+    LogBox::line("Duration: INDEFINITE (dormant mode)");
+    if (loopTimeMs > 0) {
+        LogBox::linef("Full loop time: %lums", loopTimeMs);
+    }
+    #if defined(HAS_BUTTON) && HAS_BUTTON == true
+    LogBox::line("Wake sources: BUTTON only");
+    #else
+    LogBox::line("Wake sources: NONE (dormant mode not supported without button)");
+    #endif
+    LogBox::end();
+    
+    // Flush serial before sleeping
+    Serial.flush();
+    
+    // Enter deep sleep
+    // The device will only wake up from button press
+    // (or hardware reset on boards without button)
+    esp_deep_sleep_start();
+}
+
 float PowerManager::readBatteryVoltage(void* inkplate) {
     LogBox::begin("Reading battery voltage");
     

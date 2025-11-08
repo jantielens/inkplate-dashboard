@@ -129,15 +129,15 @@ void NormalModeController::execute() {
     // Check for dormant mode (all hours disabled)
     if (allHoursDisabled && wakeReason == WAKEUP_TIMER) {
         LogBox::line("Dormant mode: All 24 hours disabled");
-        LogBox::line("Sleeping for 1 hour to conserve battery");
+        LogBox::line("Sleeping indefinitely (button wake only)");
         LogBox::end();
         
         powerManager->disableWatchdog();
         powerManager->prepareForSleep();
         unsigned long loopTimeMs = millis() - loopStartTime;
         
-        // Sleep for 60 minutes in dormant mode
-        powerManager->enterDeepSleep((float)60.0, loopTimeMs);
+        // Sleep indefinitely - only wake on button press
+        powerManager->enterDeepSleepIndefinitely(loopTimeMs);
         return;
     }
     

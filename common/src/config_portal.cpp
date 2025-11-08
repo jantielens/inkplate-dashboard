@@ -747,7 +747,7 @@ String ConfigPortal::generateConfigPage() {
         // Hourly Schedule - Update Hours
         html += "<div class='form-group' style='margin-top: 20px;'>";
         html += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery. If all hours are disabled, the device enters dormant mode (sleeps for 1 hour between wake cycles, no automatic updates).</div>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery. If all hours are disabled, the device enters dormant mode (sleeps indefinitely until button press).</div>";
         
         // 24 checkboxes in a 4x6 grid (4 columns for better UI fit)
         html += "<div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;'>";
@@ -776,7 +776,7 @@ String ConfigPortal::generateConfigPage() {
         html += "<div style='font-size: 24px;'>⚠️</div>";
         html += "<div style='flex: 1;'>";
         html += "<strong style='color: #856404; display: block; margin-bottom: 5px;'>Dormant Mode Active</strong>";
-        html += "<p style='margin: 0; color: #856404; font-size: 14px;'>All 24 hours are disabled. The device will enter dormant mode, sleeping for 1 hour between wake cycles to conserve battery. No automatic updates will occur, but manual button presses will still work.</p>";
+        html += "<p style='margin: 0; color: #856404; font-size: 14px;'>All 24 hours are disabled. The device will enter dormant mode, sleeping indefinitely until manually woken by button press. No automatic updates will occur. Press the wake button to trigger an update.</p>";
         html += "</div></div></div>";
         
         html += "</div>";

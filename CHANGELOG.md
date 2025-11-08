@@ -7,20 +7,23 @@
 ## [1.3.6] - 2025-11-08
 
 ### Fixed
-- **Hourly Schedule Edge Case: All Hours Disabled** (Issue: Handle edge case where all 24 hours are disabled)
+- **Hourly Schedule Edge Case: All Hours Disabled** (Issue #37: Handle edge case where all 24 hours are disabled)
   - **Fixed**: Device now enters "dormant mode" when all 24 hours are disabled in the hourly schedule
   - **Dormant mode behavior**:
-    - Device sleeps for 1 hour between wake cycles (instead of attempting to calculate next enabled hour)
-    - Skips NTP synchronization to conserve battery
-    - No automatic updates occur during dormant mode
+    - Device sleeps indefinitely with no timer wake (only button wake enabled)
+    - No periodic wakeups or NTP syncs - maximum battery conservation
     - Manual button presses still trigger updates normally
+    - In carousel mode, button press advances to next image as usual
   - **Configuration portal enhancements**:
     - Added real-time JavaScript validation that warns users when all hours are disabled
     - Warning displays "Dormant Mode Active" message explaining the behavior
     - Updated help text to explain dormant mode
   - **Documentation**: Updated USING.md to explain dormant mode behavior and manual override
-  - **Implementation**: Added `ConfigManager::areAllHoursDisabled()` helper method for detecting this state
-  - **Rationale**: Prevents inefficient repeated wakeups with NTP syncs but no updates, improving battery life and user experience
+  - **Implementation**: 
+    - Added `ConfigManager::areAllHoursDisabled()` helper method for detecting this state
+    - Added `PowerManager::enterDeepSleepIndefinitely()` for button-only wake sleep
+  - **Rationale**: Prevents wasteful periodic wakeups with NTP syncs when no automatic updates are scheduled, maximizing battery life
+  - **Note**: Boards without wake button cannot use dormant mode (would require hardware reset to wake)
 
 ## [1.3.5] - 2025-11-08
 

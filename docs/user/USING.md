@@ -223,11 +223,12 @@ Open browser to:
 - **Battery impact**: Disabling hours can extend battery life - fewer update cycles per day
 - **Smart scheduling**: Device wakes on timer but checks the schedule; only performs update if current hour is enabled
 - **Dormant mode**: If all 24 hours are disabled, the device enters dormant mode:
-  - Sleeps for 1 hour between wake cycles (instead of calculating next enabled hour)
-  - Skips NTP synchronization to save battery
+  - Sleeps indefinitely with no timer wake (only button wake enabled)
   - No automatic updates occur
   - Manual button presses still trigger updates normally
+  - In carousel mode, button press advances to next image as usual
   - Configuration portal shows a warning when all hours are disabled
+  - Boards without wake button: dormant mode not supported (requires hardware reset to wake)
 
 ### Optional Settings
 

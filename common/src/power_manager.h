@@ -45,6 +45,11 @@ public:
     // loopTimeMs: optional full loop time in ms (displayed if > 0)
     void enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs = 0);
     
+    // Enter deep sleep without timer wake source (button-only wake)
+    // Used in dormant mode when all hours are disabled
+    // loopTimeMs: optional full loop time in ms (displayed if > 0)
+    void enterDeepSleepIndefinitely(unsigned long loopTimeMs = 0);
+    
     // Prepare for sleep (shutdown WiFi, display, etc.)
     void prepareForSleep();
     
