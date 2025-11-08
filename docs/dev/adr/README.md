@@ -17,6 +17,7 @@ This folder contains records of architectural decisions and deep-dive technical 
 | [HOURLY_SCHEDULING_TEST_FIXES.md](HOURLY_SCHEDULING_TEST_FIXES.md) | Test feedback and fixes for hourly scheduling |
 | [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) | Notes on retry mechanism and deferred CRC32 |
 | [MODES.md](MODES.md) | Device modes and configuration details |
+| [MQTT_FORCE_UPDATE.md](ADR-MQTT_FORCE_UPDATE.md) | MQTT sensor force_update logic refactoring for Home Assistant diagnostics (v1.3.4) |
 | [NETWORK_TIMEOUT_OPTIMIZATION.md](ADR-NETWORK_TIMEOUT_OPTIMIZATION.md) | Network timeout optimization and retry telemetry (v1.3.3) |
 | [ROTATION_PERFORMANCE_OPTIMIZATION.md](ROTATION_PERFORMANCE_OPTIMIZATION.md) | Screen rotation performance optimization |
 | [SCREEN_ROTATION_IMPLEMENTATION.md](SCREEN_ROTATION_IMPLEMENTATION.md) | Implementation of screen rotation feature |
