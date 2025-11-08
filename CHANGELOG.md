@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [1.3.6] - 2025-11-08
+
+### Fixed
+- **Hourly Schedule Edge Case: All Hours Disabled** (Issue: Handle edge case where all 24 hours are disabled)
+  - **Fixed**: Device now enters "dormant mode" when all 24 hours are disabled in the hourly schedule
+  - **Dormant mode behavior**:
+    - Device sleeps for 1 hour between wake cycles (instead of attempting to calculate next enabled hour)
+    - Skips NTP synchronization to conserve battery
+    - No automatic updates occur during dormant mode
+    - Manual button presses still trigger updates normally
+  - **Configuration portal enhancements**:
+    - Added real-time JavaScript validation that warns users when all hours are disabled
+    - Warning displays "Dormant Mode Active" message explaining the behavior
+    - Updated help text to explain dormant mode
+  - **Documentation**: Updated USING.md to explain dormant mode behavior and manual override
+  - **Implementation**: Added `ConfigManager::areAllHoursDisabled()` helper method for detecting this state
+  - **Rationale**: Prevents inefficient repeated wakeups with NTP syncs but no updates, improving battery life and user experience
+
 ## [1.3.5] - 2025-11-08
 
 ### Changed

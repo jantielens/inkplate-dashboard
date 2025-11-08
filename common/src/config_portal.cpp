@@ -747,7 +747,7 @@ String ConfigPortal::generateConfigPage() {
         // Hourly Schedule - Update Hours
         html += "<div class='form-group' style='margin-top: 20px;'>";
         html += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery.</div>";
+        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery. If all hours are disabled, the device enters dormant mode (sleeps for 1 hour between wake cycles, no automatic updates).</div>";
         
         // 24 checkboxes in a 4x6 grid (4 columns for better UI fit)
         html += "<div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;'>";
@@ -769,6 +769,16 @@ String ConfigPortal::generateConfigPage() {
             html += "</label>";
         }
         html += "</div>";
+        
+        // Warning for all hours disabled
+        html += "<div id='all-hours-disabled-warning' style='display:none; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;'>";
+        html += "<div style='display: flex; align-items: start; gap: 10px;'>";
+        html += "<div style='font-size: 24px;'>⚠️</div>";
+        html += "<div style='flex: 1;'>";
+        html += "<strong style='color: #856404; display: block; margin-bottom: 5px;'>Dormant Mode Active</strong>";
+        html += "<p style='margin: 0; color: #856404; font-size: 14px;'>All 24 hours are disabled. The device will enter dormant mode, sleeping for 1 hour between wake cycles to conserve battery. No automatic updates will occur, but manual button presses will still work.</p>";
+        html += "</div></div></div>";
+        
         html += "</div>";
         
         // Battery Life Estimator - placed after all power-impacting settings

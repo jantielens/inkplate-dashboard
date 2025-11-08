@@ -253,6 +253,16 @@ public:
         return (updateHours[0] == 0xFF && updateHours[1] == 0xFF && updateHours[2] == 0xFF);
     }
     
+    /**
+     * Check if all 24 hours are disabled in the update schedule bitmask
+     * @param updateHours Bitmask array (3 bytes for 24 hours)
+     * @return true if all 24 hours are disabled, false otherwise
+     */
+    static bool areAllHoursDisabled(const uint8_t updateHours[3]) {
+        // All 24 hours are disabled when all bits in all 3 bytes are zero (0x00)
+        return (updateHours[0] == 0x00 && updateHours[1] == 0x00 && updateHours[2] == 0x00);
+    }
+    
 private:
     Preferences _preferences;
     bool _initialized;

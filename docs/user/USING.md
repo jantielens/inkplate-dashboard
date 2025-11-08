@@ -222,6 +222,12 @@ Open browser to:
 - **Example**: Uncheck hours 0-7 (midnight to 8am) to prevent updates during night hours
 - **Battery impact**: Disabling hours can extend battery life - fewer update cycles per day
 - **Smart scheduling**: Device wakes on timer but checks the schedule; only performs update if current hour is enabled
+- **Dormant mode**: If all 24 hours are disabled, the device enters dormant mode:
+  - Sleeps for 1 hour between wake cycles (instead of calculating next enabled hour)
+  - Skips NTP synchronization to save battery
+  - No automatic updates occur
+  - Manual button presses still trigger updates normally
+  - Configuration portal shows a warning when all hours are disabled
 
 ### Optional Settings
 

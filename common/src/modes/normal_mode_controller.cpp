@@ -70,13 +70,19 @@ void NormalModeController::execute() {
     
     // Check if NTP sync is needed
     // Skip NTP sync if all 24 hours are enabled (no hourly scheduling needed)
+    // Also skip if all hours are disabled (dormant mode - no scheduling needed)
     bool allHoursEnabled = ConfigManager::areAllHoursEnabled(config.updateHours);
+    bool allHoursDisabled = ConfigManager::areAllHoursDisabled(config.updateHours);
     time_t now;
     
-    if (allHoursEnabled) {
-        // All hours enabled - skip NTP sync for scheduling optimization
+    if (allHoursEnabled || allHoursDisabled) {
+        // Skip NTP sync for scheduling optimization
         LogBox::begin("NTP Time Sync");
-        LogBox::line("Skipped - all 24 hours enabled");
+        if (allHoursEnabled) {
+            LogBox::line("Skipped - all 24 hours enabled");
+        } else {
+            LogBox::line("Skipped - all 24 hours disabled (dormant mode)");
+        }
         LogBox::end();
         now = time(nullptr);  // Use last known time
         timings.ntp_ms = 0;
@@ -119,6 +125,21 @@ void NormalModeController::execute() {
                   timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
                   timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     LogBox::linef("Timezone offset: %+d, Local hour: %d", config.timezoneOffset, currentHour);
+    
+    // Check for dormant mode (all hours disabled)
+    if (allHoursDisabled && wakeReason == WAKEUP_TIMER) {
+        LogBox::line("Dormant mode: All 24 hours disabled");
+        LogBox::line("Sleeping for 1 hour to conserve battery");
+        LogBox::end();
+        
+        powerManager->disableWatchdog();
+        powerManager->prepareForSleep();
+        unsigned long loopTimeMs = millis() - loopStartTime;
+        
+        // Sleep for 60 minutes in dormant mode
+        powerManager->enterDeepSleep(60.0, loopTimeMs);
+        return;
+    }
     
     // Only enforce hourly schedule for timer-based wakeups from deep sleep
     // Skip enforcement for button presses, config mode, first boot, and other manual triggers

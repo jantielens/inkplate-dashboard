@@ -138,6 +138,23 @@ function updateCRC32CheckboxState() {
   }
 }
 
+function checkAllHoursDisabled() {
+  const warningDiv = document.getElementById('all-hours-disabled-warning');
+  if (!warningDiv) return;
+  
+  let enabledHours = 0;
+  for (let hour = 0; hour < 24; hour++) {
+    const checkbox = document.getElementById('hour_' + hour);
+    if (checkbox && checkbox.checked) enabledHours++;
+  }
+  
+  if (enabledHours === 0) {
+    warningDiv.style.display = 'block';
+  } else {
+    warningDiv.style.display = 'none';
+  }
+}
+
 function updateRemoveButtons() {
   // Hide all remove buttons first
   for (let i = 1; i < 10; i++) {
@@ -276,8 +293,17 @@ document.addEventListener('DOMContentLoaded', function() {
   
   for (let hour = 0; hour < 24; hour++) {
     const checkbox = document.getElementById('hour_' + hour);
-    if (checkbox) checkbox.addEventListener('change', calculateBatteryLife);
+    if (checkbox) {
+      checkbox.addEventListener('change', function() {
+        calculateBatteryLife();
+        checkAllHoursDisabled();
+      });
+    }
   }
+  
+  // Initial check for all hours disabled warning
+  checkAllHoursDisabled();
+  
   calculateBatteryLife();
 });
 
