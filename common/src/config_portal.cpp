@@ -119,7 +119,11 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->begin();
     LogBox::begin("Config Portal Started");
     LogBox::linef("Port: %d", _port);
-    LogBox::line("Open http://" + _wifiManager->getAPIPAddress());
+    // Use getLocalIP() to get the actual WiFi IP (not AP IP which is 0.0.0.0 in config mode)
+    String ipAddress = _wifiManager->getLocalIP();
+    if (ipAddress.length() > 0) {
+        LogBox::line("Open http://" + ipAddress);
+    }
     LogBox::end();
     
     return true;
