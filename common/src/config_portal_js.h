@@ -39,7 +39,8 @@ function calculateBatteryLife() {
   // Handle button-only mode (interval = 0)
   if (refreshRate === 0) {
     const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
-    const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
+    const dailyChangesValue = document.getElementById('daily-changes').value.trim();
+    const dailyChanges = dailyChangesValue === '' ? 5 : parseInt(dailyChangesValue);
     const buttonPresses = dailyChanges;
     
     // If no button presses expected, truly unlimited battery life
@@ -97,7 +98,8 @@ function calculateBatteryLife() {
   
   const useCRC32 = document.getElementById('crc32check').checked;
   const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
-  const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
+  const dailyChangesValue = document.getElementById('daily-changes').value.trim();
+  const dailyChanges = dailyChangesValue === '' ? 5 : parseInt(dailyChangesValue);
   
   let activeHours = 0;
   for (let hour = 0; hour < 24; hour++) {
