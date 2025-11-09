@@ -310,14 +310,42 @@ void DisplayManager::refresh(bool includeVersion) {
 }
 
 void DisplayManager::showMessage(const char* message, int x, int y, int textSize) {
-    _display->setCursor(x, y);
+#if !DISPLAY_MINIMAL_UI
+    // For larger displays, textSize is actually a GFXfont pointer
+    if (textSize != 0) {
+        _display->setFont((const GFXfont*)textSize);
+        _display->setTextSize(1);  // Always use size 1 with custom fonts
+        
+        // GFXfonts position text using baseline, not top-left
+        // Adjust y to account for this by adding the font's ascent
+        const GFXfont* font = (const GFXfont*)textSize;
+        // yAdvance is the total line height, glyph->yOffset is typically negative (above baseline)
+        // We need to shift down by the absolute value of the maximum ascent
+        // For simplicity, use yAdvance as it represents the full line height
+        y += font->yAdvance;
+    }
+#else
+    // For Inkplate 2, textSize is an integer scale factor
+    _display->setFont();  // Reset to default font
     _display->setTextSize(textSize);
+#endif
     _display->setTextColor(BLACK);
+    _display->setCursor(x, y);
     _display->print(message);
 }
 
 void DisplayManager::drawCentered(const char* message, int y, int textSize) {
+#if !DISPLAY_MINIMAL_UI
+    // For larger displays, textSize is actually a GFXfont pointer
+    if (textSize != 0) {
+        _display->setFont((const GFXfont*)textSize);
+        _display->setTextSize(1);  // Always use size 1 with custom fonts
+    }
+#else
+    // For Inkplate 2, textSize is an integer scale factor
+    _display->setFont();  // Reset to default font
     _display->setTextSize(textSize);
+#endif
     _display->setTextColor(BLACK);
     
     // Calculate text width (approximate)
@@ -326,6 +354,15 @@ void DisplayManager::drawCentered(const char* message, int y, int textSize) {
     _display->getTextBounds(message, 0, 0, &x1, &y1, &w, &h);
     
     int x = (getWidth() - w) / 2;
+    
+#if !DISPLAY_MINIMAL_UI
+    // Adjust y for baseline positioning with custom fonts
+    if (textSize != 0) {
+        const GFXfont* font = (const GFXfont*)textSize;
+        y += font->yAdvance;
+    }
+#endif
+    
     _display->setCursor(x, y);
     _display->print(message);
 }
@@ -340,7 +377,16 @@ int DisplayManager::getHeight() {
 
 void DisplayManager::drawVersionLabel() {
     static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
+    
+#if !DISPLAY_MINIMAL_UI
+    // For larger displays, FONT_NORMAL is a GFXfont pointer
+    _display->setFont((const GFXfont*)FONT_NORMAL);
+    _display->setTextSize(1);  // Always use size 1 with custom fonts
+#else
+    // For Inkplate 2, FONT_NORMAL is an integer scale factor
+    _display->setFont();  // Reset to default font
     _display->setTextSize(FONT_NORMAL);
+#endif
     _display->setTextColor(BLACK);
 
     int16_t x1 = 0;
@@ -350,7 +396,18 @@ void DisplayManager::drawVersionLabel() {
     _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
 
     int x = getWidth() - w - MARGIN;
-    int y = getHeight() - h - MARGIN;
+    int y = getHeight() - MARGIN;
+    
+#if !DISPLAY_MINIMAL_UI
+    // GFXfonts use baseline positioning - y1 from getTextBounds is the offset above baseline
+    // We want the bottom of the text to be at (getHeight() - MARGIN)
+    // So we need to subtract the descent (which is typically positive in the bounds)
+    y -= h;
+#else
+    // Default font uses top-left positioning
+    y -= h;
+#endif
+    
     if (x < MARGIN) {
         x = MARGIN;
     }
@@ -370,7 +427,17 @@ void DisplayManager::drawBitmap(const uint8_t* bitmap, int x, int y, int w, int 
 }
 
 // Helper to calculate approximate font height in pixels
-// Inkplate uses a 5x7 font matrix, scaled by textSize
 int DisplayManager::getFontHeight(int textSize) {
+#if !DISPLAY_MINIMAL_UI
+    // For larger displays, textSize is actually a GFXfont pointer
+    if (textSize != 0) {
+        const GFXfont* font = (const GFXfont*)textSize;
+        // GFXfont height = yAdvance (line height)
+        return font->yAdvance;
+    }
+    return 8;  // Fallback to default font height
+#else
+    // For Inkplate 2, use simple calculation for pixel fonts
     return 8 * textSize;  // 7 pixels + 1 pixel spacing, multiplied by size
+#endif
 }
