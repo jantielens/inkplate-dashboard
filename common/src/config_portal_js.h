@@ -29,28 +29,37 @@ function calculateBatteryLife() {
     const intInput = document.querySelector(`input[name="img_int_${i}"]`);
     
     if (urlInput && urlInput.value.trim().length > 0) {
+      imageCount++;
+    }
+  }
+  
+  // Now process intervals, knowing total image count
+  const isCarousel = imageCount > 1;
+  totalInterval = 0;
+  
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && urlInput.value.trim().length > 0) {
       const intervalValue = intInput.value.trim();
       const interval = intervalValue === '' ? 5 : parseInt(intervalValue);
       
       // For carousel mode battery calculation: treat interval=0 as 5 hours
       // This assumes user will manually advance after some time (realistic usage)
-      if (interval === 0 && imageCount > 0) {
+      if (interval === 0 && isCarousel) {
         totalInterval += BUTTON_ONLY_ASSUMED_INTERVAL;
         hasButtonOnlyImage = true;
-      } else if (interval === 0) {
-        totalInterval += interval;
       } else {
         totalInterval += interval;
       }
-      
-      imageCount++;
     }
   }
   
   const refreshRate = imageCount > 0 ? (totalInterval / imageCount) : 5;
   
-  // Handle button-only mode (interval = 0)
-  if (refreshRate === 0) {
+  // Handle button-only mode (interval = 0 or very close to 0 due to floating point)
+  if (refreshRate < 0.01) {
     const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
     const dailyChangesValue = document.getElementById('daily-changes').value.trim();
     const dailyChanges = dailyChangesValue === '' ? 5 : parseInt(dailyChangesValue);
@@ -81,10 +90,12 @@ function calculateBatteryLife() {
     const activeSecondsPerUpdate = 5;
     const displaySecondsPerUpdate = 2;
     const powerPerUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
-    let dailyPower = buttonPresses * powerPerUpdate;
     const activeTimeMinutes = (buttonPresses * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;
     const sleepHours = 24 - (activeTimeMinutes / 60);
-    dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;
+    
+    // Calculate daily power: active power + sleep power
+    let dailyPower = buttonPresses * powerPerUpdate;  // Active power in mAh
+    dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;  // Sleep power in mAh (hours × mA = mAh)
     
     const batteryLifeDays = Math.round(batteryCapacity / dailyPower);
     const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);
