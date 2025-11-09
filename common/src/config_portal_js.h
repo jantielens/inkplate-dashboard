@@ -38,22 +38,60 @@ function calculateBatteryLife() {
   
   // Handle button-only mode (interval = 0)
   if (refreshRate === 0) {
-    document.getElementById('battery-days').textContent = '∞';
-    document.getElementById('battery-months').textContent = 'Button-only mode (no automatic refresh)';
-    document.getElementById('daily-power').textContent = '0.48 mAh';
-    document.getElementById('wakeups').textContent = '0';
-    document.getElementById('active-time').textContent = '0 min/day';
-    document.getElementById('sleep-time').textContent = '24 hrs/day';
+    const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
+    const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
+    const buttonPresses = dailyChanges;
+    
+    // If no button presses expected, truly unlimited battery life
+    if (buttonPresses === 0) {
+      document.getElementById('battery-days').textContent = '∞';
+      document.getElementById('battery-months').textContent = 'Button-only mode (no automatic refresh, no expected updates)';
+      document.getElementById('daily-power').textContent = '0.48 mAh';
+      document.getElementById('wakeups').textContent = '0';
+      document.getElementById('active-time').textContent = '0 min/day';
+      document.getElementById('sleep-time').textContent = '24 hrs/day';
+      document.getElementById('status-badge').textContent = 'BUTTON ONLY';
+      document.getElementById('status-badge').className = 'status-badge status-excellent';
+      document.getElementById('battery-result').className = 'battery-result excellent';
+      const progressBar = document.getElementById('progress-bar');
+      progressBar.style.width = '100%';
+      progressBar.className = 'battery-progress-bar excellent';
+      const tipsDiv = document.getElementById('battery-tips');
+      const tipText = document.getElementById('tip-text');
+      tipsDiv.style.display = 'block';
+      tipText.textContent = 'Button-only mode with no expected updates: Device only in deep sleep. Maximum battery life (deep sleep only consumes ~20µA).';
+      return;
+    }
+    
+    // Calculate power consumption for manual wake-ups
+    const activeSecondsPerUpdate = 5;
+    const displaySecondsPerUpdate = 2;
+    const powerPerUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
+    let dailyPower = buttonPresses * powerPerUpdate;
+    const activeTimeMinutes = (buttonPresses * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;
+    const sleepHours = 24 - (activeTimeMinutes / 60);
+    dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;
+    
+    const batteryLifeDays = Math.round(batteryCapacity / dailyPower);
+    const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);
+    
+    document.getElementById('battery-days').textContent = batteryLifeDays + ' days';
+    document.getElementById('battery-months').textContent = 'Approximately ' + batteryLifeMonths + ' months';
+    document.getElementById('daily-power').textContent = dailyPower.toFixed(2) + ' mAh';
+    document.getElementById('wakeups').textContent = buttonPresses;
+    document.getElementById('active-time').textContent = activeTimeMinutes.toFixed(1) + ' min/day';
+    document.getElementById('sleep-time').textContent = sleepHours.toFixed(1) + ' hrs/day';
     document.getElementById('status-badge').textContent = 'BUTTON ONLY';
     document.getElementById('status-badge').className = 'status-badge status-excellent';
     document.getElementById('battery-result').className = 'battery-result excellent';
     const progressBar = document.getElementById('progress-bar');
-    progressBar.style.width = '100%';
+    const progressPercent = Math.min(100, (batteryLifeDays / 300) * 100);
+    progressBar.style.width = progressPercent + '%';
     progressBar.className = 'battery-progress-bar excellent';
     const tipsDiv = document.getElementById('battery-tips');
     const tipText = document.getElementById('tip-text');
     tipsDiv.style.display = 'block';
-    tipText.textContent = 'Button-only mode: Device only wakes when you press the button. Maximum battery life (deep sleep only consumes ~20µA).';
+    tipText.textContent = 'Button-only mode: Device only wakes on button press. Assuming ' + buttonPresses + ' manual updates per day. Deep sleep consumes ~20µA.';
     return;
   }
   
