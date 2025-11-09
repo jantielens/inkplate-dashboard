@@ -481,6 +481,11 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
     // Retry logic for single image mode (state index tracks retry attempts)
     if (*imageStateIndex < 2) {
         (*imageStateIndex)++;
+        
+        // Clear stored CRC32 to force download on next retry
+        // This prevents the CRC32 check from skipping download after a failed attempt
+        configManager->setLastCRC32(0);
+        
         powerManager->prepareForSleep();
         unsigned long loopTimeMs = millis() - loopStartTime;
         powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);  // 20 seconds, convert ms to s
@@ -495,6 +500,9 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         String errorMessage = "Image download failed: " + String(imageManager->getLastError());
         publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
                            configManager->getLastCRC32(), wifiBSSID, timings, errorMessage.c_str(), "error");
+        
+        // Clear stored CRC32 to force download on next retry
+        configManager->setLastCRC32(0);
         
         delay(3000);
         
