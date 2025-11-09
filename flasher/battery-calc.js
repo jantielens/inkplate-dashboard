@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Battery Life Calculator for Inkplate Dashboard
  * Ported from config portal - estimates battery life based on configuration
  */
@@ -11,7 +11,7 @@
 const POWER_CONSTANTS = {
   ACTIVE_MA: 100,        // WiFi active + processing
   DISPLAY_MA: 50,        // E-ink display update
-  SLEEP_MA: 0.02,        // Deep sleep mode (20µA)
+  SLEEP_MA: 0.02,        // Deep sleep mode (20┬ÁA)
   IMAGE_UPDATE_SEC: 7,   // Time to download and display image
   CRC32_CHECK_SEC: 1     // Time to check if image changed
 };
@@ -33,22 +33,6 @@ function calculateBatteryLife(config) {
     dailyChanges = 5,           // expected image changes
     useCRC32 = true            // CRC32 change detection
   } = config;
-
-  // Handle button-only mode (interval = 0)
-  if (refreshInterval === 0) {
-    return {
-      batteryLifeDays: Infinity,
-      batteryLifeMonths: '∞',
-      status: 'excellent',
-      statusText: 'BUTTON ONLY',
-      dailyPower: '0.48',
-      wakeupsPerDay: 0,
-      activeTime: '0',
-      sleepTime: '24.0',
-      progressPercent: 100,
-      tip: 'Button-only mode: Device only wakes when you press the button. Maximum battery life (deep sleep only consumes ~20µA).'
-    };
-  }
 
   // Calculate wake-ups per day based on active hours and refresh interval
   const wakeupsPerDay = activeHours * (60 / refreshInterval);
@@ -116,7 +100,7 @@ function calculateBatteryLife(config) {
   // Generate tip based on configuration
   let tip = null;
   if (!useCRC32) {
-    tip = 'Enable CRC32 change detection to extend battery life by 5-8×!';
+    tip = 'Enable CRC32 change detection to extend battery life by 5-8├ù!';
   } else if (refreshInterval <= 2) {
     tip = 'Consider increasing refresh rate to 5-10 minutes to extend battery life.';
   } else if (batteryLifeDays < 60) {
@@ -152,20 +136,8 @@ function updateBatteryUI(results) {
   const statusBadgeEl = document.getElementById('status-badge');
   const resultEl = document.getElementById('battery-result');
   
-  if (daysEl) {
-    if (results.batteryLifeDays === Infinity) {
-      daysEl.textContent = '∞';
-    } else {
-      daysEl.textContent = `${results.batteryLifeDays} days`;
-    }
-  }
-  if (monthsEl) {
-    if (results.batteryLifeMonths === '∞') {
-      monthsEl.textContent = 'Button-only mode (no automatic refresh)';
-    } else {
-      monthsEl.textContent = `Approximately ${results.batteryLifeMonths} months`;
-    }
-  }
+  if (daysEl) daysEl.textContent = `${results.batteryLifeDays} days`;
+  if (monthsEl) monthsEl.textContent = `Approximately ${results.batteryLifeMonths} months`;
   if (statusBadgeEl) {
     statusBadgeEl.textContent = results.statusText;
     statusBadgeEl.className = `status-badge status-${results.status}`;
