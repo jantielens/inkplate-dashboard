@@ -1,6 +1,6 @@
 {
   "name": "Inkplate Dashboard for Inkplate 6 Flick",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "home_assistant_domain": "inkplate_dashboard",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.5/inkplate6flick-v1.3.5.bootloader.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.6/inkplate6flick-v1.3.6.bootloader.bin",
           "offset": 4096
         },
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.5/inkplate6flick-v1.3.5.partitions.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.6/inkplate6flick-v1.3.6.partitions.bin",
           "offset": 32768
         },
         {
-          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.5/inkplate6flick-v1.3.5.bin",
+          "path": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.3.6/inkplate6flick-v1.3.6.bin",
           "offset": 65536
         }
       ]
