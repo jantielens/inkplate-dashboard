@@ -178,22 +178,23 @@ bool ConfigModeController::isTimedOut(unsigned long startTime) {
 void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     LogBox::begin("Config Timeout");
     LogBox::line("Config mode timeout");
-    LogBox::line("Returning to normal cycle");
+    LogBox::line("Restarting device");
     LogBox::end();
     
     // Publish log message for config mode timeout (if MQTT is configured)
     if (mqttManager->begin() && mqttManager->isConfigured()) {
         String deviceId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
         if (mqttManager->connect()) {
-            mqttManager->publishLastLog(deviceId, "Config mode timeout", "info");
+            mqttManager->publishLastLog(deviceId, "Config mode timeout - restarting", "info");
             mqttManager->disconnect();
         }
     }
     
     uiStatus->showConfigModeTimeout();
     
-    powerManager->prepareForSleep();
-    // Sleep for 10 seconds then resume normal cycle
-    powerManager->enterDeepSleep(10.0f);  // 10 seconds
+    // Restart device to reload configuration and display image
+    // Same approach as when user saves configuration
+    delay(3000);
+    ESP.restart();
 }
 
