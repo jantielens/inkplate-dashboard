@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Battery Life Calculator for Inkplate Dashboard
  * Ported from config portal - estimates battery life based on configuration
  */
@@ -11,7 +11,7 @@
 const POWER_CONSTANTS = {
   ACTIVE_MA: 100,        // WiFi active + processing
   DISPLAY_MA: 50,        // E-ink display update
-  SLEEP_MA: 0.02,        // Deep sleep mode (20µA)
+  SLEEP_MA: 0.02,        // Deep sleep mode (20┬ÁA)
   IMAGE_UPDATE_SEC: 7,   // Time to download and display image
   CRC32_CHECK_SEC: 1     // Time to check if image changed
 };
@@ -100,7 +100,7 @@ function calculateBatteryLife(config) {
   // Generate tip based on configuration
   let tip = null;
   if (!useCRC32) {
-    tip = 'Enable CRC32 change detection to extend battery life by 5-8×!';
+    tip = 'Enable CRC32 change detection to extend battery life by 5-8├ù!';
   } else if (refreshInterval <= 2) {
     tip = 'Consider increasing refresh rate to 5-10 minutes to extend battery life.';
   } else if (batteryLifeDays < 60) {

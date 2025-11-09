@@ -22,7 +22,7 @@ bool ConfigModeController::begin() {
         delay(3000);
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep((uint16_t)5);  // Default 5 minutes
+        powerManager->enterDeepSleep(300.0f);  // Default 5 minutes = 300 seconds
         return false;
     }
     
@@ -99,7 +99,7 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(sleepMinutes);
+        powerManager->enterDeepSleep((uint16_t)(sleepMinutes * 60));  // Convert minutes to seconds
         return false;
     }
 }
@@ -128,15 +128,16 @@ bool ConfigModeController::startConfigPortalWithAP() {
             uiError->showAPStartError();
             delay(3000);
             
-            // Load average interval for sleep
+            // Load average interval for sleep, with minimum 5 minute fallback
             DashboardConfig config;
             uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
             if (configManager->loadConfig(config)) {
-                sleepMinutes = config.getAverageInterval();
+                uint16_t avgInterval = config.getAverageInterval();
+                sleepMinutes = (avgInterval > 0) ? avgInterval : 5;
             }
             
             powerManager->prepareForSleep();
-            powerManager->enterDeepSleep(sleepMinutes);
+            powerManager->enterDeepSleep((float)(sleepMinutes * 60));  // Convert minutes to seconds
             return false;
         }
     } else {
@@ -144,15 +145,16 @@ bool ConfigModeController::startConfigPortalWithAP() {
         uiError->showConfigModeFailure();
         delay(3000);
         
-        // Load average interval for sleep
+        // Load average interval for sleep, with minimum 5 minute fallback
         DashboardConfig config;
         uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
         if (configManager->loadConfig(config)) {
-            sleepMinutes = config.getAverageInterval();
+            uint16_t avgInterval = config.getAverageInterval();
+            sleepMinutes = (avgInterval > 0) ? avgInterval : 5;
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(sleepMinutes);
+        powerManager->enterDeepSleep((float)(sleepMinutes * 60));  // Convert minutes to seconds
         return false;
     }
 }
@@ -176,22 +178,23 @@ bool ConfigModeController::isTimedOut(unsigned long startTime) {
 void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     LogBox::begin("Config Timeout");
     LogBox::line("Config mode timeout");
-    LogBox::line("Returning to sleep");
+    LogBox::line("Restarting device");
     LogBox::end();
     
     // Publish log message for config mode timeout (if MQTT is configured)
     if (mqttManager->begin() && mqttManager->isConfigured()) {
         String deviceId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
         if (mqttManager->connect()) {
-            mqttManager->publishLastLog(deviceId, "Config mode timeout", "info");
+            mqttManager->publishLastLog(deviceId, "Config mode timeout - restarting", "info");
             mqttManager->disconnect();
         }
     }
     
     uiStatus->showConfigModeTimeout();
-    delay(2000);
     
-    powerManager->prepareForSleep();
-    powerManager->enterDeepSleep(refreshMinutes);
+    // Restart device to reload configuration and display image
+    // Same approach as when user saves configuration
+    delay(3000);
+    ESP.restart();
 }
 

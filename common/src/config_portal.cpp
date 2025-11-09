@@ -119,7 +119,11 @@ bool ConfigPortal::begin(PortalMode mode) {
     _server->begin();
     LogBox::begin("Config Portal Started");
     LogBox::linef("Port: %d", _port);
-    LogBox::line("Open http://" + _wifiManager->getAPIPAddress());
+    // Use getLocalIP() to get the actual WiFi IP (not AP IP which is 0.0.0.0 in config mode)
+    String ipAddress = _wifiManager->getLocalIP();
+    if (ipAddress.length() > 0) {
+        LogBox::line("Open http://" + ipAddress);
+    }
     LogBox::end();
     
     return true;
@@ -627,7 +631,8 @@ String ConfigPortal::generateConfigPage() {
             html += "<label>Image " + imageNum + " URL *</label>";
             html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "' required>";
             html += "<label>Display for (minutes) *</label>";
-            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "' required>";
+            html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "' required>";
+            html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
             html += "</div>";
         }
         
@@ -645,7 +650,8 @@ String ConfigPortal::generateConfigPage() {
             html += "</div>";
             html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + String(i + 1) + ".png' value='" + existingUrl + "'>";
             html += "<label>Display for (minutes)</label>";
-            html += "<input type='number' name='img_int_" + String(i) + "' min='1' placeholder='5' value='" + String(existingInterval) + "'>";
+            html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "'>";
+            html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
             html += "</div>";
         }
         

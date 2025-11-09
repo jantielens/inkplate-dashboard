@@ -5,7 +5,7 @@ UIError::UIError(DisplayManager* display)
     : displayManager(display) {
 }
 
-void UIError::showWiFiError(const char* ssid, const char* status, int refreshMinutes) {
+void UIError::showWiFiError(const char* ssid, const char* status) {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
@@ -15,9 +15,6 @@ void UIError::showWiFiError(const char* ssid, const char* status, int refreshMin
     displayManager->showMessage("WiFi Error!", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
     
-    displayManager->showMessage("Failed to connect", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
     String ssidMsg = "SSID: " + String(ssid);
     displayManager->showMessage(ssidMsg.c_str(), MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
@@ -26,16 +23,19 @@ void UIError::showWiFiError(const char* ssid, const char* status, int refreshMin
     displayManager->showMessage(statusMsg.c_str(), MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
-    displayManager->showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager->showMessage("Failed to connect to WiFi.", MARGIN, y, FONT_NORMAL);
+    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
-    String retryMsg = "(" + String(refreshMinutes) + " minutes)";
-    displayManager->showMessage(retryMsg.c_str(), MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Trying again in 1 minute", MARGIN, y, FONT_NORMAL);
+    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager->showMessage("(or press button).", MARGIN, y, FONT_NORMAL);
+    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    displayManager->showMessage("Hold button to enter config mode.", MARGIN, y, FONT_NORMAL);
     
     displayManager->refresh();
 }
 
-void UIError::showImageError(const char* url, const char* error, int refreshMinutes) {
+void UIError::showImageError(const char* url, const char* error) {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
@@ -45,28 +45,18 @@ void UIError::showImageError(const char* url, const char* error, int refreshMinu
     displayManager->showMessage("Image Error!", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
     
-    displayManager->showMessage("Failed to display", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
+    // Show URL with extra space for potential wrapping
     displayManager->showMessage(url, MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    y += displayManager->getFontHeight(FONT_NORMAL) * 2 + LINE_SPACING * 2;
     
-    String errorMsg = "Error: " + String(error);
-    displayManager->showMessage(errorMsg.c_str(), MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Failed to download or draw image.", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
-    displayManager->showMessage("Will retry on next wake", MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Trying again in 1 minute", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
-    String retryMsg = "(" + String(refreshMinutes) + " minutes)";
-    displayManager->showMessage(retryMsg.c_str(), MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-    
-    displayManager->showMessage("If you want to update the", MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("(or press button).", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage("Image URL, hold the button", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage("to enter config mode.", MARGIN, y, FONT_NORMAL);
+    displayManager->showMessage("Hold button to enter config mode.", MARGIN, y, FONT_NORMAL);
     
     displayManager->refresh();
 }

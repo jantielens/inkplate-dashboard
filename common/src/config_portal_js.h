@@ -21,22 +21,109 @@ function calculateBatteryLife() {
   // Calculate average interval from image slots
   let totalInterval = 0;
   let imageCount = 0;
+  let hasButtonOnlyImage = false;
+  const BUTTON_ONLY_ASSUMED_INTERVAL = 300; // 5 hours in minutes for carousel calculation
   
   for (let i = 0; i < 10; i++) {
     const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
     const intInput = document.querySelector(`input[name="img_int_${i}"]`);
     
     if (urlInput && urlInput.value.trim().length > 0) {
-      const interval = parseInt(intInput.value) || 5;
-      totalInterval += interval;
       imageCount++;
     }
   }
   
+  // Now process intervals, knowing total image count
+  const isCarousel = imageCount > 1;
+  totalInterval = 0;
+  
+  for (let i = 0; i < 10; i++) {
+    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
+    const intInput = document.querySelector(`input[name="img_int_${i}"]`);
+    
+    if (urlInput && urlInput.value.trim().length > 0) {
+      const intervalValue = intInput.value.trim();
+      const interval = intervalValue === '' ? 5 : parseInt(intervalValue);
+      
+      // For carousel mode battery calculation: treat interval=0 as 5 hours
+      // This assumes user will manually advance after some time (realistic usage)
+      if (interval === 0 && isCarousel) {
+        totalInterval += BUTTON_ONLY_ASSUMED_INTERVAL;
+        hasButtonOnlyImage = true;
+      } else {
+        totalInterval += interval;
+      }
+    }
+  }
+  
   const refreshRate = imageCount > 0 ? (totalInterval / imageCount) : 5;
+  
+  // Handle button-only mode (interval = 0 or very close to 0 due to floating point)
+  if (refreshRate < 0.01) {
+    const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
+    const dailyChangesValue = document.getElementById('daily-changes').value.trim();
+    const dailyChanges = dailyChangesValue === '' ? 5 : parseInt(dailyChangesValue);
+    const buttonPresses = dailyChanges;
+    
+    // If no button presses expected, truly unlimited battery life
+    if (buttonPresses === 0) {
+      document.getElementById('battery-days').textContent = '∞';
+      document.getElementById('battery-months').textContent = 'Button-only mode (no automatic refresh, no expected updates)';
+      document.getElementById('daily-power').textContent = '0.48 mAh';
+      document.getElementById('wakeups').textContent = '0';
+      document.getElementById('active-time').textContent = '0 min/day';
+      document.getElementById('sleep-time').textContent = '24 hrs/day';
+      document.getElementById('status-badge').textContent = 'BUTTON ONLY';
+      document.getElementById('status-badge').className = 'status-badge status-excellent';
+      document.getElementById('battery-result').className = 'battery-result excellent';
+      const progressBar = document.getElementById('progress-bar');
+      progressBar.style.width = '100%';
+      progressBar.className = 'battery-progress-bar excellent';
+      const tipsDiv = document.getElementById('battery-tips');
+      const tipText = document.getElementById('tip-text');
+      tipsDiv.style.display = 'block';
+      tipText.textContent = 'Button-only mode with no expected updates: Device only in deep sleep. Maximum battery life (deep sleep only consumes ~20µA).';
+      return;
+    }
+    
+    // Calculate power consumption for manual wake-ups
+    const activeSecondsPerUpdate = 5;
+    const displaySecondsPerUpdate = 2;
+    const powerPerUpdate = (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
+    const activeTimeMinutes = (buttonPresses * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;
+    const sleepHours = 24 - (activeTimeMinutes / 60);
+    
+    // Calculate daily power: active power + sleep power
+    let dailyPower = buttonPresses * powerPerUpdate;  // Active power in mAh
+    dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;  // Sleep power in mAh (hours × mA = mAh)
+    
+    const batteryLifeDays = Math.round(batteryCapacity / dailyPower);
+    const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);
+    
+    document.getElementById('battery-days').textContent = batteryLifeDays + ' days';
+    document.getElementById('battery-months').textContent = 'Approximately ' + batteryLifeMonths + ' months';
+    document.getElementById('daily-power').textContent = dailyPower.toFixed(2) + ' mAh';
+    document.getElementById('wakeups').textContent = buttonPresses;
+    document.getElementById('active-time').textContent = activeTimeMinutes.toFixed(1) + ' min/day';
+    document.getElementById('sleep-time').textContent = sleepHours.toFixed(1) + ' hrs/day';
+    document.getElementById('status-badge').textContent = 'BUTTON ONLY';
+    document.getElementById('status-badge').className = 'status-badge status-excellent';
+    document.getElementById('battery-result').className = 'battery-result excellent';
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = Math.min(100, (batteryLifeDays / 300) * 100);
+    progressBar.style.width = progressPercent + '%';
+    progressBar.className = 'battery-progress-bar excellent';
+    const tipsDiv = document.getElementById('battery-tips');
+    const tipText = document.getElementById('tip-text');
+    tipsDiv.style.display = 'block';
+    tipText.textContent = 'Button-only mode: Device only wakes on button press. Assuming ' + buttonPresses + ' manual updates per day. Deep sleep consumes ~20µA.';
+    return;
+  }
+  
   const useCRC32 = document.getElementById('crc32check').checked;
   const batteryCapacity = parseInt(document.getElementById('battery-capacity').value) || 1200;
-  const dailyChanges = parseInt(document.getElementById('daily-changes').value) || 5;
+  const dailyChangesValue = document.getElementById('daily-changes').value.trim();
+  const dailyChanges = dailyChangesValue === '' ? 5 : parseInt(dailyChangesValue);
   
   let activeHours = 0;
   for (let hour = 0; hour < 24; hour++) {

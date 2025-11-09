@@ -4,6 +4,30 @@
 
 ## [Unreleased]
 
+## [1.3.6] - 2025-11-08
+
+### Added
+- **Button-Only Wake Mode** (Issue: Support 'button-only' wake mode by allowing 0 refresh interval)
+  - Refresh interval can now be set to 0 for button-only operation (no automatic timer wake)
+  - Maximizes battery life for use cases that don't require automatic refresh
+  - Configuration portal now accepts 0 as minimum interval value
+  - Battery calculator displays appropriate message when interval is 0
+  - Deep sleep only uses button wake source when interval is 0 (timer wake disabled)
+  - Help text in portal clarifies "0 disables automatic refresh - button only"
+  - Simple KISS approach: no additional flags or magic numbers needed
+
+### Changed
+- **Power Management API Refactored to Use Seconds** (Issue: API consistency improvement)
+  - `enterDeepSleep()` now uses **seconds** for both parameters (previously minutes + milliseconds)
+  - Signature changed from `(float refreshRateMinutes, unsigned long loopTimeMs)` to `(float durationSeconds, float loopTimeSeconds)`
+  - Benefits:
+    - Consistent units across both parameters (no mixing minutes and milliseconds)
+    - More intuitive: `enterDeepSleep(10.0f)` = 10 seconds (not `10.0f/60.0f`)
+    - Prevents confusion from function overloads with different parameter meanings
+    - Matches ESP32's microsecond-based sleep API better
+  - All call sites updated to convert minutes to seconds (`* 60`) and milliseconds to seconds (`/ 1000.0f`)
+  - Logging updated to show seconds consistently
+
 ## [1.3.5] - 2025-11-08
 
 ### Changed

@@ -6,11 +6,11 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 - 📶 **Easy WiFi setup** via captive portal, including support for static IP configuration
 - 🖼️ **Multi-image carousel** support (1-10 images with individual display intervals)
 - 🔄 **Configurable screen rotation** (portrait/landscape)
-- 🔋 **Power efficient**: deep sleep between updates
+- 🔋 **Power efficient**: deep sleep between updates, with button-only wake mode for maximum battery life
 - 🌐 **Web-based configuration** and OTA firmware updates
 - 🔘 **Button controls** for config mode and manual refresh
 - 🏠 **Home Assistant integration** (optional MQTT telemetry with comprehensive diagnostics)
-- ⚡ **Advanced options**: CRC32-based battery saver, flexible hourly scheduling, VCOM management, and more
+- ⚡ **Advanced options**: CRC32-based battery saver, flexible hourly scheduling, button-only wake mode, VCOM management, and more
 
 <div align="left">
   <table>
