@@ -211,11 +211,12 @@ Open browser to:
 - **Example**: Image 1 for 10 minutes, Image 2 for 5 minutes, Image 3 for 15 minutes
 - **Carousel behavior**: Device cycles through all images using each image's individual interval
 - **Single image**: Device refreshes the same image after the specified interval
-- **Button-only mode (0 minutes)**: Set interval to 0 to disable automatic refresh completely
+- **Button-only mode (0 minutes)**: Set interval to 0 to disable automatic refresh
   - Device only wakes when you press the button (no timer wake)
   - Maximum battery life - device stays in deep sleep until button press
   - Deep sleep consumes only ~20µA (0.48 mAh/day)
   - Ideal for displays that only need manual updates
+  - **Works in carousel**: Mix timer and button wake modes (e.g., Image 1: 5min, Image 2: 0min waits for button, Image 3: 10min)
   - **Note**: Requires a board with a physical button (Inkplate 5 V2, Inkplate 6 Flick, Inkplate 10)
   - Inkplate 2 does not have a button, so interval 0 would prevent device from ever waking
 
