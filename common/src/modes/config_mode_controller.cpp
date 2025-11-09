@@ -178,7 +178,7 @@ bool ConfigModeController::isTimedOut(unsigned long startTime) {
 void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     LogBox::begin("Config Timeout");
     LogBox::line("Config mode timeout");
-    LogBox::line("Returning to sleep");
+    LogBox::line("Returning to normal cycle");
     LogBox::end();
     
     // Publish log message for config mode timeout (if MQTT is configured)

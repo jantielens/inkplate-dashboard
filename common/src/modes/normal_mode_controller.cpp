@@ -529,8 +529,14 @@ void NormalModeController::enterSleep(const DashboardConfig& config, time_t curr
     if (sleepMinutes <= 0) {
         uint8_t currentIndex = *imageStateIndex % config.imageCount;
         float configInterval = (float)config.imageIntervals[currentIndex];
-        // Use configured interval or minimum 5 minutes if interval is 0
-        sleepMinutes = (configInterval > 0) ? configInterval : 5.0;
+        
+        if (configInterval == 0) {
+            // Button-only mode: sleep indefinitely (0 = no timer wake)
+            powerManager->enterDeepSleep(0.0f, loopTimeMs / 1000.0f);
+            return;
+        }
+        
+        sleepMinutes = configInterval;
     }
     
     powerManager->enterDeepSleep(sleepMinutes * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
