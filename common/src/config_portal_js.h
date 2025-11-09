@@ -27,7 +27,8 @@ function calculateBatteryLife() {
     const intInput = document.querySelector(`input[name="img_int_${i}"]`);
     
     if (urlInput && urlInput.value.trim().length > 0) {
-      const interval = parseInt(intInput.value) || 5;
+      const intervalValue = intInput.value.trim();
+      const interval = intervalValue === '' ? 5 : parseInt(intervalValue);
       totalInterval += interval;
       imageCount++;
     }
