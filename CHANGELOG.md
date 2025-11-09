@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-11-09
+
+### Added
+- **Custom GFXfonts for Larger Displays** (Issue #81: Replace pixelated fonts with custom GFXfonts)
+  - Inkplate 5 V2, 6 Flick, and 10 now use vector-based FreeSans fonts for smooth, professional text
+  - FreeSansBold18pt7b for large headings, FreeSans12pt7b for medium headings, FreeSans9pt7b for normal text
+  - Fonts are conditionally compiled based on DISPLAY_MINIMAL_UI flag
+  - Font ID mapping system allows font references in board_config.h without early type dependencies
+  - Inkplate 2 continues to use simple pixel fonts (no changes)
+  - Display manager updated to handle both pixel fonts and GFXfonts with proper baseline positioning
+  - Firmware size increased by ~100KB for larger displays (well within limits)
+
+### Changed
+- Text positioning for custom fonts now uses baseline alignment instead of top-left
+- `getFontHeight()` now calculates line height based on font type (GFXfont yAdvance vs pixel size)
+
 ## [1.3.6] - 2025-11-08
 
 ### Added

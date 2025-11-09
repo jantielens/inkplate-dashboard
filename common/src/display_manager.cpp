@@ -6,6 +6,19 @@
 #include <src/fonts.h>
 #include <Wire.h>
 
+#if !DISPLAY_MINIMAL_UI
+// Map font IDs to actual font pointers
+// This mapping is defined here where GFXfont types are available
+static const GFXfont* getFontPointer(int fontId) {
+    switch (fontId) {
+        case 0xF001: return &FreeSansBold18pt7b;
+        case 0xF002: return &FreeSans12pt7b;
+        case 0xF003: return &FreeSans9pt7b;
+        default: return nullptr;
+    }
+}
+#endif
+
 DisplayManager::DisplayManager(Inkplate* display) {
     _display = display;
 }
@@ -312,17 +325,14 @@ void DisplayManager::refresh(bool includeVersion) {
 
 void DisplayManager::showMessage(const char* message, int x, int y, int textSize) {
 #if !DISPLAY_MINIMAL_UI
-    // For larger displays, textSize is actually a GFXfont pointer
-    if (textSize != 0) {
-        _display->setFont((const GFXfont*)textSize);
+    // For larger displays, textSize is a font ID that maps to a GFXfont pointer
+    const GFXfont* font = getFontPointer(textSize);
+    if (font != nullptr) {
+        _display->setFont(font);
         _display->setTextSize(1);  // Always use size 1 with custom fonts
         
         // GFXfonts position text using baseline, not top-left
-        // Adjust y to account for this by adding the font's ascent
-        const GFXfont* font = (const GFXfont*)textSize;
-        // yAdvance is the total line height, glyph->yOffset is typically negative (above baseline)
-        // We need to shift down by the absolute value of the maximum ascent
-        // For simplicity, use yAdvance as it represents the full line height
+        // Adjust y to account for this by adding the font's line height
         y += font->yAdvance;
     }
 #else
@@ -337,9 +347,10 @@ void DisplayManager::showMessage(const char* message, int x, int y, int textSize
 
 void DisplayManager::drawCentered(const char* message, int y, int textSize) {
 #if !DISPLAY_MINIMAL_UI
-    // For larger displays, textSize is actually a GFXfont pointer
-    if (textSize != 0) {
-        _display->setFont((const GFXfont*)textSize);
+    // For larger displays, textSize is a font ID that maps to a GFXfont pointer
+    const GFXfont* font = getFontPointer(textSize);
+    if (font != nullptr) {
+        _display->setFont(font);
         _display->setTextSize(1);  // Always use size 1 with custom fonts
     }
 #else
@@ -358,8 +369,7 @@ void DisplayManager::drawCentered(const char* message, int y, int textSize) {
     
 #if !DISPLAY_MINIMAL_UI
     // Adjust y for baseline positioning with custom fonts
-    if (textSize != 0) {
-        const GFXfont* font = (const GFXfont*)textSize;
+    if (font != nullptr) {
         y += font->yAdvance;
     }
 #endif
@@ -380,9 +390,12 @@ void DisplayManager::drawVersionLabel() {
     static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
     
 #if !DISPLAY_MINIMAL_UI
-    // For larger displays, FONT_NORMAL is a GFXfont pointer
-    _display->setFont((const GFXfont*)FONT_NORMAL);
-    _display->setTextSize(1);  // Always use size 1 with custom fonts
+    // For larger displays, FONT_NORMAL is a font ID
+    const GFXfont* font = getFontPointer(FONT_NORMAL);
+    if (font != nullptr) {
+        _display->setFont(font);
+        _display->setTextSize(1);  // Always use size 1 with custom fonts
+    }
 #else
     // For Inkplate 2, FONT_NORMAL is an integer scale factor
     _display->setFont();  // Reset to default font
@@ -430,9 +443,9 @@ void DisplayManager::drawBitmap(const uint8_t* bitmap, int x, int y, int w, int 
 // Helper to calculate approximate font height in pixels
 int DisplayManager::getFontHeight(int textSize) {
 #if !DISPLAY_MINIMAL_UI
-    // For larger displays, textSize is actually a GFXfont pointer
-    if (textSize != 0) {
-        const GFXfont* font = (const GFXfont*)textSize;
+    // For larger displays, textSize is a font ID that maps to a GFXfont pointer
+    const GFXfont* font = getFontPointer(textSize);
+    if (font != nullptr) {
         // GFXfont height = yAdvance (line height)
         return font->yAdvance;
     }

@@ -3,6 +3,7 @@
 // Assumes board_config.h has already been included by the .ino file
 
 #include "Inkplate.h"
+#include <src/fonts.h>  // Include custom fonts after Inkplate.h so GFXfont types are available
 #include <src/config.h>
 #include <src/display_manager.h>
 #include <src/utils.h>
