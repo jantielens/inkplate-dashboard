@@ -34,6 +34,22 @@ function calculateBatteryLife(config) {
     useCRC32 = true            // CRC32 change detection
   } = config;
 
+  // Handle button-only mode (interval = 0)
+  if (refreshInterval === 0) {
+    return {
+      batteryLifeDays: Infinity,
+      batteryLifeMonths: '∞',
+      status: 'excellent',
+      statusText: 'BUTTON ONLY',
+      dailyPower: '0.48',
+      wakeupsPerDay: 0,
+      activeTime: '0',
+      sleepTime: '24.0',
+      progressPercent: 100,
+      tip: 'Button-only mode: Device only wakes when you press the button. Maximum battery life (deep sleep only consumes ~20µA).'
+    };
+  }
+
   // Calculate wake-ups per day based on active hours and refresh interval
   const wakeupsPerDay = activeHours * (60 / refreshInterval);
   
@@ -136,8 +152,20 @@ function updateBatteryUI(results) {
   const statusBadgeEl = document.getElementById('status-badge');
   const resultEl = document.getElementById('battery-result');
   
-  if (daysEl) daysEl.textContent = `${results.batteryLifeDays} days`;
-  if (monthsEl) monthsEl.textContent = `Approximately ${results.batteryLifeMonths} months`;
+  if (daysEl) {
+    if (results.batteryLifeDays === Infinity) {
+      daysEl.textContent = '∞';
+    } else {
+      daysEl.textContent = `${results.batteryLifeDays} days`;
+    }
+  }
+  if (monthsEl) {
+    if (results.batteryLifeMonths === '∞') {
+      monthsEl.textContent = 'Button-only mode (no automatic refresh)';
+    } else {
+      monthsEl.textContent = `Approximately ${results.batteryLifeMonths} months`;
+    }
+  }
   if (statusBadgeEl) {
     statusBadgeEl.textContent = results.statusText;
     statusBadgeEl.className = `status-badge status-${results.status}`;
