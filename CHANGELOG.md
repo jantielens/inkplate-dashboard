@@ -9,7 +9,8 @@
 ### Added
 - **Custom GFXfonts for Larger Displays** (Issue #81: Replace pixelated fonts with custom GFXfonts)
   - Inkplate 5 V2, 6 Flick, and 10 now use vector-based FreeSans fonts for smooth, professional text
-  - FreeSansBold18pt7b for large headings, FreeSans12pt7b for medium headings, FreeSans9pt7b for normal text
+  - FreeSansBold24pt7b for large headings, FreeSans18pt7b for medium headings, FreeSans12pt7b for normal text
+  - Font sizes increased for better readability (was: 18pt/12pt/9pt, now: 24pt/18pt/12pt)
   - Fonts are conditionally compiled based on DISPLAY_MINIMAL_UI flag
   - Font ID mapping system allows font references in board_config.h without early type dependencies
   - Inkplate 2 continues to use simple pixel fonts (no changes)

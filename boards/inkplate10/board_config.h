@@ -38,9 +38,9 @@
 #if !DISPLAY_MINIMAL_UI
   // Custom fonts for larger displays - use special marker values
   // These will be mapped to actual GFXfont pointers in display_manager.cpp
-  #define FONT_HEADING1 0xF001  // FreeSansBold18pt7b
-  #define FONT_HEADING2 0xF002  // FreeSans12pt7b
-  #define FONT_NORMAL 0xF003    // FreeSans9pt7b
+  #define FONT_HEADING1 0xF001  // FreeSansBold24pt7b
+  #define FONT_HEADING2 0xF002  // FreeSans18pt7b
+  #define FONT_NORMAL 0xF003    // FreeSans12pt7b (increased from 9pt for better readability)
 #else
   // Keep simple integer sizes for Inkplate 2
   #define FONT_HEADING1 8   // Large headings (e.g., "Dashboard", screen titles)

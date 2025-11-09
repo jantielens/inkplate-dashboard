@@ -11,9 +11,9 @@
 // This mapping is defined here where GFXfont types are available
 static const GFXfont* getFontPointer(int fontId) {
     switch (fontId) {
-        case 0xF001: return &FreeSansBold18pt7b;
-        case 0xF002: return &FreeSans12pt7b;
-        case 0xF003: return &FreeSans9pt7b;
+        case 0xF001: return &FreeSansBold24pt7b;  // Large headings
+        case 0xF002: return &FreeSans18pt7b;      // Medium headings
+        case 0xF003: return &FreeSans12pt7b;      // Normal text (increased from 9pt)
         default: return nullptr;
     }
 }
