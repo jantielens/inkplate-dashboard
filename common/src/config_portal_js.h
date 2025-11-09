@@ -21,6 +21,8 @@ function calculateBatteryLife() {
   // Calculate average interval from image slots
   let totalInterval = 0;
   let imageCount = 0;
+  let hasButtonOnlyImage = false;
+  const BUTTON_ONLY_ASSUMED_INTERVAL = 300; // 5 hours in minutes for carousel calculation
   
   for (let i = 0; i < 10; i++) {
     const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
@@ -29,7 +31,18 @@ function calculateBatteryLife() {
     if (urlInput && urlInput.value.trim().length > 0) {
       const intervalValue = intInput.value.trim();
       const interval = intervalValue === '' ? 5 : parseInt(intervalValue);
-      totalInterval += interval;
+      
+      // For carousel mode battery calculation: treat interval=0 as 5 hours
+      // This assumes user will manually advance after some time (realistic usage)
+      if (interval === 0 && imageCount > 0) {
+        totalInterval += BUTTON_ONLY_ASSUMED_INTERVAL;
+        hasButtonOnlyImage = true;
+      } else if (interval === 0) {
+        totalInterval += interval;
+      } else {
+        totalInterval += interval;
+      }
+      
       imageCount++;
     }
   }

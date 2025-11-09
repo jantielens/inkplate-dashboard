@@ -75,6 +75,7 @@ const char* CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML = R"(
       <li>WiFi: 100mA average, Display: 50mA, Sleep: 20µA</li>
       <li>7s per image update, 1s per CRC32 check</li>
       <li>Good WiFi signal strength</li>
+      <li>Carousel with interval=0: assumes 5 hours until button press</li>
     </ul>
   </div>
 </div>
