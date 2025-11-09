@@ -32,8 +32,8 @@ const char* CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML = R"(
   
   <div class='battery-capacity-input'>
     <label for='daily-changes'>Expected Image Changes Per Day</label>
-    <input type='number' id='daily-changes' min='1' max='1000' value='5' style='width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;'>
-    <div style='font-size: 11px; color: #666; margin-top: 5px;'>How many times per day does your image content actually change? (Default: 5)</div>
+    <input type='number' id='daily-changes' min='0' max='1000' value='5' style='width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;'>
+    <div style='font-size: 11px; color: #666; margin-top: 5px;'>How many times per day does your image content actually change? Set to 0 with button-only mode for unlimited battery life. (Default: 5)</div>
   </div>
   
   <div class='battery-result good' id='battery-result'>
