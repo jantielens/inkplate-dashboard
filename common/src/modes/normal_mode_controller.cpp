@@ -160,8 +160,8 @@ void NormalModeController::execute() {
     String currentImageUrl = config.imageUrls[currentIndex];
     int currentInterval = config.imageIntervals[currentIndex];
     
-    // Validate interval (sanity check)
-    if (currentInterval < MIN_INTERVAL_MINUTES) {
+    // Validate interval (allow 0 for button-only wake in carousel)
+    if (currentInterval < 0) {
         LogBox::messagef("Config Error", "Invalid interval for image %d, using default", currentIndex + 1);
         currentInterval = DEFAULT_INTERVAL_MINUTES;
     }
@@ -171,12 +171,20 @@ void NormalModeController::execute() {
         LogBox::begin("Carousel Mode");
         LogBox::linef("Displaying image %d of %d", currentIndex + 1, config.imageCount);
         LogBox::line("URL: " + currentImageUrl);
-        LogBox::linef("Display for: %d minutes", currentInterval);
+        if (currentInterval == 0) {
+            LogBox::line("Display until button press (button-only wake)");
+        } else {
+            LogBox::linef("Display for: %d minutes", currentInterval);
+        }
         LogBox::end();
     } else {
         LogBox::begin("Single Image Mode");
         LogBox::line("URL: " + currentImageUrl);
-        LogBox::linef("Refresh in: %d minutes", currentInterval);
+        if (currentInterval == 0) {
+            LogBox::line("Button-only mode (no automatic refresh)");
+        } else {
+            LogBox::linef("Refresh in: %d minutes", currentInterval);
+        }
         LogBox::end();
     }
     
