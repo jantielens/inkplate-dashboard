@@ -36,14 +36,9 @@ public:
     ButtonPressType detectButtonPressType();
     
     // Enter deep sleep with timer wake source
-    // refreshRateMinutes: how long to sleep (in minutes)
-    // loopTimeMs: optional full loop time in ms (displayed if > 0)
-    void enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs = 0);
-    
-    // Enter deep sleep with timer wake source (fractional minutes)
-    // refreshRateMinutes: how long to sleep (in minutes, supports fractions)
-    // loopTimeMs: optional full loop time in ms (displayed if > 0)
-    void enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs = 0);
+    // durationSeconds: how long to sleep (in seconds, supports fractions)
+    // loopTimeSeconds: optional full loop time in seconds (for sleep compensation)
+    void enterDeepSleep(float durationSeconds, float loopTimeSeconds = 0);
     
     // Prepare for sleep (shutdown WiFi, display, etc.)
     void prepareForSleep();

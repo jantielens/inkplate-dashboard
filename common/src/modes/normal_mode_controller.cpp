@@ -145,12 +145,12 @@ void NormalModeController::execute() {
             unsigned long loopTimeMs = millis() - loopStartTime;
             
             if (sleepMinutes > 0) {
-                powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
+                powerManager->enterDeepSleep(sleepMinutes * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
             } else {
                 // Fallback to average interval with minimum 5 minutes
                 float avgInterval = (float)config.getAverageInterval();
                 float fallbackInterval = (avgInterval > 0) ? avgInterval : 5.0;
-                powerManager->enterDeepSleep(fallbackInterval, loopTimeMs);
+                powerManager->enterDeepSleep(fallbackInterval * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
             }
             return;
         }
@@ -237,7 +237,7 @@ void NormalModeController::execute() {
             powerManager->disableWatchdog();
             powerManager->prepareForSleep();
             unsigned long loopTimeMs = millis() - loopStartTime;
-            powerManager->enterDeepSleep((float)currentInterval, loopTimeMs);
+            powerManager->enterDeepSleep((float)currentInterval * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
         } else {
             // Failed - check if it's the first image
             if (currentIndex == 0) {
@@ -249,7 +249,7 @@ void NormalModeController::execute() {
                     powerManager->disableWatchdog();
                     powerManager->prepareForSleep();
                     unsigned long loopTimeMs = millis() - loopStartTime;
-                    powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
+                    powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);  // 20 seconds, convert ms to s
                 } else {
                     // Exhausted retries on first image - show error and move to next
                     LogBox::message("Carousel Error", "First image failed after retries, moving to next");
@@ -266,7 +266,7 @@ void NormalModeController::execute() {
                     powerManager->disableWatchdog();
                     powerManager->prepareForSleep();
                     unsigned long loopTimeMs = millis() - loopStartTime;
-                    powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds to next image
+                    powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);  // 20 seconds to next image, convert ms to s
                 }
             } else {
                 // Non-first image - skip to next immediately
@@ -282,7 +282,7 @@ void NormalModeController::execute() {
                 powerManager->disableWatchdog();
                 powerManager->prepareForSleep();
                 unsigned long loopTimeMs = millis() - loopStartTime;
-                powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds to next image
+                powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);  // 20 seconds to next image, convert ms to s
             }
         }
     } else {
@@ -304,7 +304,7 @@ bool NormalModeController::loadConfiguration(DashboardConfig& config) {
     delay(3000);
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
-    powerManager->enterDeepSleep((uint16_t)5);  // No loop timing for early failure
+    powerManager->enterDeepSleep(300.0f);  // 5 minutes = 300 seconds, no loop timing for early failure
     return false;
 }
 
@@ -422,7 +422,7 @@ bool NormalModeController::checkAndHandleCRC32(const DashboardConfig& config, ui
             sleepMinutes = (config.imageCount > 0) ? (float)config.imageIntervals[0] : (float)DEFAULT_INTERVAL_MINUTES;
         }
         
-        powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
+        powerManager->enterDeepSleep(sleepMinutes * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
         return false;  // Stop execution
     }
     
@@ -483,7 +483,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         (*imageStateIndex)++;
         powerManager->prepareForSleep();
         unsigned long loopTimeMs = millis() - loopStartTime;
-        powerManager->enterDeepSleep((float)(20.0 / 60.0), loopTimeMs);  // 20 seconds
+        powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);  // 20 seconds, convert ms to s
     } else {
         *imageStateIndex = 0;
         // For single image mode, use first image's interval; for carousel use average
@@ -503,7 +503,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         powerManager->disableWatchdog();
         powerManager->prepareForSleep();
         unsigned long loopTimeMs = millis() - loopStartTime;
-        powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES, loopTimeMs);
+        powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
     }
 }
 
@@ -513,7 +513,7 @@ void NormalModeController::handleWiFiFailure(const DashboardConfig& config, unsi
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
     unsigned long loopTimeMs = millis() - loopStartTime;
-    powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES, loopTimeMs);
+    powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
 }
 
 
@@ -533,6 +533,6 @@ void NormalModeController::enterSleep(const DashboardConfig& config, time_t curr
         sleepMinutes = (configInterval > 0) ? configInterval : 5.0;
     }
     
-    powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
+    powerManager->enterDeepSleep(sleepMinutes * 60.0f, loopTimeMs / 1000.0f);  // Convert minutes to seconds, ms to s
 }
 

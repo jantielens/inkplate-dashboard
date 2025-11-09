@@ -30,14 +30,14 @@ The code already measures `loopTimeMs` (time from wake to sleep) and passes it t
 unsigned long loopStartTime = millis();
 // ... WiFi, download, display ...
 unsigned long loopTimeMs = millis() - loopStartTime;
-powerManager->enterDeepSleep(refreshMinutes, loopTimeMs);  // loopTimeMs only logged
+powerManager->enterDeepSleep(refreshSeconds, loopTimeMs / 1000.0f);  // loopTimeMs only logged
 ```
 
-The `getSleepDuration()` function simply converts minutes to microseconds without adjustment:
+The `getSleepDuration()` function simply converts seconds to microseconds without adjustment:
 
 ```cpp
-uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
-    uint64_t microseconds = (uint64_t)refreshRateMinutes * 60ULL * 1000000ULL;
+uint64_t PowerManager::getSleepDuration(float durationSeconds) {
+    uint64_t microseconds = (uint64_t)(durationSeconds * 1000000.0);
     return microseconds;  // No compensation for active time
 }
 ```
@@ -48,19 +48,19 @@ uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
 
 ### Implementation
 
-Modify `enterDeepSleep()` methods to subtract `loopTimeMs` from the calculated sleep duration:
+Modify `enterDeepSleep()` methods to subtract `loopTimeSeconds` from the calculated sleep duration:
 
 ```cpp
-void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs) {
-    bool buttonOnlyMode = (refreshRateMinutes == 0);
+void PowerManager::enterDeepSleep(float durationSeconds, float loopTimeSeconds) {
+    bool buttonOnlyMode = (durationSeconds == 0);
     
     if (!buttonOnlyMode) {
-        uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+        uint64_t sleepDuration = getSleepDuration(durationSeconds / 60.0);  // Convert to minutes
         
         // Compensate for active loop time to maintain accurate intervals
-        if (loopTimeMs > 0) {
-            uint64_t loopTimeMicros = loopTimeMs * 1000ULL;  // ms to µs
-            uint64_t targetCycleMicros = refreshRateMinutes * 60ULL * 1000000ULL;
+        if (loopTimeSeconds > 0) {
+            uint64_t loopTimeMicros = (uint64_t)(loopTimeSeconds * 1000000.0);  // s to µs
+            uint64_t targetCycleMicros = (uint64_t)(durationSeconds * 1000000.0);
             
             if (loopTimeMicros < targetCycleMicros) {
                 sleepDuration = targetCycleMicros - loopTimeMicros;
@@ -77,7 +77,7 @@ void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loo
 
 ### Edge Case Handling
 
-**When loop time >= configured interval** (e.g., 90s active time with 1min interval):
+**When loop time >= configured interval** (e.g., 90s active time with 60s interval):
 - **Decision:** Sleep for the full configured interval anyway
 - **Rationale:** This is an edge case indicating slow network/display performance
 - **Outcome:** Drift is acceptable in this scenario - the configured interval acts as a minimum sleep time
@@ -90,10 +90,10 @@ This prevents:
 
 ### Benefits
 
-1. **Accurate timing:** Configured "1 minute" interval = actual 60-second cycles
+1. **Accurate timing:** Configured "60 seconds" interval = actual 60-second cycles
 2. **Better scheduling:** Hourly wake windows work as expected
 3. **Accurate battery estimates:** Power calculations match real-world usage
-4. **Simple implementation:** Uses existing `loopTimeMs` measurement
+4. **Simple implementation:** Uses existing loop time measurement
 5. **Backward compatible:** Only affects sleep duration calculation, not config format
 
 ### Logging Changes
@@ -102,8 +102,8 @@ Update logging to show both configured and compensated sleep durations:
 
 ```
 Entering Deep Sleep
-  Configured interval: 1 minutes
-  Active loop time: 7234ms
+  Configured interval: 60.00 seconds
+  Active loop time: 7.234s
   Adjusted sleep: 52.766 seconds
   Wake sources: TIMER + BUTTON
 ```
@@ -148,12 +148,12 @@ Entering Deep Sleep
 ### Code Changes Required
 
 1. **`common/src/power_manager.cpp`:**
-   - Modify `enterDeepSleep(uint16_t, unsigned long)` - compensate sleep duration
-   - Modify `enterDeepSleep(float, unsigned long)` - compensate sleep duration
+   - Modify `enterDeepSleep(uint16_t, float)` - compensate sleep duration
+   - Modify `enterDeepSleep(float, float)` - compensate sleep duration
    - Update logging to show compensation details
 
 2. **Testing:**
-   - Verify 1-minute interval results in ~60s cycles (not 67s)
+   - Verify 60s interval results in ~60s cycles (not 67s)
    - Verify edge case (90s loop with 60s interval) sleeps 60s
    - Verify button-only mode (interval=0) unaffected
    - Verify carousel mode with mixed intervals

@@ -22,7 +22,7 @@ bool ConfigModeController::begin() {
         delay(3000);
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep((uint16_t)5);  // Default 5 minutes
+        powerManager->enterDeepSleep(300.0f);  // Default 5 minutes = 300 seconds
         return false;
     }
     
@@ -99,7 +99,7 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(sleepMinutes);
+        powerManager->enterDeepSleep((uint16_t)(sleepMinutes * 60));  // Convert minutes to seconds
         return false;
     }
 }
@@ -137,7 +137,7 @@ bool ConfigModeController::startConfigPortalWithAP() {
             }
             
             powerManager->prepareForSleep();
-            powerManager->enterDeepSleep(sleepMinutes);
+            powerManager->enterDeepSleep((float)(sleepMinutes * 60));  // Convert minutes to seconds
             return false;
         }
     } else {
@@ -154,7 +154,7 @@ bool ConfigModeController::startConfigPortalWithAP() {
         }
         
         powerManager->prepareForSleep();
-        powerManager->enterDeepSleep(sleepMinutes);
+        powerManager->enterDeepSleep((float)(sleepMinutes * 60));  // Convert minutes to seconds
         return false;
     }
 }
@@ -193,6 +193,7 @@ void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     uiStatus->showConfigModeTimeout();
     
     powerManager->prepareForSleep();
-    powerManager->enterDeepSleep((uint16_t)0, (uint16_t)10);  // Sleep 10 seconds then resume normal cycle
+    // Sleep for 10 seconds then resume normal cycle
+    powerManager->enterDeepSleep(10.0f);  // 10 seconds
 }
 

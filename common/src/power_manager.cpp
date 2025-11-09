@@ -254,26 +254,23 @@ void PowerManager::prepareForSleep() {
     LogBox::end();
 }
 
-void PowerManager::enterDeepSleep(uint16_t refreshRateMinutes, unsigned long loopTimeMs) {
-    // Delegate to float overload to avoid code duplication
-    enterDeepSleep((float)refreshRateMinutes, loopTimeMs);
-}
-
-void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTimeMs) {
+void PowerManager::enterDeepSleep(float durationSeconds, float loopTimeSeconds) {
     // Configure wake sources based on refresh interval
     // If interval is 0, only button wake is enabled (button-only mode)
-    bool buttonOnlyMode = (refreshRateMinutes == 0.0);
+    bool buttonOnlyMode = (durationSeconds == 0.0);
     
     if (!buttonOnlyMode) {
         // Calculate sleep duration and configure timer wake source
-        uint64_t sleepDuration = getSleepDuration(refreshRateMinutes);
+        // Convert seconds to minutes for getSleepDuration (which expects minutes)
+        float durationMinutes = durationSeconds / 60.0;
+        uint64_t sleepDuration = getSleepDuration(durationMinutes);
         
         // Compensate for active loop time to maintain accurate refresh intervals
-        // Example: 1 min interval with 7s active time → sleep 53s (not 60s)
+        // Example: 60s interval with 7s active time → sleep 53s (not 60s)
         // This ensures total cycle time = configured interval
-        if (loopTimeMs > 0) {
-            uint64_t loopTimeMicros = loopTimeMs * 1000ULL;  // Convert ms to µs
-            uint64_t targetCycleMicros = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
+        if (loopTimeSeconds > 0) {
+            uint64_t loopTimeMicros = (uint64_t)(loopTimeSeconds * 1000000.0);  // Convert s to µs
+            uint64_t targetCycleMicros = (uint64_t)(durationSeconds * 1000000.0);
             
             if (loopTimeMicros < targetCycleMicros) {
                 // Normal case: adjust sleep to compensate for loop time
@@ -301,17 +298,17 @@ void PowerManager::enterDeepSleep(float refreshRateMinutes, unsigned long loopTi
         LogBox::line("Button-only mode (interval = 0)");
         LogBox::line("No automatic refresh - wake by button press only");
     } else {
-        LogBox::linef("Configured interval: %.2f minutes", refreshRateMinutes);
-        if (loopTimeMs > 0) {
-            uint64_t loopTimeMicros = loopTimeMs * 1000ULL;
-            uint64_t targetCycleMicros = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
+        LogBox::linef("Configured interval: %.2f seconds", durationSeconds);
+        if (loopTimeSeconds > 0) {
+            uint64_t loopTimeMicros = (uint64_t)(loopTimeSeconds * 1000000.0);
+            uint64_t targetCycleMicros = (uint64_t)(durationSeconds * 1000000.0);
             if (loopTimeMicros < targetCycleMicros) {
                 uint64_t adjustedSleepMicros = targetCycleMicros - loopTimeMicros;
                 float adjustedSleepSeconds = adjustedSleepMicros / 1000000.0;
-                LogBox::linef("Active loop time: %lums", loopTimeMs);
+                LogBox::linef("Active loop time: %.3fs", loopTimeSeconds);
                 LogBox::linef("Adjusted sleep: %.3f seconds", adjustedSleepSeconds);
             } else {
-                LogBox::linef("Active loop time: %lums (>= interval, no adjustment)", loopTimeMs);
+                LogBox::linef("Active loop time: %.3fs (>= interval, no adjustment)", loopTimeSeconds);
             }
         }
     }
