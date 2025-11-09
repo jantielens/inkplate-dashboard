@@ -1,6 +1,10 @@
 #include <src/modes/normal_mode_controller.h>
 #include <WiFi.h>
 
+// Error retry interval: how long to wait before retrying after image download failure
+// This prevents indefinite sleep when configured interval is 0 (button-only mode)
+const float ERROR_RETRY_INTERVAL_MINUTES = 1.0;
+
 NormalModeController::NormalModeController(Inkplate* disp, ConfigManager* config, WiFiManager* wifi,
                                            ImageManager* image, PowerManager* power, MQTTManager* mqtt,
                                            UIStatus* uiStatus, UIError* uiError, uint8_t* stateIndex)
@@ -143,8 +147,10 @@ void NormalModeController::execute() {
             if (sleepMinutes > 0) {
                 powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);
             } else {
-                // Fallback to average interval
-                powerManager->enterDeepSleep((float)config.getAverageInterval(), loopTimeMs);
+                // Fallback to average interval with minimum 5 minutes
+                float avgInterval = (float)config.getAverageInterval();
+                float fallbackInterval = (avgInterval > 0) ? avgInterval : 5.0;
+                powerManager->enterDeepSleep(fallbackInterval, loopTimeMs);
             }
             return;
         }
@@ -249,7 +255,7 @@ void NormalModeController::execute() {
                     LogBox::message("Carousel Error", "First image failed after retries, moving to next");
                     
                     *imageStateIndex = 1;  // Move to second image
-                    uiError->showImageError(currentImageUrl.c_str(), imageManager->getLastError(), currentInterval);
+                    uiError->showImageError(currentImageUrl.c_str(), imageManager->getLastError());
                     
                     float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
                     String errorMessage = "First carousel image failed: " + String(imageManager->getLastError());
@@ -483,7 +489,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
         // For single image mode, use first image's interval; for carousel use average
         int displayInterval = (config.imageCount > 0) ? config.imageIntervals[0] : DEFAULT_INTERVAL_MINUTES;
         String firstUrl = (config.imageCount > 0) ? config.imageUrls[0] : "";
-        uiError->showImageError(firstUrl.c_str(), imageManager->getLastError(), displayInterval);
+        uiError->showImageError(firstUrl.c_str(), imageManager->getLastError());
         
         float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
         String errorMessage = "Image download failed: " + String(imageManager->getLastError());
@@ -491,18 +497,23 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
                            configManager->getLastCRC32(), wifiBSSID, timings, errorMessage.c_str(), "error");
         
         delay(3000);
-        enterSleep(config, currentTime, loopStartTime);
+        
+        // For error retry, always use ERROR_RETRY_INTERVAL_MINUTES regardless of configured interval
+        // This prevents indefinite sleep when interval=0 and ensures quick recovery attempts
+        powerManager->disableWatchdog();
+        powerManager->prepareForSleep();
+        unsigned long loopTimeMs = millis() - loopStartTime;
+        powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES, loopTimeMs);
     }
 }
 
 void NormalModeController::handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime) {
-    int fallbackInterval = config.getAverageInterval();
-    uiError->showWiFiError(config.wifiSSID.c_str(), wifiManager->getStatusString().c_str(), fallbackInterval);
+    uiError->showWiFiError(config.wifiSSID.c_str(), wifiManager->getStatusString().c_str());
     delay(3000);
     powerManager->disableWatchdog();
     powerManager->prepareForSleep();
     unsigned long loopTimeMs = millis() - loopStartTime;
-    powerManager->enterDeepSleep((uint16_t)fallbackInterval, loopTimeMs);
+    powerManager->enterDeepSleep(ERROR_RETRY_INTERVAL_MINUTES, loopTimeMs);
 }
 
 
@@ -517,7 +528,9 @@ void NormalModeController::enterSleep(const DashboardConfig& config, time_t curr
     // If no enabled hours found or calculation failed, use current image's interval
     if (sleepMinutes <= 0) {
         uint8_t currentIndex = *imageStateIndex % config.imageCount;
-        sleepMinutes = (float)config.imageIntervals[currentIndex];
+        float configInterval = (float)config.imageIntervals[currentIndex];
+        // Use configured interval or minimum 5 minutes if interval is 0
+        sleepMinutes = (configInterval > 0) ? configInterval : 5.0;
     }
     
     powerManager->enterDeepSleep(sleepMinutes, loopTimeMs);

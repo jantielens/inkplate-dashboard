@@ -14,8 +14,8 @@ public:
     UIError(DisplayManager* display);
     
     // Error screens
-    void showWiFiError(const char* ssid, const char* status, int refreshMinutes);
-    void showImageError(const char* url, const char* error, int refreshMinutes);
+    void showWiFiError(const char* ssid, const char* status);
+    void showImageError(const char* url, const char* error);
     void showAPStartError();
     void showPortalError();
     void showConfigLoadError();

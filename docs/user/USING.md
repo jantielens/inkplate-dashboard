@@ -812,6 +812,11 @@ Open browser to:
 
 **Problem**: Display shows "Image Error!" or blank screen after trying to download.
 
+**Automatic Retry Behavior:**
+- Device automatically retries failed downloads 3 times (20 seconds between attempts)
+- After exhausting retries, shows error screen and retries again after **1 minute**
+- This ensures the device won't get stuck - even with button-only mode (0-minute interval)
+
 **Solutions:**
 1. **Check image URL** - must be complete URL starting with `http://` or `https://`
 2. **Test URL in browser** - open the URL on your computer to verify it works

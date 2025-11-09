@@ -128,11 +128,12 @@ bool ConfigModeController::startConfigPortalWithAP() {
             uiError->showAPStartError();
             delay(3000);
             
-            // Load average interval for sleep
+            // Load average interval for sleep, with minimum 5 minute fallback
             DashboardConfig config;
             uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
             if (configManager->loadConfig(config)) {
-                sleepMinutes = config.getAverageInterval();
+                uint16_t avgInterval = config.getAverageInterval();
+                sleepMinutes = (avgInterval > 0) ? avgInterval : 5;
             }
             
             powerManager->prepareForSleep();
@@ -144,11 +145,12 @@ bool ConfigModeController::startConfigPortalWithAP() {
         uiError->showConfigModeFailure();
         delay(3000);
         
-        // Load average interval for sleep
+        // Load average interval for sleep, with minimum 5 minute fallback
         DashboardConfig config;
         uint16_t sleepMinutes = DEFAULT_INTERVAL_MINUTES;
         if (configManager->loadConfig(config)) {
-            sleepMinutes = config.getAverageInterval();
+            uint16_t avgInterval = config.getAverageInterval();
+            sleepMinutes = (avgInterval > 0) ? avgInterval : 5;
         }
         
         powerManager->prepareForSleep();
