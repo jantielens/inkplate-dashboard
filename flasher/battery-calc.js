@@ -40,6 +40,22 @@ function calculateBatteryLife(config) {
     // Use dailyChanges as the expected number of button presses per day
     const buttonPresses = dailyChanges;
     
+    // If no button presses expected, truly unlimited battery life
+    if (buttonPresses === 0) {
+      return {
+        batteryLifeDays: Infinity,
+        batteryLifeMonths: '∞',
+        status: 'excellent',
+        statusText: 'BUTTON ONLY',
+        dailyPower: '0.48',
+        wakeupsPerDay: 0,
+        activeTime: '0',
+        sleepTime: '24.0',
+        progressPercent: 100,
+        tip: 'Button-only mode with no expected updates: Device only in deep sleep. Maximum battery life (deep sleep only consumes ~20µA).'
+      };
+    }
+    
     // Calculate power consumption for manual wake-ups
     const activeSecondsPerUpdate = 5;
     const displaySecondsPerUpdate = 2;
