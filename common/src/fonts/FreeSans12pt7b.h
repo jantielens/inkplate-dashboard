@@ -1,7 +1,6 @@
 #ifndef FREESANS12PT7B_H
 #define FREESANS12PT7B_H
 
-#include <Arduino.h>
 #include <Inkplate.h>
 
 

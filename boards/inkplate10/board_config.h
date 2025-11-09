@@ -38,10 +38,17 @@
 #if !DISPLAY_MINIMAL_UI
   // Custom fonts for larger displays
   // Font pointers are cast to int to maintain API compatibility
-  // The actual font definitions are in display_manager.cpp
-  #define FONT_HEADING1 ((int)&FreeSansBold18pt7b)  // Large headings (e.g., "Dashboard", screen titles)
-  #define FONT_HEADING2 ((int)&FreeSans12pt7b)      // Medium headings (e.g., section titles)
-  #define FONT_NORMAL ((int)&FreeSans9pt7b)         // Normal text (e.g., descriptions, status messages)
+  // The actual font definitions are included via fonts.h in .cpp files
+  
+  // External font declarations (defined in font files, included via fonts.h)
+  // We declare these as simple char arrays to avoid type conflicts
+  extern const char FreeSansBold18pt7b[];
+  extern const char FreeSans12pt7b[];
+  extern const char FreeSans9pt7b[];
+  
+  #define FONT_HEADING1 ((int)FreeSansBold18pt7b)  // Large headings (e.g., "Dashboard", screen titles)
+  #define FONT_HEADING2 ((int)FreeSans12pt7b)      // Medium headings (e.g., section titles)
+  #define FONT_NORMAL ((int)FreeSans9pt7b)         // Normal text (e.g., descriptions, status messages)
 #else
   // Keep simple integer sizes for Inkplate 2
   #define FONT_HEADING1 8   // Large headings (e.g., "Dashboard", screen titles)
@@ -57,11 +64,3 @@
 #define INDENT_MARGIN 30   // Indentation for nested content
 
 #endif // BOARD_CONFIG_H
-
-// Include custom fonts AFTER the header guard to ensure GFX types are available
-// These fonts are only used on larger displays
-#if !DISPLAY_MINIMAL_UI
-#include <fonts/FreeSansBold18pt7b.h>
-#include <fonts/FreeSans12pt7b.h>
-#include <fonts/FreeSans9pt7b.h>
-#endif

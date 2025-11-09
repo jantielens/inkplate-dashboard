@@ -1,7 +1,6 @@
 #ifndef FREESANSBOLD18PT7B_H
 #define FREESANSBOLD18PT7B_H
 
-#include <Arduino.h>
 #include <Inkplate.h>
 
 

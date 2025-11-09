@@ -1,7 +1,6 @@
 #ifndef FREESANS9PT7B_H
 #define FREESANS9PT7B_H
 
-// Minimal includes for font data structures
 #include <Arduino.h>
 // GFXfont types will be available when this is included normally
 

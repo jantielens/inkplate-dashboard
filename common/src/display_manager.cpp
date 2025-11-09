@@ -3,6 +3,7 @@
 #include "display_manager.h"
 #include "logger.h"
 #include <src/version.h>
+#include <src/fonts.h>
 #include <Wire.h>
 
 DisplayManager::DisplayManager(Inkplate* display) {
