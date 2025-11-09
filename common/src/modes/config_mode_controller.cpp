@@ -189,9 +189,8 @@ void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
     }
     
     uiStatus->showConfigModeTimeout();
-    delay(2000);
     
     powerManager->prepareForSleep();
-    powerManager->enterDeepSleep(refreshMinutes);
+    powerManager->enterDeepSleep((uint16_t)0, (uint16_t)10);  // Sleep 10 seconds then resume normal cycle
 }
 

@@ -741,7 +741,8 @@ Open browser to:
 
 **Config Mode Timeout:**
 - Config mode automatically exits after **5 minutes** of inactivity
-- Device will return to sleep or continue normal operation
+- Shows "Config Mode Timeout" message for 10 seconds
+- Device then resumes normal operation (downloads configured image)
 - To re-enter, use the button/reset method again
 
 ---
