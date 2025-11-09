@@ -36,17 +36,39 @@ function calculateBatteryLife(config) {
 
   // Handle button-only mode (interval = 0)
   if (refreshInterval === 0) {
+    // Button-only mode: only manual button presses trigger wake-ups
+    // Use dailyChanges as the expected number of button presses per day
+    const buttonPresses = dailyChanges;
+    
+    // Calculate power consumption for manual wake-ups
+    const activeSecondsPerUpdate = 5;
+    const displaySecondsPerUpdate = 2;
+    const powerPerUpdate = 
+      (activeSecondsPerUpdate * POWER_CONSTANTS.ACTIVE_MA / 3600) + 
+      (displaySecondsPerUpdate * POWER_CONSTANTS.DISPLAY_MA / 3600);
+    
+    let dailyPower = buttonPresses * powerPerUpdate;
+    const activeTimeMinutes = (buttonPresses * POWER_CONSTANTS.IMAGE_UPDATE_SEC) / 60;
+    
+    // Add deep sleep power consumption (nearly 24 hours)
+    const sleepHours = 24 - (activeTimeMinutes / 60);
+    dailyPower += sleepHours * POWER_CONSTANTS.SLEEP_MA;
+    
+    // Calculate battery life
+    const batteryLifeDays = Math.round(batteryCapacity / dailyPower);
+    const batteryLifeMonths = (batteryLifeDays / 30).toFixed(1);
+    
     return {
-      batteryLifeDays: Infinity,
-      batteryLifeMonths: '∞',
+      batteryLifeDays,
+      batteryLifeMonths,
       status: 'excellent',
       statusText: 'BUTTON ONLY',
-      dailyPower: '0.48',
-      wakeupsPerDay: 0,
-      activeTime: '0',
-      sleepTime: '24.0',
-      progressPercent: 100,
-      tip: 'Button-only mode: Device only wakes when you press the button. Maximum battery life (deep sleep only consumes ~20µA).'
+      dailyPower: dailyPower.toFixed(2),
+      wakeupsPerDay: buttonPresses,
+      activeTime: activeTimeMinutes.toFixed(1),
+      sleepTime: sleepHours.toFixed(1),
+      progressPercent: Math.min(100, (batteryLifeDays / 300) * 100),
+      tip: `Button-only mode: Device only wakes on button press. Assuming ${buttonPresses} manual updates per day. Deep sleep consumes ~20µA.`
     };
   }
 
