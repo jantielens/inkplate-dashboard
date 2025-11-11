@@ -194,14 +194,19 @@ void setup() {
             LogBox::end();
             
             #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-            // Enable frontlight for manual refresh (Inkplate 6 Flick)
-            display.frontlight(true);
-            display.setFrontlight(63);  // Max brightness
-            frontlightActivated = true;
-            frontlightStartTime = millis();
-            LogBox::begin("Frontlight");
-            LogBox::line("Frontlight enabled at max brightness for manual refresh");
-            LogBox::end();
+            // Check if frontlight is enabled (duration > 0)
+            DashboardConfig tempConfig;
+            if (configManager.loadConfig(tempConfig) && tempConfig.frontlightDuration > 0) {
+                // Enable frontlight for manual refresh (Inkplate 6 Flick)
+                display.frontlight(true);
+                display.setFrontlight(tempConfig.frontlightBrightness);
+                frontlightActivated = true;
+                frontlightStartTime = millis();
+                LogBox::begin("Frontlight");
+                LogBox::linef("Frontlight enabled (brightness: %d, duration: %d sec)", 
+                             tempConfig.frontlightBrightness, tempConfig.frontlightDuration);
+                LogBox::end();
+            }
             #endif
             
             // Show immediate visual feedback for manual refresh

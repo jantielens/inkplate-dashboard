@@ -245,18 +245,28 @@ void PowerManager::prepareForSleep() {
     LogBox::begin("Preparing for deep sleep");
     
     #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-    // Check if frontlight was activated and ensure it stays on for minimum duration
+    // Check if frontlight was activated and ensure it stays on for configured duration
     extern bool frontlightActivated;
     extern unsigned long frontlightStartTime;
+    extern ConfigManager configManager;
     
     if (frontlightActivated) {
-        const unsigned long FRONTLIGHT_MIN_DURATION_MS = 15000;  // 15 seconds
-        unsigned long elapsedTime = millis() - frontlightStartTime;
+        // Load config to get frontlight duration
+        DashboardConfig config;
+        uint8_t frontlightDuration = 15;  // Default fallback
+        if (configManager.loadConfig(config)) {
+            frontlightDuration = config.frontlightDuration;
+        }
         
-        if (elapsedTime < FRONTLIGHT_MIN_DURATION_MS) {
-            unsigned long remainingTime = FRONTLIGHT_MIN_DURATION_MS - elapsedTime;
-            LogBox::linef("Frontlight minimum duration: waiting %lu ms", remainingTime);
-            delay(remainingTime);
+        if (frontlightDuration > 0) {
+            unsigned long frontlightMinDurationMs = frontlightDuration * 1000UL;
+            unsigned long elapsedTime = millis() - frontlightStartTime;
+            
+            if (elapsedTime < frontlightMinDurationMs) {
+                unsigned long remainingTime = frontlightMinDurationMs - elapsedTime;
+                LogBox::linef("Frontlight minimum duration: waiting %lu ms", remainingTime);
+                delay(remainingTime);
+            }
         }
         
         // Turn off frontlight before sleep
