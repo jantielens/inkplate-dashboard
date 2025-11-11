@@ -189,6 +189,15 @@ void setup() {
             LogBox::line("Short button press detected - performing normal update");
             LogBox::end();
             
+            #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+            // Enable frontlight for manual refresh (Inkplate 6 Flick)
+            display.frontlight(true);
+            display.setFrontlight(63);  // Max brightness
+            LogBox::begin("Frontlight");
+            LogBox::line("Frontlight enabled at max brightness for manual refresh");
+            LogBox::end();
+            #endif
+            
             // Show immediate visual feedback for manual refresh
             uiStatus.showManualRefresh();
             delay(1500); // Show message for 1.5 seconds

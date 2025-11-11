@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [1.3.7] - 2025-11-11
+
+### Added
+- **Frontlight Support for Manual Refresh on Inkplate 6 Flick** (Issue #85)
+  - Frontlight automatically turns on at max brightness (63/63) when user triggers manual refresh via short button press
+  - Frontlight stays on during entire update cycle and turns off before deep sleep
+  - Behavior is board-specific - only applies to Inkplate 6 Flick (using `HAS_FRONTLIGHT` flag)
+  - Provides visual feedback in low-light conditions and confirms button press registration
+  - Does not affect automatic timer-based refreshes (frontlight only for manual updates)
+
 ## [1.3.6] - 2025-11-08
 
 ### Added

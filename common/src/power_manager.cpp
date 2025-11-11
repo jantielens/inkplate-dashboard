@@ -243,6 +243,14 @@ uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
 
 void PowerManager::prepareForSleep() {
     LogBox::begin("Preparing for deep sleep");
+    
+    #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+    // Turn off frontlight before sleep (if it was enabled)
+    LogBox::line("Turning off frontlight...");
+    extern Inkplate display;  // Access global display object
+    display.frontlight(false);
+    #endif
+    
     LogBox::line("Disconnecting WiFi...");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
