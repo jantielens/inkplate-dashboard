@@ -5,6 +5,7 @@
 #include <Preferences.h>
 #include "Inkplate.h"
 #include "logger.h"
+#include "config_manager.h"  // For DashboardConfig and ConfigManager
 
 // RTC memory to track if device was previously running
 RTC_DATA_ATTR uint32_t rtc_boot_count = 0;
