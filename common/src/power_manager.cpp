@@ -245,10 +245,29 @@ void PowerManager::prepareForSleep() {
     LogBox::begin("Preparing for deep sleep");
     
     #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-    // Turn off frontlight before sleep (if it was enabled)
-    LogBox::line("Turning off frontlight...");
-    extern Inkplate display;  // Access global display object
-    display.frontlight(false);
+    // Check if frontlight was activated and ensure it stays on for minimum duration
+    extern bool frontlightActivated;
+    extern unsigned long frontlightStartTime;
+    
+    if (frontlightActivated) {
+        const unsigned long FRONTLIGHT_MIN_DURATION_MS = 15000;  // 15 seconds
+        unsigned long elapsedTime = millis() - frontlightStartTime;
+        
+        if (elapsedTime < FRONTLIGHT_MIN_DURATION_MS) {
+            unsigned long remainingTime = FRONTLIGHT_MIN_DURATION_MS - elapsedTime;
+            LogBox::linef("Frontlight minimum duration: waiting %lu ms", remainingTime);
+            delay(remainingTime);
+        }
+        
+        // Turn off frontlight before sleep
+        LogBox::line("Turning off frontlight...");
+        extern Inkplate display;  // Access global display object
+        display.frontlight(false);
+        
+        // Reset frontlight tracking
+        frontlightActivated = false;
+        frontlightStartTime = 0;
+    }
     #endif
     
     LogBox::line("Disconnecting WiFi...");

@@ -47,6 +47,10 @@ unsigned long configModeStartTime = 0;
 // In single image mode: tracks retry attempts (0-2)
 RTC_DATA_ATTR uint8_t imageStateIndex = 0;
 
+// RTC memory for frontlight tracking (persists across deep sleep)
+RTC_DATA_ATTR bool frontlightActivated = false;  // Whether frontlight was turned on
+RTC_DATA_ATTR unsigned long frontlightStartTime = 0;  // When frontlight was activated (millis)
+
 // UI Components
 UIMessages uiMessages(&displayManager);
 UIError uiError(&displayManager);
@@ -193,6 +197,8 @@ void setup() {
             // Enable frontlight for manual refresh (Inkplate 6 Flick)
             display.frontlight(true);
             display.setFrontlight(63);  // Max brightness
+            frontlightActivated = true;
+            frontlightStartTime = millis();
             LogBox::begin("Frontlight");
             LogBox::line("Frontlight enabled at max brightness for manual refresh");
             LogBox::end();
