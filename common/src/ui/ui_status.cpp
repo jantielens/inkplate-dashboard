@@ -32,8 +32,10 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
     displayManager->showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
     
+#if !DISPLAY_MINIMAL_UI
     displayManager->showMessage("Connect WiFi", MARGIN, y, FONT_HEADING2);
     y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+#endif
     
     displayManager->showMessage("1. Connect to WiFi:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;

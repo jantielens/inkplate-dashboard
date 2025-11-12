@@ -365,19 +365,19 @@ void DisplayManager::drawVersionLabel() {
     uint16_t h = 0;
     _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
 
-    int x = getWidth() - w - MARGIN;
-    // Position from bottom: getHeight() - MARGIN gives bottom edge, subtract h for top of text
-    int y = getHeight() - h - MARGIN;
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    // Position from bottom: getHeight() - MARGIN is where we want the baseline
+    int baselineY = getHeight() - MARGIN;
+    
+    // Calculate X position (right-aligned)
+    // x1 can be negative (characters extending left of cursor), so we need to account for it
+    // Total width is: abs(x1) + w (left offset + bounding box width)
+    int totalWidth = (x1 < 0 ? -x1 : 0) + w;
+    int x = getWidth() - totalWidth - MARGIN;
     if (x < MARGIN) {
         x = MARGIN;
     }
-    if (y < MARGIN) {
-        y = MARGIN;
-    }
-
-    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
-    // y1 is negative and represents the distance from baseline to top of tallest character
-    int baselineY = y - y1;
 
     _display->setCursor(x, baselineY);
     _display->print(versionLabel);
