@@ -9,6 +9,7 @@ A smart, multi-board firmware for [Inkplate e-ink displays by Soldered Electroni
 - 🔋 **Power efficient**: deep sleep between updates, with button-only wake mode for maximum battery life
 - 🌐 **Web-based configuration** and OTA firmware updates
 - 🔘 **Button controls** for config mode and manual refresh
+- 💡 **Automatic frontlight** (Inkplate 6 Flick only) - illuminates display after manual button press updates
 - 🏠 **Home Assistant integration** (optional MQTT telemetry with comprehensive diagnostics)
 - ⚡ **Advanced options**: CRC32-based battery saver, flexible hourly scheduling, button-only wake mode, VCOM management, and more
 

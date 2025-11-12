@@ -38,6 +38,10 @@
 // Device identification
 #define PREF_FRIENDLY_NAME "friendly_name"
 
+// Frontlight configuration (Inkplate 6 Flick only)
+#define PREF_FRONTLIGHT_DURATION "fl_duration"  // Duration in seconds (0 = disabled)
+#define PREF_FRONTLIGHT_BRIGHTNESS "fl_bright"  // Brightness level (0-63)
+
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
@@ -80,6 +84,10 @@ struct DashboardConfig {
     String imageUrls[MAX_IMAGE_SLOTS];    // Image URLs
     int imageIntervals[MAX_IMAGE_SLOTS];  // Display duration per image in minutes
     
+    // Frontlight configuration (only for boards with HAS_FRONTLIGHT)
+    uint8_t frontlightDuration;   // Duration in seconds (0 = disabled, default 0)
+    uint8_t frontlightBrightness; // Brightness level (0-63, default 63)
+    
     // Constructor with defaults
     DashboardConfig() : 
         wifiSSID(""),
@@ -99,7 +107,9 @@ struct DashboardConfig {
         subnet(""),
         primaryDNS(""),
         secondaryDNS(""),
-        imageCount(0) {
+        imageCount(0),
+        frontlightDuration(0),      // Default: disabled
+        frontlightBrightness(63) {  // Default: max brightness
         // Initialize all hours enabled by default (0xFF = all bits set)
         updateHours[0] = 0xFF;  // Hours 0-7
         updateHours[1] = 0xFF;  // Hours 8-15

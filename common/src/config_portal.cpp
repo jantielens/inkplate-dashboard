@@ -240,6 +240,22 @@ void ConfigPortal::handleSubmit() {
         screenRotation = 0;  // Default to 0° on invalid input
     }
     
+    // Parse frontlight configuration (only for boards with HAS_FRONTLIGHT)
+    uint8_t frontlightDuration = 0;
+    uint8_t frontlightBrightness = 63;
+    #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+    String frontlightDurationStr = _server->arg("frontlight_duration");
+    String frontlightBrightnessStr = _server->arg("frontlight_brightness");
+    frontlightDuration = frontlightDurationStr.toInt();
+    if (frontlightDuration > 255) {
+        frontlightDuration = 255;  // Clamp to max
+    }
+    frontlightBrightness = frontlightBrightnessStr.toInt();
+    if (frontlightBrightness > 63) {
+        frontlightBrightness = 63;  // Clamp to max
+    }
+    #endif
+    
     // Parse hourly schedule bitmask (24 checkboxes)
     uint8_t updateHours[3] = {0, 0, 0};
     for (int hour = 0; hour < 24; hour++) {
@@ -340,6 +356,10 @@ void ConfigPortal::handleSubmit() {
         config.imageUrls[i] = imageUrls[i];
         config.imageIntervals[i] = imageIntervals[i];
     }
+    
+    // Save frontlight configuration
+    config.frontlightDuration = frontlightDuration;
+    config.frontlightBrightness = frontlightBrightness;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {
@@ -695,6 +715,24 @@ String ConfigPortal::generateConfigPage() {
         html += "</label>";
         html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         html += "</div>";
+        
+        // Frontlight configuration (only for boards with HAS_FRONTLIGHT)
+        #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+        html += "<div class='form-group'>";
+        html += "<label for='frontlight_duration'>Frontlight Duration (seconds)</label>";
+        uint8_t currentDuration = hasConfig ? currentConfig.frontlightDuration : 0;
+        html += "<input type='number' id='frontlight_duration' name='frontlight_duration' min='0' max='255' value='" + String(currentDuration) + "' placeholder='0'>";
+        html += "<div class='help-text'>How long to keep the frontlight on during manual button refresh (0 = disabled, default). When set to 0, frontlight is never activated and device goes to sleep immediately after refresh.</div>";
+        html += "</div>";
+        
+        html += "<div class='form-group'>";
+        html += "<label for='frontlight_brightness'>Frontlight Brightness (0-63)</label>";
+        uint8_t currentBrightness = hasConfig ? currentConfig.frontlightBrightness : 63;
+        html += "<input type='number' id='frontlight_brightness' name='frontlight_brightness' min='0' max='63' value='" + String(currentBrightness) + "' placeholder='63'>";
+        html += "<div class='help-text'>Brightness level when frontlight is active (0-63, where 63 is maximum brightness). Not used if duration is set to 0.</div>";
+        html += "</div>";
+        #endif
+        
         html += SECTION_END();
         
         // MQTT Section

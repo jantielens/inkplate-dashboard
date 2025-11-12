@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [1.3.7] - 2025-11-11
+
+### Added
+- **Frontlight Support for Manual Refresh on Inkplate 6 Flick** (Issue #85)
+  - Frontlight automatically turns on **after image is successfully displayed** following manual button press
+  - Configurable frontlight duration (0-255 seconds, default: 0/disabled)
+  - Configurable frontlight brightness (0-63, default: 63/max brightness)
+  - Frontlight stays on for minimum configured duration (postpones deep sleep if needed)
+  - If update cycle takes longer than configured duration, frontlight stays on until completion
+  - Configuration fields only appear for devices with frontlight support (Inkplate 6 Flick)
+  - When duration is set to 0, frontlight is never activated (default behavior for backward compatibility)
+  - Provides visual feedback in low-light conditions and confirms successful update
+  - Does not affect automatic timer-based refreshes (frontlight only for manual updates)
+- **FrontlightManager Class** - Refactored frontlight logic into dedicated manager class for cleaner architecture and easier extensibility
+
 ## [1.3.6] - 2025-11-08
 
 ### Added

@@ -114,6 +114,10 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
         config.imageIntervals[i] = _preferences.getInt(intKey.c_str(), DEFAULT_INTERVAL_MINUTES);
     }
     
+    // Load frontlight configuration (only for boards with HAS_FRONTLIGHT)
+    config.frontlightDuration = _preferences.getUChar(PREF_FRONTLIGHT_DURATION, 0);  // Default: disabled
+    config.frontlightBrightness = _preferences.getUChar(PREF_FRONTLIGHT_BRIGHTNESS, 63);  // Default: max brightness
+    
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageCount == 0) {
         LogBox::message("Config Error", "Invalid configuration: missing SSID or images");
@@ -224,6 +228,10 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
         _preferences.remove(urlKey.c_str());
         _preferences.remove(intKey.c_str());
     }
+    
+    // Save frontlight configuration (only for boards with HAS_FRONTLIGHT)
+    _preferences.putUChar(PREF_FRONTLIGHT_DURATION, config.frontlightDuration);
+    _preferences.putUChar(PREF_FRONTLIGHT_BRIGHTNESS, config.frontlightBrightness);
     
     LogBox::begin("Config Saved");
     LogBox::line("Configuration saved successfully");

@@ -1,5 +1,6 @@
 #include <src/modes/normal_mode_controller.h>
 #include <WiFi.h>
+#include <src/frontlight_manager.h>
 
 // Error retry interval: how long to wait before retrying after image download failure
 // This prevents indefinite sleep when configured interval is 0 (button-only mode)
@@ -229,6 +230,15 @@ void NormalModeController::execute() {
                 imageManager->saveCRC32(newCRC32);
             }
             
+            // Enable frontlight after successful image display (only for button wake)
+            #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+            if (wakeReason == WAKEUP_BUTTON && config.frontlightDuration > 0) {
+                extern FrontlightManager frontlightManager;
+                unsigned long durationMs = config.frontlightDuration * 1000UL;
+                frontlightManager.turnOn(config.frontlightBrightness, durationMs);
+            }
+            #endif
+            
             float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
             publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
                                0, wifiBSSID, timings, "Carousel image displayed successfully", "info");
@@ -457,6 +467,16 @@ void NormalModeController::handleImageSuccess(const DashboardConfig& config, uin
     
     // Reset state index (single image mode: reset retry counter, carousel: handled separately)
     *imageStateIndex = 0;
+    
+    // Enable frontlight after successful image display (only for button wake)
+    #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+    if (wakeReason == WAKEUP_BUTTON && config.frontlightDuration > 0) {
+        extern FrontlightManager frontlightManager;
+        unsigned long durationMs = config.frontlightDuration * 1000UL;
+        frontlightManager.turnOn(config.frontlightBrightness, durationMs);
+    }
+    #endif
+    
     float loopTimeSeconds = (millis() - loopStartTime) / 1000.0;
     
     // Determine appropriate log message based on CRC32 check results

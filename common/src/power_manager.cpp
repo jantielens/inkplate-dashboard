@@ -5,6 +5,8 @@
 #include <Preferences.h>
 #include "Inkplate.h"
 #include "logger.h"
+#include "config_manager.h"  // For DashboardConfig and ConfigManager
+#include "frontlight_manager.h"
 
 // RTC memory to track if device was previously running
 RTC_DATA_ATTR uint32_t rtc_boot_count = 0;
@@ -243,6 +245,15 @@ uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
 
 void PowerManager::prepareForSleep() {
     LogBox::begin("Preparing for deep sleep");
+    
+    #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+    // Turn off frontlight if active (respects minimum duration internally)
+    extern FrontlightManager frontlightManager;
+    if (frontlightManager.isActive()) {
+        frontlightManager.turnOff();
+    }
+    #endif
+    
     LogBox::line("Disconnecting WiFi...");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);

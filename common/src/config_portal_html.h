@@ -76,6 +76,7 @@ const char* CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML = R"(
       <li>7s per image update, 1s per CRC32 check</li>
       <li>Good WiFi signal strength</li>
       <li>Carousel with interval=0: assumes 5 hours until button press</li>
+      <li>Frontlight usage (if available) is not included in calculation</li>
     </ul>
   </div>
 </div>

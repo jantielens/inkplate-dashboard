@@ -19,6 +19,7 @@
 #include <src/modes/ap_mode_controller.h>
 #include <src/modes/config_mode_controller.h>
 #include <src/modes/normal_mode_controller.h>
+#include <src/frontlight_manager.h>
 
 
 // Create Inkplate instance
@@ -46,6 +47,10 @@ unsigned long configModeStartTime = 0;
 // In carousel mode: tracks which image to display next (0-9)
 // In single image mode: tracks retry attempts (0-2)
 RTC_DATA_ATTR uint8_t imageStateIndex = 0;
+
+#if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+FrontlightManager frontlightManager(&display);
+#endif
 
 // UI Components
 UIMessages uiMessages(&displayManager);
@@ -243,7 +248,6 @@ void loop() {
         // Check if configuration was received
         if (configModeController.isConfigReceived()) {
             LogBox::begin("Configuration Updated");
-            LogBox::line("Configuration updated");
             LogBox::line("Restarting in 3 seconds");
             LogBox::end();
             

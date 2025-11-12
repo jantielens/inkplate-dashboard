@@ -19,7 +19,7 @@
 
 // Board-specific features
 #define HAS_TOUCHSCREEN false
-#define HAS_FRONTLIGHT false
+#define HAS_FRONTLIGHT true
 #define HAS_BATTERY true
 #define HAS_BUTTON true  // Inkplate 6 Flick has a wake button
 
