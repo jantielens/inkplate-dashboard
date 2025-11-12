@@ -237,8 +237,8 @@ void DisplayManager::showVcomTestPattern() {
     
     // Read and display current VCOM
     double currentVcom = readPanelVCOM();
+    _display->setFont(FONT_NORMAL);
     _display->setTextColor(BLACK);
-    _display->setTextSize(2);
     _display->setCursor(5, 5);
     _display->print("Current VCOM: ");
     if (!isnan(currentVcom)) {
@@ -309,15 +309,15 @@ void DisplayManager::refresh(bool includeVersion) {
     _display->display();
 }
 
-void DisplayManager::showMessage(const char* message, int x, int y, int textSize) {
-    _display->setCursor(x, y);
-    _display->setTextSize(textSize);
+void DisplayManager::showMessage(const char* message, int x, int y, const GFXfont* font) {
+    _display->setFont(font);
     _display->setTextColor(BLACK);
+    _display->setCursor(x, y);
     _display->print(message);
 }
 
-void DisplayManager::drawCentered(const char* message, int y, int textSize) {
-    _display->setTextSize(textSize);
+void DisplayManager::drawCentered(const char* message, int y, const GFXfont* font) {
+    _display->setFont(font);
     _display->setTextColor(BLACK);
     
     // Calculate text width (approximate)
@@ -340,7 +340,7 @@ int DisplayManager::getHeight() {
 
 void DisplayManager::drawVersionLabel() {
     static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
-    _display->setTextSize(FONT_NORMAL);
+    _display->setFont(FONT_NORMAL);
     _display->setTextColor(BLACK);
 
     int16_t x1 = 0;
@@ -369,8 +369,13 @@ void DisplayManager::drawBitmap(const uint8_t* bitmap, int x, int y, int w, int 
     _display->drawImage(bitmap, x, y, w, h);
 }
 
-// Helper to calculate approximate font height in pixels
-// Inkplate uses a 5x7 font matrix, scaled by textSize
-int DisplayManager::getFontHeight(int textSize) {
-    return 8 * textSize;  // 7 pixels + 1 pixel spacing, multiplied by size
+// Helper to calculate font height in pixels for GFXfonts
+// Uses the yAdvance value from the GFXfont structure
+int DisplayManager::getFontHeight(const GFXfont* font) {
+    if (font == nullptr) {
+        // Fallback to default font height (5x7 pixel font)
+        return 8;
+    }
+    // GFXfont stores yAdvance which is the recommended line spacing
+    return font->yAdvance;
 }

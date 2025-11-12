@@ -7,6 +7,10 @@ param(
     [string]$Board = "inkplate5v2"
 )
 
+# Fix for PowerShell 7.3+ argument passing to native executables
+# This ensures compatibility with both PowerShell 5.1 and PowerShell 7+
+$PSNativeCommandArgumentPassing = "Legacy"
+
 # Get absolute path to workspace
 $WORKSPACE_PATH = (Get-Location).Path
 $COMMON_PATH = Join-Path $WORKSPACE_PATH "common"

@@ -34,10 +34,12 @@
 // Board-specific settings
 #define DISPLAY_TIMEOUT_MS 15000  // Larger display, longer timeout
 
-// Font sizes for text hierarchy
-#define FONT_HEADING1 8   // Large headings (e.g., "Dashboard", screen titles)
-#define FONT_HEADING2 5   // Medium headings (e.g., section titles)
-#define FONT_NORMAL 3     // Normal text (e.g., descriptions, status messages)
+// Font definitions using GFXfonts
+// Font objects are defined in font headers included by main_sketch.ino.inc
+// These macros reference the font objects by name
+#define FONT_HEADING1 (&FreeSansBold24pt7b)  // Large headings (e.g., "Dashboard", screen titles)
+#define FONT_HEADING2 (&FreeSansBold18pt7b)  // Medium headings (e.g., section titles)
+#define FONT_NORMAL (&FreeSans12pt7b)        // Normal text (e.g., descriptions, status messages)
 
 // Line spacing (pixels between lines of text)
 #define LINE_SPACING 10

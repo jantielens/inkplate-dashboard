@@ -3,6 +3,13 @@
 
 #include "Inkplate.h"
 
+// Include font files (provides GFXfont objects referenced by board_config.h)
+#include <src/fonts/Picopixel.h>
+#include <src/fonts/FreeSans9pt7b.h>
+#include <src/fonts/FreeSans12pt7b.h>
+#include <src/fonts/FreeSansBold18pt7b.h>
+#include <src/fonts/FreeSansBold24pt7b.h>
+
 class DisplayManager {
 public:
     DisplayManager(Inkplate* display);
@@ -10,8 +17,8 @@ public:
     void init(bool clearOnInit = true, uint8_t rotation = 0);
     void clear();
     void refresh(bool includeVersion = true);
-    void showMessage(const char* message, int x, int y, int textSize);
-    void drawCentered(const char* message, int y, int textSize);
+    void showMessage(const char* message, int x, int y, const GFXfont* font);
+    void drawCentered(const char* message, int y, const GFXfont* font);
     
     // Rotation management (for performance optimization)
     void setRotation(uint8_t rotation);
@@ -19,8 +26,8 @@ public:
     void enableRotation();   // Restore configured rotation
     void disableRotation();  // Set to 0 for performance
     
-    // Helper to calculate font height in pixels (approximate)
-    int getFontHeight(int textSize);
+    // Helper to calculate font height in pixels for GFXfonts
+    int getFontHeight(const GFXfont* font);
     
     // Board-specific adaptations can be added here
     int getWidth();
