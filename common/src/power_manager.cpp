@@ -6,6 +6,7 @@
 #include "Inkplate.h"
 #include "logger.h"
 #include "config_manager.h"  // For DashboardConfig and ConfigManager
+#include "frontlight_manager.h"
 
 // RTC memory to track if device was previously running
 RTC_DATA_ATTR uint32_t rtc_boot_count = 0;
@@ -246,38 +247,10 @@ void PowerManager::prepareForSleep() {
     LogBox::begin("Preparing for deep sleep");
     
     #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-    // Check if frontlight was activated and ensure it stays on for configured duration
-    extern bool frontlightActivated;
-    extern unsigned long frontlightStartTime;
-    extern ConfigManager configManager;
-    
-    if (frontlightActivated) {
-        // Load config to get frontlight duration
-        DashboardConfig config;
-        uint8_t frontlightDuration = 15;  // Default fallback
-        if (configManager.loadConfig(config)) {
-            frontlightDuration = config.frontlightDuration;
-        }
-        
-        if (frontlightDuration > 0) {
-            unsigned long frontlightMinDurationMs = frontlightDuration * 1000UL;
-            unsigned long elapsedTime = millis() - frontlightStartTime;
-            
-            if (elapsedTime < frontlightMinDurationMs) {
-                unsigned long remainingTime = frontlightMinDurationMs - elapsedTime;
-                LogBox::linef("Frontlight minimum duration: waiting %lu ms", remainingTime);
-                delay(remainingTime);
-            }
-        }
-        
-        // Turn off frontlight before sleep
-        LogBox::line("Turning off frontlight...");
-        extern Inkplate display;  // Access global display object
-        display.frontlight(false);
-        
-        // Reset frontlight tracking
-        frontlightActivated = false;
-        frontlightStartTime = 0;
+    // Turn off frontlight if active (respects minimum duration internally)
+    extern FrontlightManager frontlightManager;
+    if (frontlightManager.isActive()) {
+        frontlightManager.turnOff();
     }
     #endif
     

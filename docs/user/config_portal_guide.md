@@ -197,6 +197,39 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Note**: Only needed if your broker requires authentication
 - **Security**: Stored securely in ESP32 NVS
 
+### Frontlight Configuration (Inkplate 6 Flick Only)
+
+**Note**: These fields only appear when using an Inkplate 6 Flick device with built-in frontlight support.
+
+#### Frontlight Duration
+- **Required**: No
+- **Type**: Number
+- **Unit**: Seconds
+- **Default**: 0 (disabled)
+- **Range**: 0-255 seconds
+- **Description**: How long to keep the frontlight on after a manual button press update
+- **Behavior**:
+  - **0 seconds** = Frontlight never activates (default, backward compatible)
+  - **1-255 seconds** = Frontlight turns on after successful image display and stays on for the configured duration
+- **Use Cases**:
+  - **Quick check** (15-30 seconds) - Brief illumination to verify the update
+  - **Extended viewing** (60-300 seconds) - Comfortable reading time in low light conditions
+- **Note**: Frontlight only activates for manual button press updates, not automatic timer-based refreshes
+
+#### Frontlight Brightness
+- **Required**: No
+- **Type**: Number
+- **Unit**: Brightness level
+- **Default**: 63 (maximum brightness)
+- **Range**: 0-63
+- **Description**: Brightness level for the frontlight
+- **Values**:
+  - **0** = Minimum brightness (essentially off)
+  - **31** = Medium brightness
+  - **63** = Maximum brightness (default)
+- **Recommendation**: Start with maximum (63) and reduce if too bright
+- **Note**: Only used when Frontlight Duration > 0
+
 ## Web Interface
 
 The configuration portal features a modern, card-based design optimized for mobile and desktop:

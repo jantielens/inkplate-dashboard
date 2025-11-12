@@ -19,6 +19,7 @@
 #include <src/modes/ap_mode_controller.h>
 #include <src/modes/config_mode_controller.h>
 #include <src/modes/normal_mode_controller.h>
+#include <src/frontlight_manager.h>
 
 
 // Create Inkplate instance
@@ -47,9 +48,9 @@ unsigned long configModeStartTime = 0;
 // In single image mode: tracks retry attempts (0-2)
 RTC_DATA_ATTR uint8_t imageStateIndex = 0;
 
-// RTC memory for frontlight tracking (persists across deep sleep)
-RTC_DATA_ATTR bool frontlightActivated = false;  // Whether frontlight was turned on
-RTC_DATA_ATTR unsigned long frontlightStartTime = 0;  // When frontlight was activated (millis)
+#if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
+FrontlightManager frontlightManager(&display);
+#endif
 
 // UI Components
 UIMessages uiMessages(&displayManager);
@@ -193,22 +194,6 @@ void setup() {
             LogBox::line("Short button press detected - performing normal update");
             LogBox::end();
             
-            #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-            // Check if frontlight is enabled (duration > 0)
-            DashboardConfig tempConfig;
-            if (configManager.loadConfig(tempConfig) && tempConfig.frontlightDuration > 0) {
-                // Enable frontlight for manual refresh (Inkplate 6 Flick)
-                display.frontlight(true);
-                display.setFrontlight(tempConfig.frontlightBrightness);
-                frontlightActivated = true;
-                frontlightStartTime = millis();
-                LogBox::begin("Frontlight");
-                LogBox::linef("Frontlight enabled (brightness: %d, duration: %d sec)", 
-                             tempConfig.frontlightBrightness, tempConfig.frontlightDuration);
-                LogBox::end();
-            }
-            #endif
-            
             // Show immediate visual feedback for manual refresh
             uiStatus.showManualRefresh();
             delay(1500); // Show message for 1.5 seconds
@@ -263,7 +248,6 @@ void loop() {
         // Check if configuration was received
         if (configModeController.isConfigReceived()) {
             LogBox::begin("Configuration Updated");
-            LogBox::line("Configuration updated");
             LogBox::line("Restarting in 3 seconds");
             LogBox::end();
             

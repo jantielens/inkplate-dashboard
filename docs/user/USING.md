@@ -559,15 +559,81 @@ You can manually trigger an immediate update without waiting for the automatic r
 
 ### Devices with a Wake Button (Inkplate 5 V2, 10, 6 Flick)
 
-If your device has a wake button, triggering a manual update is simple. Just press and quickly release the wake button with a short press - don't hold it down. The device wakes immediately and shows you visual feedback with a message saying "Manual Refresh" and "Button pressed - updating..." so you know your button press was registered. The update then proceeds just like a normal automatic cycle, connecting to WiFi, downloading the image, and displaying it. After showing the updated image, the device returns to sleep and resumes its normal schedule.
+If your device has a wake button, triggering a manual update is simple. Just press and quickly release the wake button with a short press - don't hold it down. The device wakes immediately and shows you visual feedback with a message saying "Manual Refresh" and "Button pressed - updating..." so you know your button press was registered. The update then proceeds just like a normal automatic cycle, connecting to WiFi, downloading the image, and displaying it. **After the image is successfully displayed, the frontlight turns on automatically** (Inkplate 6 Flick only, if configured with a non-zero duration). The device then returns to sleep after the configured frontlight duration elapses and resumes its normal schedule.
 
 You can find the button in different locations depending on your device. On the Inkplate 5 V2, look for a small button labeled "WAKE" on the board itself. The Inkplate 10 has a large round button prominently placed on the front panel, making it easy to press. The Inkplate 6 Flick features a button on the side of the device for convenient access.
 
-This manual refresh feature is particularly useful when you've updated the source image and want to see it immediately without waiting for the next automatic cycle. It's also great for testing your configuration or showing someone the latest version of your dashboard on demand.
+This manual refresh feature is particularly useful when you've updated the source image and want to see it immediately without waiting for the next automatic cycle. It's also great for testing your configuration or showing someone the latest version of your dashboard on demand. **On the Inkplate 6 Flick, you can configure the frontlight to turn on automatically after manual updates**, making it easier to read the display in low-light conditions without needing a separate light source.
 
 ### Devices without a Wake Button (Inkplate 2)
 
 The Inkplate 2 doesn't have a physical wake button, which means the manual refresh feature isn't available on this device. Your display will only update according to the automatic schedule you've configured. If you need more frequent updates, you can reduce the refresh rate to as low as 1 minute in the configuration settings, though this isn't recommended if you're running on battery power as it will drain much faster. Alternatively, you can use the reset button to enter config mode, which will trigger an update when you save your settings.
+
+---
+
+## Frontlight (Inkplate 6 Flick)
+
+The Inkplate 6 Flick features a built-in frontlight that can automatically illuminate the display after manual button press updates, making it easier to read in low-light conditions.
+
+### How It Works
+
+1. **Press the wake button** to trigger a manual update
+2. **Device downloads and displays** the new image
+3. **Frontlight turns on automatically** after the image is successfully displayed
+4. **Frontlight stays on** for your configured duration (15-300 seconds recommended)
+5. **Frontlight turns off** and device returns to deep sleep
+
+### Configuration
+
+You can configure the frontlight behavior in the web configuration portal:
+
+**Frontlight Duration** (0-255 seconds, default: 0)
+- **0 seconds** = Frontlight disabled (never turns on)
+- **15-30 seconds** = Quick check mode
+- **60-120 seconds** = Comfortable reading time
+- **180-300 seconds** = Extended viewing
+
+**Frontlight Brightness** (0-63, default: 63)
+- **63** = Maximum brightness (recommended starting point)
+- **31** = Medium brightness
+- **Lower values** = Dimmer, for very dark environments
+
+### Important Notes
+
+- **Manual updates only**: Frontlight only activates for button press updates, not automatic timer-based refreshes
+- **After image display**: Frontlight turns on **after** the new image is shown, not during the update process
+- **Battery impact**: Frontlight consumes additional power. Longer durations and higher brightness reduce battery life
+- **Minimum duration respected**: If the update takes longer than configured duration, frontlight stays on until update completes
+- **Board-specific**: This feature is only available on Inkplate 6 Flick devices
+
+### Use Cases
+
+**Quick Check (15-30 seconds)**
+- Verify the update was successful
+- Glance at new information
+- Minimal battery impact
+
+**Normal Use (60-120 seconds)**
+- Read detailed dashboard information
+- Check multiple data points
+- Comfortable viewing time
+
+**Extended View (180-300 seconds)**
+- Detailed analysis of charts/graphs
+- Reading longer text content
+- Sharing display with others
+
+### Troubleshooting
+
+**Frontlight doesn't turn on:**
+- Check Frontlight Duration is set > 0 in configuration
+- Ensure you're using a button press (not automatic update)
+- Verify the image update completed successfully
+
+**Frontlight too bright/dim:**
+- Adjust Frontlight Brightness setting (0-63)
+- Start at 63 and reduce if needed
+- Test different levels in your lighting conditions
 
 ---
 
