@@ -4,12 +4,8 @@
 
 #include "Inkplate.h"
 
-// Include font files after Inkplate.h (provides GFXfont types)
-#include <src/fonts/Picopixel.h>
-#include <src/fonts/FreeSans9pt7b.h>
-#include <src/fonts/FreeSans12pt7b.h>
-#include <src/fonts/FreeSansBold18pt7b.h>
-#include <src/fonts/FreeSansBold24pt7b.h>
+// Note: Font files are now included in display_manager.h
+// No need to include them here anymore
 
 #include <src/config.h>
 #include <src/display_manager.h>
