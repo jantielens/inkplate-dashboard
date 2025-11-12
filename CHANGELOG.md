@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [1.3.8] - 2025-11-12
+
+### Changed
+- **Font System Replaced with GFXfonts** (Issue #81)
+  - Replaced scaled pixel fonts with proper Adafruit GFX bitmap fonts
+  - Eliminates pixelation on larger displays (Inkplate 5, 6 Flick, 10)
+  - **Inkplate 2**: Uses Picopixel (6px height) for minimal UI on 104px screen
+  - **Inkplate 5/6 Flick/10**: Uses FreeSans family (9pt, 12pt, Bold 18pt, Bold 24pt)
+  - Font macros (FONT_HEADING1, FONT_HEADING2, FONT_NORMAL) now reference GFXfont pointers
+  - DisplayManager methods updated to accept `const GFXfont*` instead of `int textSize`
+  - Font height calculation now uses `font->yAdvance` from GFXfont metadata
+  - Added 5 font header files to `common/src/fonts/` from Inkplate library
+  - No changes required to UI components (already use FONT_* defines)
+  - Improves text rendering quality across all board sizes
+
 ## [1.3.7] - 2025-11-11
 
 ### Added

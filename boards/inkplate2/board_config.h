@@ -40,10 +40,12 @@
 // Watchdog timer timeout (Inkplate 2's display update takes ~20 seconds)
 #define WATCHDOG_TIMEOUT_SECONDS 60
 
-// Font sizes for text hierarchy (smaller for tiny screen)
-#define FONT_HEADING1 1   // Large headings (e.g., "Dashboard", screen titles)
-#define FONT_HEADING2 1   // Medium headings (e.g., section titles)
-#define FONT_NORMAL 1     // Normal text (e.g., descriptions, status messages)
+// Font definitions using GFXfonts
+// Font objects are defined in font headers included by main_sketch.ino.inc
+// These macros reference the font objects by name
+#define FONT_HEADING1 (&FreeSans7pt7b)   // Large headings (e.g., "Dashboard", screen titles) - 16px height
+#define FONT_HEADING2 (&FreeSans7pt7b)   // Medium headings (e.g., section titles) - 16px height
+#define FONT_NORMAL (&FreeSans7pt7b)     // Normal text (e.g., descriptions, status messages) - 16px height
 
 // Line spacing (pixels between lines of text - tight on small screen)
 #define LINE_SPACING 1

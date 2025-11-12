@@ -3,6 +3,10 @@
 // Assumes board_config.h has already been included by the .ino file
 
 #include "Inkplate.h"
+
+// Note: Font files are now included in display_manager.h
+// No need to include them here anymore
+
 #include <src/config.h>
 #include <src/display_manager.h>
 #include <src/utils.h>

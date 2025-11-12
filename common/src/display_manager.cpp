@@ -237,8 +237,8 @@ void DisplayManager::showVcomTestPattern() {
     
     // Read and display current VCOM
     double currentVcom = readPanelVCOM();
+    _display->setFont(FONT_NORMAL);
     _display->setTextColor(BLACK);
-    _display->setTextSize(2);
     _display->setCursor(5, 5);
     _display->print("Current VCOM: ");
     if (!isnan(currentVcom)) {
@@ -309,24 +309,40 @@ void DisplayManager::refresh(bool includeVersion) {
     _display->display();
 }
 
-void DisplayManager::showMessage(const char* message, int x, int y, int textSize) {
-    _display->setCursor(x, y);
-    _display->setTextSize(textSize);
-    _display->setTextColor(BLACK);
-    _display->print(message);
-}
-
-void DisplayManager::drawCentered(const char* message, int y, int textSize) {
-    _display->setTextSize(textSize);
+void DisplayManager::showMessage(const char* message, int x, int y, const GFXfont* font) {
+    _display->setFont(font);
     _display->setTextColor(BLACK);
     
-    // Calculate text width (approximate)
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // to maintain the same visual positioning as before (where Y was the top of text)
     int16_t x1, y1;
     uint16_t w, h;
     _display->getTextBounds(message, 0, 0, &x1, &y1, &w, &h);
     
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+    
+    _display->setCursor(x, baselineY);
+    _display->print(message);
+}
+
+void DisplayManager::drawCentered(const char* message, int y, const GFXfont* font) {
+    _display->setFont(font);
+    _display->setTextColor(BLACK);
+    
+    // Calculate text bounds
+    int16_t x1, y1;
+    uint16_t w, h;
+    _display->getTextBounds(message, 0, 0, &x1, &y1, &w, &h);
+    
+    // Center horizontally
     int x = (getWidth() - w) / 2;
-    _display->setCursor(x, y);
+    
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+    
+    _display->setCursor(x, baselineY);
     _display->print(message);
 }
 
@@ -340,7 +356,7 @@ int DisplayManager::getHeight() {
 
 void DisplayManager::drawVersionLabel() {
     static const char versionLabel[] = "Firmware " FIRMWARE_VERSION;
-    _display->setTextSize(FONT_NORMAL);
+    _display->setFont(FONT_NORMAL);
     _display->setTextColor(BLACK);
 
     int16_t x1 = 0;
@@ -349,16 +365,27 @@ void DisplayManager::drawVersionLabel() {
     uint16_t h = 0;
     _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
 
-    int x = getWidth() - w - MARGIN;
-    int y = getHeight() - h - MARGIN;
+    // Calculate X position (right-aligned)
+    // x1 can be negative (characters extending left of cursor), so we need to account for it
+    // Total width is: abs(x1) + w (left offset + bounding box width)
+    int totalWidth = (x1 < 0 ? -x1 : 0) + w;
+    int x = getWidth() - totalWidth - MARGIN;
     if (x < MARGIN) {
         x = MARGIN;
     }
+    
+    // Calculate Y position from bottom
+    // Position from bottom: getHeight() - MARGIN gives bottom edge, subtract h for top of text
+    int y = getHeight() - h - MARGIN;
     if (y < MARGIN) {
         y = MARGIN;
     }
 
-    _display->setCursor(x, y);
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+
+    _display->setCursor(x, baselineY);
     _display->print(versionLabel);
 }
 
@@ -369,8 +396,13 @@ void DisplayManager::drawBitmap(const uint8_t* bitmap, int x, int y, int w, int 
     _display->drawImage(bitmap, x, y, w, h);
 }
 
-// Helper to calculate approximate font height in pixels
-// Inkplate uses a 5x7 font matrix, scaled by textSize
-int DisplayManager::getFontHeight(int textSize) {
-    return 8 * textSize;  // 7 pixels + 1 pixel spacing, multiplied by size
+// Helper to calculate font height in pixels for GFXfonts
+// Uses the yAdvance value from the GFXfont structure
+int DisplayManager::getFontHeight(const GFXfont* font) {
+    if (font == nullptr) {
+        // Fallback to default font height (5x7 pixel font)
+        return 8;
+    }
+    // GFXfont stores yAdvance which is the recommended line spacing
+    return font->yAdvance;
 }
