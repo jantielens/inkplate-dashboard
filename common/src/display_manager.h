@@ -4,11 +4,10 @@
 #include "Inkplate.h"
 
 // Include font files (provides GFXfont objects referenced by board_config.h)
-#include <src/fonts/Picopixel.h>
-#include <src/fonts/FreeSans9pt7b.h>
-#include <src/fonts/FreeSans12pt7b.h>
-#include <src/fonts/FreeSansBold18pt7b.h>
-#include <src/fonts/FreeSansBold24pt7b.h>
+#include <src/fonts/FreeSans7pt7b.h>
+#include <src/fonts/Roboto_Regular12pt7b.h>
+#include <src/fonts/Roboto_Bold20pt7b.h>
+#include <src/fonts/Roboto_Bold24pt7b.h>
 
 class DisplayManager {
 public:

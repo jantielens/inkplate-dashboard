@@ -43,9 +43,9 @@
 // Font definitions using GFXfonts
 // Font objects are defined in font headers included by main_sketch.ino.inc
 // These macros reference the font objects by name
-#define FONT_HEADING1 (&Picopixel)   // Large headings (e.g., "Dashboard", screen titles)
-#define FONT_HEADING2 (&Picopixel)   // Medium headings (e.g., section titles)
-#define FONT_NORMAL (&Picopixel)     // Normal text (e.g., descriptions, status messages)
+#define FONT_HEADING1 (&FreeSans7pt7b)   // Large headings (e.g., "Dashboard", screen titles) - 16px height
+#define FONT_HEADING2 (&FreeSans7pt7b)   // Medium headings (e.g., section titles) - 16px height
+#define FONT_NORMAL (&FreeSans7pt7b)     // Normal text (e.g., descriptions, status messages) - 16px height
 
 // Line spacing (pixels between lines of text - tight on small screen)
 #define LINE_SPACING 1
