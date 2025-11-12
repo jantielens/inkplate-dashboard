@@ -312,7 +312,17 @@ void DisplayManager::refresh(bool includeVersion) {
 void DisplayManager::showMessage(const char* message, int x, int y, const GFXfont* font) {
     _display->setFont(font);
     _display->setTextColor(BLACK);
-    _display->setCursor(x, y);
+    
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // to maintain the same visual positioning as before (where Y was the top of text)
+    int16_t x1, y1;
+    uint16_t w, h;
+    _display->getTextBounds(message, 0, 0, &x1, &y1, &w, &h);
+    
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+    
+    _display->setCursor(x, baselineY);
     _display->print(message);
 }
 
@@ -320,13 +330,19 @@ void DisplayManager::drawCentered(const char* message, int y, const GFXfont* fon
     _display->setFont(font);
     _display->setTextColor(BLACK);
     
-    // Calculate text width (approximate)
+    // Calculate text bounds
     int16_t x1, y1;
     uint16_t w, h;
     _display->getTextBounds(message, 0, 0, &x1, &y1, &w, &h);
     
+    // Center horizontally
     int x = (getWidth() - w) / 2;
-    _display->setCursor(x, y);
+    
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+    
+    _display->setCursor(x, baselineY);
     _display->print(message);
 }
 
@@ -350,6 +366,7 @@ void DisplayManager::drawVersionLabel() {
     _display->getTextBounds(versionLabel, 0, 0, &x1, &y1, &w, &h);
 
     int x = getWidth() - w - MARGIN;
+    // Position from bottom: getHeight() - MARGIN gives bottom edge, subtract h for top of text
     int y = getHeight() - h - MARGIN;
     if (x < MARGIN) {
         x = MARGIN;
@@ -358,7 +375,11 @@ void DisplayManager::drawVersionLabel() {
         y = MARGIN;
     }
 
-    _display->setCursor(x, y);
+    // GFXfonts use baseline positioning, so we need to offset Y by the font's ascent
+    // y1 is negative and represents the distance from baseline to top of tallest character
+    int baselineY = y - y1;
+
+    _display->setCursor(x, baselineY);
     _display->print(versionLabel);
 }
 
