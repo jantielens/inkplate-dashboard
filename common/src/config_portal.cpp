@@ -884,9 +884,8 @@ String ConfigPortal::generateConfigPage() {
     html += "</div>";
     
     // Modal dialog for factory reset confirmation (only in CONFIG_MODE)
-    if (_mode == CONFIG_MODE && hasConfig) {
+    if (_mode == CONFIG_MODE) {
         html += CONFIG_PORTAL_RESET_MODAL_HTML;
-        html += CONFIG_PORTAL_MODAL_SCRIPT;
     }
     
     // Footer with version
@@ -894,15 +893,18 @@ String ConfigPortal::generateConfigPage() {
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
     html += footer;
     
+    // Factory Reset Modal JavaScript - needed in CONFIG_MODE (for factory reset button in danger zone)
+    if (_mode == CONFIG_MODE) {
+        html += CONFIG_PORTAL_MODAL_SCRIPT;
+    }
+    
+    // Friendly Name Sanitization JavaScript - needed in both modes (friendly name field now in BOOT_MODE too)
+    html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
+    
     // Battery Life Estimator JavaScript - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         html += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
         html += CONFIG_PORTAL_BADGE_SCRIPT;
-    }
-    
-    // Friendly Name Sanitization JavaScript - only in CONFIG_MODE
-    if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
     }
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
