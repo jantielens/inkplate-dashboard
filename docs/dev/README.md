@@ -30,6 +30,7 @@ This section contains documentation for developers, contributors, and maintainer
 | [ADR-TESTING.MD](adr/ADR-TESTING.MD) | Testing the CI/CD workflow |
 | [ADR-TESTING_RETRY_MECHANISM.MD](adr/ADR-TESTING_RETRY_MECHANISM.MD) | Testing the image download retry mechanism |
 | [ADR-TIMEZONE_ANALYSIS_REPORT.MD](adr/ADR-TIMEZONE_ANALYSIS_REPORT.MD) | Analysis of timezone handling and DST feasibility |
+| [ADR-WEB_PORTAL_OPTIMIZATION.MD](adr/ADR-WEB_PORTAL_OPTIMIZATION.MD) | Web portal HTML/CSS/JavaScript separation for memory optimization |
 | [ADR-WORKFLOWS_README.MD](adr/ADR-WORKFLOWS_README.MD) | GitHub Actions CI/CD workflow documentation |
 
 **ADR Structure**

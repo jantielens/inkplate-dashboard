@@ -6,7 +6,6 @@
 #define CONFIG_PORTAL_CSS_H
 
 const char* CONFIG_PORTAL_CSS = R"(
-<style>
     /* Reset and base styles */
     * {
         margin: 0;
@@ -712,7 +711,6 @@ const char* CONFIG_PORTAL_CSS = R"(
             font-size: 20px;
         }
     }
-</style>
 )";
 
 #endif // CONFIG_PORTAL_CSS_H

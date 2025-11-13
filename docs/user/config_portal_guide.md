@@ -197,9 +197,25 @@ Users can still configure everything in one step by navigating to `http://192.16
 - **Type**: Number
 - **Unit**: Minutes
 - **Default**: 5 minutes (auto-filled when URL entered)
-- **Minimum**: 1 minute
+- **Minimum**: 0 minutes (button-only mode)
 - **Description**: How long to display this image before moving to next (or refreshing in single image mode)
 - **Example**: Image 1 for 10 minutes, Image 2 for 5 minutes, Image 3 for 15 minutes
+
+#### Stay on Image (per image)
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Unchecked (false)
+- **Description**: When checked, the image refreshes at the configured interval but does NOT auto-advance to the next image
+- **Behavior**:
+  - **Unchecked** (stay: false) = Auto-advance after interval (classic carousel)
+  - **Checked** (stay: true) = Refresh every interval but wait for button press to advance
+- **Use Cases**:
+  - Create pause points in carousel (some images auto-rotate, others wait for manual advance)
+  - Display critical information that requires acknowledgment before proceeding
+  - Hybrid workflows: e.g., Image 1 (stay, refresh every 5min) → Button → Image 2 (auto-advance after 1min) → Image 3 (stay, refresh every 3min)
+- **Button Press**: Always advances to next image regardless of stay flag
+- **Single Image Mode**: Stay flag has no effect (only applies in carousel mode with 2+ images)
+- **Interval 0**: When interval is 0 (button-only mode), stay flag is ignored (device waits for button regardless)
 
 #### Progressive Disclosure UI
 - Form shows **2 image slots by default** (required + optional)

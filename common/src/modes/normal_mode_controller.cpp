@@ -162,8 +162,32 @@ void NormalModeController::execute() {
     LogBox::end();
     
 
-    // Get current image index and URL from carousel
+    // Get current image index from carousel
     uint8_t currentIndex = *imageStateIndex % config.imageCount;
+    
+    // Carousel advancement logic - BEFORE displaying
+    if (config.isCarouselMode()) {
+        if (wakeReason == WAKEUP_BUTTON) {
+            // Button press: advance to next image
+            LogBox::message("Carousel", "Button press - advancing to next image");
+            currentIndex = (currentIndex + 1) % config.imageCount;
+            *imageStateIndex = currentIndex;
+        } else {
+            // Timer wake: check stay flag
+            bool currentStay = config.imageStay[currentIndex];
+            if (!currentStay) {
+                // stay=false: skip this image, advance to next
+                LogBox::message("Carousel", "Auto-advancing (stay:false) - skipping to next image");
+                currentIndex = (currentIndex + 1) % config.imageCount;
+                *imageStateIndex = currentIndex;
+            } else {
+                // stay=true: display this image
+                LogBox::message("Carousel", "Stay flag set - displaying current image");
+            }
+        }
+    }
+    
+    // Now get URL and interval for the (potentially advanced) index
     String currentImageUrl = config.imageUrls[currentIndex];
     int currentInterval = config.imageIntervals[currentIndex];
     
@@ -222,9 +246,6 @@ void NormalModeController::execute() {
     // Handle carousel mode vs single image mode
     if (config.isCarouselMode()) {
         if (success) {
-            // Success - advance to next image
-            *imageStateIndex = (currentIndex + 1) % config.imageCount;
-            
             // Save CRC32 if enabled (though disabled in carousel, keep for consistency)
             if (config.useCRC32Check && newCRC32 != 0) {
                 imageManager->saveCRC32(newCRC32);
@@ -243,7 +264,8 @@ void NormalModeController::execute() {
             publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
                                0, wifiBSSID, timings, "Carousel image displayed successfully", "info");
             
-            // Sleep with current image's interval
+            // Advancement already happened before display (see lines ~168-186)
+            // Just sleep with the current image's interval
             powerManager->disableWatchdog();
             powerManager->prepareForSleep();
             unsigned long loopTimeMs = millis() - loopStartTime;

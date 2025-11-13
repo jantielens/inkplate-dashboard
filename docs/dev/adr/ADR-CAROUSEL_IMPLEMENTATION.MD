@@ -1,8 +1,8 @@
-# ADR: Multi-Image Carousel Implementation (v1.0.0)
+# ADR: Multi-Image Carousel Implementation
 
-**Date:** 2025-10-24  
+**Date:** 2025-10-24 (v1.0.0), Updated: 2025-11-13 (v1.5.0)  
 **Status:** Implemented  
-**Issue:** #54
+**Issues:** #54 (v1.0.0), #94 (v1.5.0 - Stay Flag)
 
 ## Context
 
@@ -19,6 +19,7 @@ We implemented a **multi-image carousel with per-image intervals** as a breaking
 - **Fixed NVS keys** instead of JSON for simplicity and robustness
 - Store up to **10 image URLs** using keys: `img_url_0` through `img_url_9`
 - Store **per-image intervals** using keys: `img_int_0` through `img_int_9`
+- Store **per-image stay flags** using keys: `img_stay_0` through `img_stay_9` (v1.5.0+)
 - Store **image count** using key: `img_count` (uint8_t: 0-10)
 - **Removed global `refreshRate`** - replaced with per-image intervals
 - **Config version tracking** added (`cfg_ver`) for future upgrade detection
@@ -77,8 +78,10 @@ We implemented a **multi-image carousel with per-image intervals** as a breaking
 
 **Form Fields per Image:**
 - Image URL (required for slot 0, optional for 1-9)
-- Display interval in minutes (required when URL provided, min 1 minute)
+- Display interval in minutes (required when URL provided, min 0 minutes)
+- Stay checkbox (optional, v1.5.0+) - "Stay on this image (refresh interval still works, advance on button press)"
 - Default interval: 5 minutes (auto-filled via JavaScript)
+- Default stay: unchecked (false)
 
 **JavaScript Features:**
 - `addImageSlot()` function for progressive disclosure
@@ -106,11 +109,12 @@ struct DashboardConfig {
     // ...
 };
 
-// New (v1.0.0)
+// New (v1.0.0, updated v1.5.0)
 struct DashboardConfig {
     uint8_t imageCount;              // 0-10
     String imageUrls[10];            // Array of URLs
     int imageIntervals[10];          // Per-image intervals in minutes
+    bool imageStay[10];              // Per-image stay flags (v1.5.0+)
     // ...
     
     bool isCarouselMode() const {
@@ -166,7 +170,17 @@ int currentInterval = config.imageIntervals[currentIndex];
 if (config.isCarouselMode()) {
     // Carousel mode
     if (success) {
-        *imageStateIndex = (currentIndex + 1) % config.imageCount;
+        // v1.5.0: Check stay flag and wakeup reason
+        bool shouldAdvance = false;
+        if (wakeReason == WAKEUP_BUTTON) {
+            shouldAdvance = true;  // Button always advances
+        } else if (!config.imageStay[currentIndex]) {
+            shouldAdvance = true;  // Timer + stay:false = auto-advance
+        }
+        // Only advance if shouldAdvance is true
+        if (shouldAdvance) {
+            *imageStateIndex = (currentIndex + 1) % config.imageCount;
+        }
         // Sleep with current image's interval
     } else {
         if (currentIndex == 0) {
@@ -218,10 +232,12 @@ for (uint8_t i = 0; i < 2; i++) {
 
 ### Positive
 - ✅ **More flexible**: Users can now display multiple images with different durations
+- ✅ **Advanced carousel control** (v1.5.0): Per-image stay flags enable hybrid workflows with multiple pause points
 - ✅ **Simpler mental model**: Each image has its own "display time"
 - ✅ **Better UX**: Progressive disclosure makes form less overwhelming
 - ✅ **Clean implementation**: No migration code, no dual-format support
 - ✅ **Future-proof**: Config version tracking enables future migrations
+- ✅ **Backward compatible stay flags** (v1.5.0): Default false preserves classic auto-advance behavior
 
 ### Negative
 - ⚠️ **Breaking change**: All users must reconfigure after v1.0.0 upgrade
@@ -251,7 +267,8 @@ for (uint8_t i = 0; i < 2; i++) {
 
 ## References
 
-- Issue: #54 - Feature: Multi-Image Carousel Support with Per-Image Intervals
+- Issue: #54 - Feature: Multi-Image Carousel Support with Per-Image Intervals (v1.0.0)
+- Issue: #94 - Add per-image "stay" flag for advanced carousel control (v1.5.0)
 - Related: ADR-HOURLY_SCHEDULING.MD - Hourly schedule compatibility
 - Related: ADR-CRC32_GUIDE.MD - CRC32 implementation details
 

@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-11-13
+
+### Added
+- **Per-Image "Stay" Flag for Advanced Carousel Control** (Issue #94)
+  - Added `stay` boolean flag for each carousel image slot (stored as `img_stay_0` through `img_stay_9` in NVS)
+  - When `stay: true`, image refreshes at configured interval but does NOT auto-advance to next image
+  - Manual button press always advances to next image (regardless of stay flag)
+  - Enables multiple pause points in carousel: some images auto-rotate, others wait for button press
+  - Each "stay" image continues to refresh on schedule (CRC32 check applies in single-image mode)
+  - Default is `stay: false` (backward compatible - classic auto-advancing carousel)
+  - Web UI shows checkbox: "Stay on this image (refresh interval still works, advance on button press)"
+  - Behavior matrix:
+    - `stay: false, interval > 0` = Auto-advance after interval (current carousel behavior)
+    - `stay: true, interval > 0` = Refresh every interval but don't auto-advance (NEW)
+    - `stay: true, interval: 0` = No automatic refresh AND no auto-advance (wait for button)
+    - `stay: false, interval: 0` = Button-only mode (interval takes precedence)
+  - Fully backward compatible: old configs load with all stay flags as `false`
+  - Supports hybrid workflows: e.g., Image 1 (stay, refresh every 5min) → Button → Image 2 (auto-advance after 1min) → Image 3 (stay, refresh every 3min)
+
 ## [1.4.0] - 2025-11-13
 
 ### Added

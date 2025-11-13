@@ -28,6 +28,10 @@ bool ConfigPortal::begin(PortalMode mode) {
     
     // Set up routes
     _server->on("/", [this]() { this->handleRoot(); });
+    _server->on("/styles.css", [this]() { this->handleCSS(); });
+    _server->on("/scripts/main.js", [this]() { this->handleMainJS(); });
+    _server->on("/scripts/ota.js", [this]() { this->handleOTAJS(); });
+    _server->on("/scripts/ota-status.js", [this]() { this->handleOTAStatusJS(); });
     _server->on("/submit", HTTP_POST, [this]() { this->handleSubmit(); });
     _server->on("/factory-reset", HTTP_POST, [this]() { this->handleFactoryReset(); });
     _server->on("/reboot", HTTP_POST, [this]() { this->handleReboot(); });
@@ -157,6 +161,32 @@ void ConfigPortal::handleRoot() {
     _server->send(200, "text/html", generateConfigPage());
 }
 
+void ConfigPortal::handleCSS() {
+    LogBox::message("Web Request", "Serving CSS stylesheet");
+    _server->send(200, "text/css", CONFIG_PORTAL_CSS);
+}
+
+void ConfigPortal::handleMainJS() {
+    String js;
+    js.reserve(20000);  // Reserve 20KB for combined scripts
+    js = CONFIG_PORTAL_MODAL_SCRIPT;
+    js += "\n";
+    js += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
+    js += "\n";
+    js += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
+    js += "\n";
+    js += CONFIG_PORTAL_BADGE_SCRIPT;
+    _server->send(200, "application/javascript", js);
+}
+
+void ConfigPortal::handleOTAJS() {
+    _server->send(200, "application/javascript", CONFIG_PORTAL_OTA_SCRIPT);
+}
+
+void ConfigPortal::handleOTAStatusJS() {
+    _server->send(200, "application/javascript", CONFIG_PORTAL_OTA_STATUS_SCRIPT);
+}
+
 void ConfigPortal::handleSubmit() {
     LogBox::message("Web Request", "Configuration form submitted");
     
@@ -191,12 +221,15 @@ void ConfigPortal::handleSubmit() {
     uint8_t imageCount = 0;
     String imageUrls[MAX_IMAGE_SLOTS];
     int imageIntervals[MAX_IMAGE_SLOTS];
+    bool imageStay[MAX_IMAGE_SLOTS];
     
     for (uint8_t i = 0; i < MAX_IMAGE_SLOTS; i++) {
         String urlKey = "img_url_" + String(i);
         String intKey = "img_int_" + String(i);
+        String stayKey = "img_stay_" + String(i);
         String url = _server->arg(urlKey);
         String intervalStr = _server->arg(intKey);
+        bool stay = _server->hasArg(stayKey) && _server->arg(stayKey) == "on";
         
         url.trim();
         
@@ -224,6 +257,7 @@ void ConfigPortal::handleSubmit() {
             
             imageUrls[imageCount] = url;
             imageIntervals[imageCount] = interval;
+            imageStay[imageCount] = stay;
             imageCount++;
         }
     }
@@ -361,6 +395,7 @@ void ConfigPortal::handleSubmit() {
     for (uint8_t i = 0; i < imageCount; i++) {
         config.imageUrls[i] = imageUrls[i];
         config.imageIntervals[i] = imageIntervals[i];
+        config.imageStay[i] = imageStay[i];
     }
     
     // Save frontlight configuration
@@ -428,10 +463,6 @@ void ConfigPortal::handleNotFound() {
     _server->send(404, "text/html", generateErrorPage("Page not found"));
 }
 
-String ConfigPortal::getCSS() {
-    return String(CONFIG_PORTAL_CSS);
-}
-
 bool ConfigPortal::validateIPv4Format(const String& ip) {
     // Simple IPv4 validation: check format and range
     if (ip.length() == 0) {
@@ -488,9 +519,13 @@ String ConfigPortal::generateConfigPage() {
         hasPartialConfig = true;
     }
     
-    String html = CONFIG_PORTAL_PAGE_HEADER_START;
+    // Pre-allocate string to avoid reallocations (estimate: 35KB without inline CSS)
+    String html;
+    html.reserve(36000);  // Reserve 35KB
+    
+    html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Inkplate Dashboard Setup</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>📊 Inkplate Dashboard</h1>";
@@ -671,6 +706,7 @@ String ConfigPortal::generateConfigPage() {
             bool hasExisting = (i < existingCount);
             String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
             int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
+            bool existingStay = hasExisting ? currentConfig.imageStay[i] : false;
             
             html += "<div class='image-slot' id='slot_" + String(i) + "'>";
             html += "<label>Image " + imageNum + " URL *</label>";
@@ -678,6 +714,12 @@ String ConfigPortal::generateConfigPage() {
             html += "<label>Display for (minutes) *</label>";
             html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "' required>";
             html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
+            html += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
+            html += "<input type='checkbox' name='img_stay_" + String(i) + "'";
+            if (existingStay) html += " checked";
+            html += ">";
+            html += "Stay on this image (advance on button press)";
+            html += "</label>";
             html += "</div>";
         }
         
@@ -686,6 +728,7 @@ String ConfigPortal::generateConfigPage() {
             bool hasExisting = (i < existingCount);
             String existingUrl = hasExisting ? currentConfig.imageUrls[i] : "";
             int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
+            bool existingStay = hasExisting ? currentConfig.imageStay[i] : false;
             String displayStyle = hasExisting ? "" : " style='display:none;'";
             
             html += "<div class='image-slot' id='slot_" + String(i) + "'" + displayStyle + ">";
@@ -697,6 +740,12 @@ String ConfigPortal::generateConfigPage() {
             html += "<label>Display for (minutes)</label>";
             html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "'>";
             html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
+            html += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
+            html += "<input type='checkbox' name='img_stay_" + String(i) + "'";
+            if (existingStay) html += " checked";
+            html += ">";
+            html += "Stay on this image (advance on button press)";
+            html += "</label>";
             html += "</div>";
         }
         
@@ -884,18 +933,10 @@ String ConfigPortal::generateConfigPage() {
     html += footer;
     
     // Factory Reset Modal JavaScript - needed in CONFIG_MODE (for factory reset button in danger zone)
-    if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_MODAL_SCRIPT;
-    }
-    
     // Friendly Name Sanitization JavaScript - needed in both modes (friendly name field now in BOOT_MODE too)
-    html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
-    
     // Battery Life Estimator JavaScript - only in CONFIG_MODE
-    if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
-        html += CONFIG_PORTAL_BADGE_SCRIPT;
-    }
+    // All scripts now served from /scripts/main.js
+    html += "<script src='/scripts/main.js'></script>";
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
@@ -910,7 +951,7 @@ String ConfigPortal::generateConfigPage() {
 String ConfigPortal::generateSuccessPage() {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Configuration Saved</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "<meta http-equiv='refresh' content='5;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
@@ -934,7 +975,7 @@ String ConfigPortal::generateSuccessPage() {
 String ConfigPortal::generateErrorPage(const String& error) {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Error</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "<meta http-equiv='refresh' content='3;url=/'>";
     html += "</head><body>";
     html += "<div class='container'>";
@@ -957,7 +998,7 @@ String ConfigPortal::generateErrorPage(const String& error) {
 String ConfigPortal::generateFactoryResetPage() {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Factory Reset</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "</head><body>";
     html += "<div class='container'>";
     
@@ -976,7 +1017,7 @@ String ConfigPortal::generateFactoryResetPage() {
 String ConfigPortal::generateRebootPage() {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Rebooting</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "</head><body>";
     html += "<div class='container'>";
     
@@ -995,7 +1036,7 @@ String ConfigPortal::generateRebootPage() {
 String ConfigPortal::generateOTAPage() {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Firmware Update</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>⬆️ Firmware Update</h1>";
@@ -1018,7 +1059,7 @@ String ConfigPortal::generateOTAPage() {
     html += "</div>"; // Close container
     
     // OTA JavaScript (GitHub updates and manual upload)
-    html += CONFIG_PORTAL_OTA_SCRIPT;
+    html += "<script src='/scripts/ota.js'></script>";
     
     html += "</body></html>";
     
@@ -1264,7 +1305,7 @@ void ConfigPortal::handleVcomSubmit() {
 String ConfigPortal::generateVcomPage(double currentVcom, const String& message, const String& diagnostics) {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>VCOM Management</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += "</head><body>";
     html += "<div class='container'>";
     html += "<h1>⚙️ VCOM Management</h1>";
@@ -1336,7 +1377,7 @@ String ConfigPortal::generateVcomPage(double currentVcom, const String& message,
 String ConfigPortal::generateOTAStatusPage() {
     String html = CONFIG_PORTAL_PAGE_HEADER_START;
     html += "<title>Updating Firmware</title>";
-    html += getCSS();
+    html += "<link rel='stylesheet' href='/styles.css'>";
     html += CONFIG_PORTAL_OTA_STATUS_STYLES;
     html += "</head><body>";
     html += "<div class='container'>";
@@ -1353,7 +1394,7 @@ String ConfigPortal::generateOTAStatusPage() {
     html += "</div>"; // Close container
     
     // JavaScript to trigger the update and poll progress
-    html += CONFIG_PORTAL_OTA_STATUS_SCRIPT;
+    html += "<script src='/scripts/ota-status.js'></script>";
     
     html += "</body></html>";
     

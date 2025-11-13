@@ -55,6 +55,10 @@ private:
     void handleOTAStatus();
     void handleOTAProgress();
     void handleNotFound();
+    void handleCSS();
+    void handleMainJS();
+    void handleOTAJS();
+    void handleOTAStatusJS();
     #ifndef DISPLAY_MODE_INKPLATE2
     void handleVcom();
     void handleVcomSubmit();
@@ -71,9 +75,6 @@ private:
     #ifndef DISPLAY_MODE_INKPLATE2
     String generateVcomPage(double currentVcom, const String& message = "", const String& diagnostics = "");
     #endif
-    
-    // CSS styles
-    String getCSS();
     
     // Validation helpers
     bool validateIPv4Format(const String& ip);

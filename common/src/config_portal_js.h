@@ -8,7 +8,6 @@
 // Battery Life Calculator JavaScript
 // Calculates and displays battery life estimates based on configuration
 const char* CONFIG_PORTAL_BATTERY_CALC_SCRIPT = R"(
-<script>
 const POWER_CONSTANTS = {
   ACTIVE_MA: 100,
   DISPLAY_MA: 50,
@@ -430,13 +429,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize static IP fields visibility on page load
   toggleStaticIPFields();
 });
-</script>
 )";
 
 // Floating Battery Badge JavaScript
 // Handles visibility logic and interactions for the floating badge
 const char* CONFIG_PORTAL_BADGE_SCRIPT = R"(
-<script>
 function isBatteryDaysVisible() {
   const daysElement = document.getElementById('battery-days');
   if (!daysElement) return true;
@@ -475,21 +472,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if (target) { observer.observe(target, { characterData: true, childList: true, subtree: true }); }
   updateBadgeValue();
 });
-</script>
 )";
 
 // Factory Reset Modal JavaScript
 const char* CONFIG_PORTAL_MODAL_SCRIPT = R"(
-<script>
 function showResetModal() { document.getElementById('resetModal').style.display = 'block'; }
 function hideResetModal() { document.getElementById('resetModal').style.display = 'none'; }
 window.onclick = function(event) { var modal = document.getElementById('resetModal'); if (event.target == modal) { modal.style.display = 'none'; } }
-</script>
 )";
 
 // OTA Page - JavaScript for GitHub updates and manual upload
 const char* CONFIG_PORTAL_OTA_SCRIPT = R"(
-<script>
 var updateAssetUrl = '';
 function checkForUpdates() {
   document.getElementById('checkUpdateBtn').disabled = true;
@@ -585,13 +578,11 @@ document.getElementById('otaForm').addEventListener('submit', function(e) {
   xhr.open('POST', '/ota');
   xhr.send(formData);
 });
-</script>
 )";
 
 // OTA Status Page - JavaScript for progress polling and update management
 // Handles downloading, progress tracking, error handling, and automatic reboot detection
 const char* CONFIG_PORTAL_OTA_STATUS_SCRIPT = R"(
-<script>
 var updateStarted = false;
 var progressInterval = null;
 var failedPolls = 0;
@@ -664,12 +655,10 @@ window.addEventListener('DOMContentLoaded', function() {
       document.getElementById('errorSection').style.display = 'block';
     });
 });
-</script>
 )";
 
 // Friendly Name Sanitization Preview JavaScript
 const char* CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT = R"(
-<script>
 function sanitizeFriendlyName(input) {
   let output = '';
   
@@ -725,7 +714,6 @@ function sanitizeFriendlyNamePreview() {
 document.addEventListener('DOMContentLoaded', function() {
   sanitizeFriendlyNamePreview();
 });
-</script>
 )";
 
 #endif // CONFIG_PORTAL_JS_H
