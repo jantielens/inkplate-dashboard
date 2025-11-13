@@ -484,6 +484,7 @@ String ConfigPortal::generateConfigPage() {
     if (!hasConfig && _configManager->hasWiFiConfig()) {
         currentConfig.wifiSSID = _configManager->getWiFiSSID();
         currentConfig.wifiPassword = _configManager->getWiFiPassword();
+        currentConfig.friendlyName = _configManager->getFriendlyName();  // Load friendly name if set in Step 1
         hasPartialConfig = true;
     }
     
