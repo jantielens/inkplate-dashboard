@@ -219,19 +219,31 @@ void NormalModeController::execute() {
         LogBox::end();
     }
     
-    // Check CRC32 and potentially skip download (only for single image mode)
+    // Check CRC32 and potentially skip download
     uint32_t newCRC32 = 0;
     bool crc32WasChecked = false;
     bool crc32Matched = false;
-    bool shouldCheckCRC32 = config.useCRC32Check && !config.isCarouselMode();
+    bool shouldCheckCRC32 = config.useCRC32Check;
+    
+    // For carousel mode: only check CRC32 on timer wake + stay:true
+    if (shouldCheckCRC32 && config.isCarouselMode()) {
+        bool currentStay = config.imageStay[currentIndex];
+        shouldCheckCRC32 = (wakeReason == WAKEUP_TIMER && currentStay);
+        
+        if (!shouldCheckCRC32) {
+            if (wakeReason == WAKEUP_BUTTON) {
+                LogBox::message("CRC32 Check", "Skipped - button press requires immediate update");
+            } else if (!currentStay) {
+                LogBox::message("CRC32 Check", "Skipped - image has stay:false (advancing)");
+            }
+        }
+    }
     
     if (shouldCheckCRC32) {
         if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, wifiBSSID, timings)) {
             return;  // CRC32 matched and timer wake - already went to sleep (timing already captured)
         }
         // Timing already captured inside checkAndHandleCRC32
-    } else if (config.isCarouselMode()) {
-        LogBox::message("CRC32 Check", "CRC32 disabled in carousel mode");
     }
     
     // Download and display image (measure timing)

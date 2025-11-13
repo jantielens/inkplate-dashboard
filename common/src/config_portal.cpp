@@ -858,8 +858,7 @@ String ConfigPortal::generateConfigPage() {
         }
         html += "> Enable CRC32-based change detection";
         html += "</label>";
-        html += "<div class='help-text'>Skips image download & refresh when unchanged. Only works in single image mode (disabled in carousel). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
-        html += "<div class='help-text' id='crc32-carousel-warning' style='display:none; color: #e74c3c; font-weight: bold; margin-top: 5px;'>⚠️ CRC32 change detection is disabled because carousel mode (multiple images) is active. This feature only works with a single image.</div>";
+        html += "<div class='help-text'>Skips image download & refresh when unchanged. Works in single image mode and carousel mode (for images with stay:true flag). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
         html += "</div>";
         
         // Hourly Schedule - Update Hours

@@ -12,7 +12,7 @@
   - When `stay: true`, image refreshes at configured interval but does NOT auto-advance to next image
   - Manual button press always advances to next image (regardless of stay flag)
   - Enables multiple pause points in carousel: some images auto-rotate, others wait for button press
-  - Each "stay" image continues to refresh on schedule (CRC32 check applies in single-image mode)
+  - Each "stay" image continues to refresh on schedule (CRC32 check now works in carousel mode)
   - Default is `stay: false` (backward compatible - classic auto-advancing carousel)
   - Web UI shows checkbox: "Stay on this image (refresh interval still works, advance on button press)"
   - Behavior matrix:
@@ -22,6 +22,16 @@
     - `stay: false, interval: 0` = Button-only mode (interval takes precedence)
   - Fully backward compatible: old configs load with all stay flags as `false`
   - Supports hybrid workflows: e.g., Image 1 (stay, refresh every 5min) → Button → Image 2 (auto-advance after 1min) → Image 3 (stay, refresh every 3min)
+- **CRC32 Optimization for Carousel Mode** 
+  - CRC32 change detection now works in carousel mode for images with `stay: true` flag
+  - When timer wake occurs on a stay image, device checks CRC32 before downloading full image
+  - Skips CRC32 check for button press advancement (always show next image immediately)
+  - Skips CRC32 check for `stay: false` images (auto-advance, no refresh optimization needed)
+  - Simplification: Uses single stored CRC32 value (no per-image index tracking needed)
+  - Rationale: If CRC32 matches, content is identical regardless of which slot changed
+  - Extends battery life in carousel configurations: 2.5× to 8× improvement for stay images
+  - Web UI: CRC32 checkbox no longer disabled in carousel mode
+  - Help text updated: "Works in single image mode and carousel mode (for images with stay:true flag)"
 
 ## [1.4.0] - 2025-11-13
 

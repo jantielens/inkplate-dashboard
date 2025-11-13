@@ -204,24 +204,10 @@ function updateCRC32CheckboxState() {
   
   if (!crc32Checkbox) return;
   
-  // Count how many image URLs are filled in visible slots
-  let filledImageCount = 0;
-  for (let i = 0; i < visibleSlots; i++) {
-    const urlInput = document.querySelector(`input[name="img_url_${i}"]`);
-    if (urlInput && urlInput.value.trim().length > 0) {
-      filledImageCount++;
-    }
-  }
-  
-  // Disable CRC32 if more than 1 image is configured
-  if (filledImageCount > 1) {
-    crc32Checkbox.disabled = true;
-    crc32Checkbox.checked = false;
-    if (crc32Warning) crc32Warning.style.display = 'block';
-  } else {
-    crc32Checkbox.disabled = false;
-    if (crc32Warning) crc32Warning.style.display = 'none';
-  }
+  // CRC32 is now supported in carousel mode with stay:true images
+  // No need to disable it anymore
+  crc32Checkbox.disabled = false;
+  if (crc32Warning) crc32Warning.style.display = 'none';
 }
 
 function updateRemoveButtons() {
