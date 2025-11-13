@@ -224,6 +224,7 @@ void NormalModeController::execute() {
     bool crc32WasChecked = false;
     bool crc32Matched = false;
     bool shouldCheckCRC32 = config.useCRC32Check;
+    bool shouldFetchCRC32ForSaving = config.useCRC32Check;  // Always fetch if enabled, even if not checking for skip
     
     // For carousel mode: only check CRC32 on timer wake + stay:true
     if (shouldCheckCRC32 && config.isCarouselMode()) {
@@ -244,6 +245,12 @@ void NormalModeController::execute() {
             return;  // CRC32 matched and timer wake - already went to sleep (timing already captured)
         }
         // Timing already captured inside checkAndHandleCRC32
+    } else if (shouldFetchCRC32ForSaving) {
+        // CRC32 enabled but not checking for skip (e.g., button press or stay:false in carousel)
+        // Still fetch the CRC32 value so we can save it for future comparisons
+        uint8_t crcRetryCount = 0;
+        imageManager->checkCRC32Changed(currentImageUrl.c_str(), &newCRC32, &crcRetryCount);
+        // Ignore the return value - we're downloading regardless
     }
     
     // Download and display image (measure timing)
