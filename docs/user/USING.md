@@ -109,8 +109,9 @@ Connect WiFi
 4. **Enter your WiFi credentials**:
    - **WiFi SSID**: Your home/office WiFi network name
    - **WiFi Password**: Your WiFi password (leave blank if no password)
+   - **Device Name** (optional): Set a friendly name (e.g., "kitchen") to access Step 2 via `http://kitchen.local` instead of an IP address
    
-5. **Click "Save WiFi Settings"**
+5. **Click "Save WiFi Settings"****
 
 6. **Wait for the device to restart** - it will now connect to your WiFi network.
 
@@ -125,16 +126,19 @@ Setup - Step 2
 Configure Dashboard
 
 Open browser to:
-  http://192.168.1.XXX
+  http://kitchen.local
+  or http://192.168.1.XXX
 ```
 
 **How to Configure:**
 
 1. **Connect to your regular WiFi network** (the same one you configured in Step 1)
 
-2. **Look at the device's screen** - it will show an IP address (e.g., `http://192.168.1.123`)
+2. **Look at the device's screen** - it will show a `.local` hostname (if you set a Device Name in Step 1) and/or an IP address
 
-3. **Open a web browser** and go to the IP address shown on the screen
+3. **Open a web browser** and go to the address shown on the screen:
+   - **Option 1 (Easier)**: `http://kitchen.local` (if you set "kitchen" as Device Name)
+   - **Option 2 (Fallback)**: The IP address (e.g., `http://192.168.1.123`)
 
 4. **Complete your dashboard settings**:
    - **Image URLs**: Configure 1-10 images with individual display intervals

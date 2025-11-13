@@ -6,7 +6,11 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 
 ## How It Works
 
-### First Boot Sequence
+### Two-Step Setup Process
+
+The Inkplate Dashboard uses a **two-step setup** to make configuration easier:
+
+#### Step 1: WiFi Setup (Boot Mode)
 
 1. **Device boots for the first time** (no configuration stored)
 2. **Access Point starts automatically**:
@@ -18,29 +22,52 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 3. **Web server starts** on port 80
 4. **Display shows instructions**:
    ```
-   Configuration Mode
+   Setup - Step 1
+   Connect WiFi
+   
    1. Connect to WiFi: inkplate-dashb-XXXXXX
    2. Open browser to: http://inkplate-xxxxxx.local
       or http://192.168.4.1
-   3. Enter your settings
+   3. Enter WiFi settings
    ```
 
-### User Configuration Steps
+5. **User configures WiFi credentials**:
+   - **WiFi Network Name (SSID)** - Required
+   - **WiFi Password** - Optional (leave empty for open networks)
+   - **Device Name** - Optional (set now to access Step 2 via `.local` hostname)
 
-1. **Connect to the Inkplate WiFi network** using phone/laptop
-2. **Open web browser** and navigate to:
-   - **Recommended**: `http://inkplate-xxxxxx.local` (replace `xxxxxx` with code from screen)
-   - **Alternative**: `http://192.168.4.1` (if `.local` doesn't work)
-3. **Fill out the configuration form**:
-   - WiFi Network Name (SSID) - Required
-   - WiFi Password - Optional (leave empty for open networks)
-   - Device Name - Optional (custom friendly name for MQTT/Home Assistant)
-   - Dashboard Images - Required (at least 1 image URL with display interval)
-   - Additional images - Optional (add up to 10 images total for carousel mode)
+6. **Device saves WiFi settings and restarts**
+7. **Device connects to configured WiFi network**
 
-4. **Click "Save Configuration"**
-5. **Device saves settings and restarts**
-6. **Device connects to configured WiFi** and enters normal operation
+#### Step 2: Dashboard Configuration (Config Mode)
+
+1. **Device automatically enters configuration mode** (no image URLs configured yet)
+2. **Display shows instructions**:
+   ```
+   Setup - Step 2
+   Configure Dashboard
+   
+   Open browser to:
+     http://kitchen.local
+     or http://192.168.1.XXX
+   ```
+
+3. **User connects to same WiFi network** and navigates to:
+   - **Recommended**: `http://yourname.local` (if Device Name was set in Step 1)
+   - **Alternative**: IP address shown on screen (e.g., `http://192.168.1.123`)
+
+4. **User completes dashboard configuration**:
+   - Dashboard Images (at least 1 required)
+   - Device Name (can be changed/set if not done in Step 1)
+   - MQTT settings (optional)
+   - Network configuration (optional - Static IP)
+   - Display settings, debug mode, etc.
+
+5. **Device saves all settings and enters normal operation**
+
+### Legacy Single-Step Configuration (Still Supported)
+
+Users can still configure everything in one step by navigating to `http://192.168.4.1` during Step 1 and completing the full configuration form. The two-step approach is recommended for better user experience.
 
 ## Configuration Form Fields
 
@@ -49,17 +76,21 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Type**: Text
 - **Description**: The name of your WiFi network
 - **Example**: `MyHomeWiFi`
+- **Available in**: Step 1 (Boot Mode) and Step 2 (Config Mode)
 
 ### WiFi Password
 - **Required**: No
 - **Type**: Password
 - **Description**: Password for your WiFi network (leave empty if open network)
 - **Security**: Stored securely in ESP32 NVS
+- **Available in**: Step 1 (Boot Mode) and Step 2 (Config Mode)
 
 ### Device Name (Friendly Name)
 - **Required**: No
 - **Type**: Text (max 24 characters)
 - **Description**: Optional custom name for your device
+- **Available in**: **Step 1 (Boot Mode)** and Step 2 (Config Mode)
+- **💡 Tip**: Set this in Step 1 to access Step 2 via `http://yourname.local` instead of looking for the IP address on screen
 - **Display behavior**: 
   - Your input is used as-is for the Home Assistant device name (preserves spaces and capitalization)
   - A sanitized version is used for MQTT topics, entity IDs, and mDNS hostname (`.local` address)
