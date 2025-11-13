@@ -63,12 +63,17 @@ We implemented a **multi-image carousel with per-image intervals** as a breaking
 **Single Image Mode:**
 - Keeps existing retry logic (3 attempts, 20 seconds apart, then show error screen)
 
-### 6. CRC32 Behavior
-- **Disabled in carousel mode** (`imageCount > 1`)
-- Only enabled for single image mode
-- Skip per-image CRC32 tracking complexity
+### 6. CRC32 Behavior (Updated v1.5.0)
+- **Enabled for carousel mode with stay:true images** (as of v1.5.0)
+- Works in single image mode (always)
+- Works in carousel mode when image has stay:true flag (checks on timer wake only)
+- Does NOT check CRC32 on button press (user expects immediate update)
+- Does NOT check CRC32 for stay:false images (advancing anyway)
+- Uses single CRC32 value - if different images have same CRC32, skip download (same visual content)
 
-**Rationale:** CRC32 optimization is for "check if same image changed" - doesn't make sense for carousel which expects rotation. Keeping implementation simple.
+**Rationale (v1.0.0):** CRC32 optimization is for "check if same image changed" - didn't make sense for carousel which expected rotation.
+
+**Update (v1.5.0):** With stay:true flag, images can refresh in place repeatedly - perfect use case for CRC32 optimization. Simplification: no per-image CRC32 tracking needed - if two images have identical CRC32, they're visually identical anyway.
 
 ### 7. Configuration Portal UI
 **Progressive Disclosure:**
@@ -260,7 +265,9 @@ for (uint8_t i = 0; i < 2; i++) {
 **Rejected:** Adds complexity for a major version bump. Clean break is acceptable for v1.0.0.
 
 ### 4. CRC32 Per-Image in Carousel
-**Rejected:** Complex to implement. Carousel implies rotation (users expect all images to show).
+**Originally Rejected (v1.0.0):** Complex to implement. Carousel implied rotation (users expect all images to show).
+
+**Implemented (v1.5.0):** With stay:true flag, images can refresh in place. CRC32 now works without per-image tracking - uses single stored CRC32 value. If different images happen to have same CRC32 (astronomically unlikely), they're visually identical anyway, so skipping download is correct.
 
 ### 5. Single Retry Logic for All Carousel Images
 **Rejected:** If first image fails repeatedly, display shows nothing. Better to try harder on first image.
