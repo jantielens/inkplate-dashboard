@@ -323,20 +323,9 @@ void ConfigPortal::handleSubmit() {
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
         
-        // Save friendly name if provided
+        // Save friendly name if provided (use setFriendlyName to avoid saveConfig validation)
         if (friendlyName.length() > 0) {
-            DashboardConfig partialConfig;
-            if (_configManager->loadConfig(partialConfig)) {
-                // Update existing config with new friendly name
-                partialConfig.friendlyName = friendlyName;
-                _configManager->saveConfig(partialConfig);
-            } else {
-                // Create minimal config with just friendly name and WiFi
-                DashboardConfig newConfig;
-                newConfig.wifiSSID = ssid;
-                newConfig.friendlyName = friendlyName;
-                _configManager->saveConfig(newConfig);
-            }
+            _configManager->setFriendlyName(friendlyName);
         }
         
         LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
