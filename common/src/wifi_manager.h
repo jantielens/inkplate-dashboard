@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ESPmDNS.h>
 #include "config_manager.h"
 #include "power_manager.h"
 
@@ -49,11 +50,17 @@ public:
     String generateDeviceID();  // Generate MAC-based ID (e.g., "AABBCC")
     String getDeviceIdentifier();  // Get friendly name if set, else "inkplate-XXXXXX"
     
+    // mDNS support
+    bool startMDNS();           // Start mDNS service
+    void stopMDNS();            // Stop mDNS service
+    String getMDNSHostname();   // Get the .local hostname (empty if mDNS not active)
+    
 private:
     ConfigManager* _configManager;
     PowerManager* _powerManager;
     String _apName;
     bool _apActive;
+    bool _mdnsActive;
 };
 
 #endif // WIFI_MANAGER_H

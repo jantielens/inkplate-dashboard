@@ -6,7 +6,7 @@ UIStatus::UIStatus(DisplayManager* display)
     : displayManager(display) {
 }
 
-void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
+void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname) {
     // Enable rotation for essential setup screen (user needs to read instructions)
     displayManager->enableRotation();
     
@@ -44,8 +44,21 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
     
     displayManager->showMessage("2. Open browser to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    String url = "http://" + String(apIP);
-    displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    
+    // Show mDNS hostname if available
+    if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
+        String mdnsUrl = "http://" + String(mdnsHostname);
+        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        // Show IP as alternative
+        String ipUrl = "or http://" + String(apIP);
+        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    } else {
+        // Fallback to IP only
+        String url = "http://" + String(apIP);
+        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    }
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
     displayManager->showMessage("3. Enter WiFi settings", MARGIN, y, FONT_NORMAL);
@@ -53,7 +66,7 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP) {
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes) {
+void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname) {
     // Enable rotation for essential setup screen (user needs to read URL)
     displayManager->enableRotation();
     
@@ -82,9 +95,22 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
     displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
 
-    String url = "http://" + String(localIP);
-    displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
-    y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+    // Show mDNS hostname if available
+    if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
+        String mdnsUrl = "http://" + String(mdnsHostname);
+        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING;
+        
+        // Show IP as alternative
+        String ipUrl = "or http://" + String(localIP);
+        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    } else {
+        // Fallback to IP only
+        String url = "http://" + String(localIP);
+        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+    }
 
     if (hasTimeout) {
         String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
@@ -94,7 +120,7 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModePartialSetup(const char* localIP) {
+void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsHostname) {
     // Enable rotation for essential setup screen (user needs to read URL)
     displayManager->enableRotation();
     
@@ -123,8 +149,20 @@ void UIStatus::showConfigModePartialSetup(const char* localIP) {
     displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     
-    String url = "http://" + String(localIP);
-    displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+    // Show mDNS hostname if available
+    if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
+        String mdnsUrl = "http://" + String(mdnsHostname);
+        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING;
+        
+        // Show IP as alternative
+        String ipUrl = "or http://" + String(localIP);
+        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    } else {
+        // Fallback to IP only
+        String url = "http://" + String(localIP);
+        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+    }
     
     displayManager->refresh();
 }
@@ -189,7 +227,7 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid) {
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes) {
+void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname) {
     // Enable rotation for essential setup screen (user needs to read instructions)
     displayManager->enableRotation();
     
@@ -209,8 +247,27 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
     
     displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    String url = "http://" + String(apIP);
-    displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    
+    // Show mDNS hostname if available
+    if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
+        String mdnsUrl = "http://" + String(mdnsHostname);
+        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        
+        // Show IP as alternative
+        String ipUrl = "or http://" + String(apIP);
+        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    } else {
+        // Fallback to IP only
+        String url = "http://" + String(apIP);
+        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+    }
+    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+    
+    if (hasTimeout) {
+        String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
+        displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
+    }
     
     displayManager->refresh();
 }

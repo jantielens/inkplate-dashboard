@@ -500,9 +500,15 @@ String ConfigPortal::generateConfigPage() {
     html += "<div class='device-info'>";
     html += "<strong>Device:</strong> " + _wifiManager->getAPName() + "<br>";
     
-    // Show appropriate IP address
+    // Show appropriate IP address and mDNS hostname
     if (_wifiManager->isConnected()) {
+        String mdnsHostname = _wifiManager->getMDNSHostname();
         html += "<strong>IP:</strong> " + _wifiManager->getLocalIP() + "<br>";
+        
+        // Show mDNS hostname if available
+        if (mdnsHostname.length() > 0) {
+            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a><br>";
+        }
         
         // Show WiFi optimization info
         if (_configManager->hasWiFiChannelLock()) {
@@ -518,7 +524,13 @@ String ConfigPortal::generateConfigPage() {
             html += "<strong>WiFi Optimization:</strong> Will activate on next power cycle";
         }
     } else {
-        html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress();
+        String mdnsHostname = _wifiManager->getMDNSHostname();
+        html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress() + "<br>";
+        
+        // Show mDNS hostname if available
+        if (mdnsHostname.length() > 0) {
+            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a>";
+        }
     }
     html += "</div>";
     
@@ -557,7 +569,7 @@ String ConfigPortal::generateConfigPage() {
         html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
         html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
         html += "<div class='help-text'>";
-        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname. ";
+        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname (e.g., <code>kitchen.local</code>). ";
         html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
         html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
         html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";

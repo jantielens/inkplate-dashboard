@@ -13,20 +13,24 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
    - Network Name: `inkplate-dashb-XXXXXX` (last 6 chars of MAC address)
    - Security: Open (no password required)
    - IP Address: `192.168.4.1` (default AP IP)
+   - mDNS Hostname: `inkplate-xxxxxx.local` (friendly hostname)
 
 3. **Web server starts** on port 80
 4. **Display shows instructions**:
    ```
    Configuration Mode
    1. Connect to WiFi: inkplate-dashb-XXXXXX
-   2. Open browser to: http://192.168.4.1
+   2. Open browser to: http://inkplate-xxxxxx.local
+      or http://192.168.4.1
    3. Enter your settings
    ```
 
 ### User Configuration Steps
 
 1. **Connect to the Inkplate WiFi network** using phone/laptop
-2. **Open web browser** and navigate to `http://192.168.4.1`
+2. **Open web browser** and navigate to:
+   - **Recommended**: `http://inkplate-xxxxxx.local` (replace `xxxxxx` with code from screen)
+   - **Alternative**: `http://192.168.4.1` (if `.local` doesn't work)
 3. **Fill out the configuration form**:
    - WiFi Network Name (SSID) - Required
    - WiFi Password - Optional (leave empty for open networks)
@@ -58,13 +62,17 @@ The Inkplate Dashboard configuration portal allows users to set up their device 
 - **Description**: Optional custom name for your device
 - **Display behavior**: 
   - Your input is used as-is for the Home Assistant device name (preserves spaces and capitalization)
-  - A sanitized version is used for MQTT topics, entity IDs, and hostname
+  - A sanitized version is used for MQTT topics, entity IDs, and mDNS hostname (`.local` address)
 - **Validation**: Automatically sanitized to: lowercase a-z, digits 0-9, hyphens (-)
-- **Real-time feedback**: Preview shows sanitized result as you type
-- **Default**: If empty, uses `Inkplate Dashboard <MAC>` format (e.g., `Inkplate Dashboard a886e694`)
+- **Real-time feedback**: Preview shows sanitized result and `.local` hostname as you type
+- **Default**: If empty, uses MAC-based ID (e.g., `inkplate-a886e694`)
 - **Examples**: 
-  - Input: `Bedroom Lis` → Device: "Bedroom Lis", Entities: `sensor.bedroomlis_*`
-  - Input: `living-room` → Device: "living-room", Entities: `sensor.living-room_*`
+  - Input: `Bedroom Lis` → Device: "Bedroom Lis", Hostname: `bedroomlis.local`, Entities: `sensor.bedroomlis_*`
+  - Input: `living-room` → Device: "living-room", Hostname: `living-room.local`, Entities: `sensor.living-room_*`
+  - Input: `Kitchen Display` → Device: "Kitchen Display", Hostname: `kitchen.local`, Entities: `sensor.kitchen_*`
+- **Accessing the device**: After configuration, you can always access the config portal at:
+  - `http://yourname.local` (e.g., `http://kitchen.local`) - works on most devices
+  - Or via IP address if `.local` doesn't work on your network
 - **⚠️ Warning**: Changing this creates a new device in Home Assistant (old entities stop updating)
 
 ### Network Configuration
@@ -499,8 +507,8 @@ The easiest way to factory reset your device:
 
 2. **Access Configuration Page**:
    - Open browser to device IP address
-   - For AP mode: `http://192.168.4.1`
-   - For WiFi mode: Use device's local IP
+   - For AP mode: `http://inkplate-xxxxxx.local` or `http://192.168.4.1`
+   - For WiFi mode: Use device's `.local` hostname or local IP
 
 3. **Locate Factory Reset**:
    - Scroll to bottom of configuration page
@@ -592,7 +600,7 @@ ESP.restart();
 
 ### Can't access web page
 - Ensure connected to Inkplate WiFi
-- Try `http://192.168.4.1` (not https)
+- Try `http://inkplate-xxxxxx.local` or `http://192.168.4.1` (not https)
 - Some devices may require disabling mobile data
 
 ### Configuration not saving

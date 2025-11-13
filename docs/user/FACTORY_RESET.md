@@ -8,7 +8,7 @@ The factory reset feature allows users to completely erase all stored configurat
 
 1. **Access the Configuration Portal**
    - If the device is already configured, connect to your WiFi network and access the device's IP address in your browser
-   - If the device is not configured, it will create an AP (Access Point) - connect to it and navigate to `http://192.168.4.1`
+   - If the device is not configured, it will create an AP (Access Point) - connect to it and navigate to `http://inkplate-xxxxxx.local` or `http://192.168.4.1`
 
 2. **Locate the Factory Reset Button**
    - On the configuration page, scroll to the bottom

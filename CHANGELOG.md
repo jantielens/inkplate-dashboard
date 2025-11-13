@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-11-13
+
+### Added
+- **mDNS Support for Friendly Hostname Access** (Issue #90)
+  - Access config portal via `http://friendlyname.local` (e.g., `http://kitchen.local`)
+  - Falls back to `http://inkplate-XXXXXX.local` if no friendly name is set
+  - Uses existing sanitized friendly name (lowercase a-z, digits 0-9, hyphens, max 24 chars)
+  - Works in both AP mode and station mode
+  - mDNS hostname displayed prominently on e-ink screen alongside IP address
+  - Config portal web UI shows both mDNS hostname and IP address
+  - Home Assistant-like user experience
+  - No external dependencies (uses built-in ESPmDNS library)
+  - IP address access still works as before (backward compatible)
+  - Network hostname automatically advertises HTTP service on port 80
+  - Survives DHCP IP address changes
+
 ## [1.3.8] - 2025-11-12
 
 ### Changed

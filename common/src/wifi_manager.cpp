@@ -2,7 +2,7 @@
 #include "logger.h"
 
 WiFiManager::WiFiManager(ConfigManager* configManager) 
-    : _configManager(configManager), _powerManager(nullptr), _apActive(false) {
+    : _configManager(configManager), _powerManager(nullptr), _apActive(false), _mdnsActive(false) {
     _apName = String(AP_SSID_PREFIX) + generateDeviceID();
 }
 
@@ -14,6 +14,7 @@ WiFiManager::~WiFiManager() {
     if (_apActive) {
         stopAccessPoint();
     }
+    stopMDNS();
     disconnect();
 }
 
@@ -60,6 +61,12 @@ bool WiFiManager::startAccessPoint() {
         IPAddress ip = WiFi.softAPIP();
         LogBox::line("Access Point started successfully");
         LogBox::line("IP Address: " + ip.toString());
+        
+        // Start mDNS service
+        if (startMDNS()) {
+            LogBox::line("Access via: http://" + getMDNSHostname());
+        }
+        
         LogBox::line("Connect to WiFi network: " + _apName);
         LogBox::line("Then navigate to: http://" + ip.toString());
         LogBox::end();
@@ -75,6 +82,7 @@ bool WiFiManager::startAccessPoint() {
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
         LogBox::message("Access Point", "Stopping Access Point...");
+        stopMDNS();
         WiFi.softAPdisconnect(true);
         _apActive = false;
     }
@@ -237,6 +245,11 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         LogBox::line("IP Address: " + WiFi.localIP().toString());
         LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
         
+        // Start mDNS service
+        if (startMDNS()) {
+            LogBox::line("Access via: http://" + getMDNSHostname());
+        }
+        
         // Save channel and BSSID for future fast connections
         if (shouldSaveChannel && _configManager) {
             uint8_t channel = WiFi.channel();
@@ -280,6 +293,7 @@ bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
 void WiFiManager::disconnect() {
     if (WiFi.status() == WL_CONNECTED) {
         LogBox::message("WiFi", "Disconnecting from WiFi...");
+        stopMDNS();
         WiFi.disconnect();
     }
 }
@@ -371,4 +385,33 @@ bool WiFiManager::configureStaticIP(const String& ip, const String& gateway, con
     }
     
     return true;
+}
+
+bool WiFiManager::startMDNS() {
+    String hostname = getDeviceIdentifier();  // Already returns sanitized name or device ID
+    
+    if (MDNS.begin(hostname.c_str())) {
+        _mdnsActive = true;
+        MDNS.addService("http", "tcp", 80);  // Advertise HTTP service on port 80
+        LogBox::line("mDNS started: " + hostname + ".local");
+        return true;
+    }
+    
+    LogBox::line("WARNING: Failed to start mDNS");
+    _mdnsActive = false;
+    return false;
+}
+
+void WiFiManager::stopMDNS() {
+    if (_mdnsActive) {
+        MDNS.end();
+        _mdnsActive = false;
+    }
+}
+
+String WiFiManager::getMDNSHostname() {
+    if (_mdnsActive) {
+        return getDeviceIdentifier() + ".local";
+    }
+    return "";
 }

@@ -70,17 +70,23 @@ bool ConfigModeController::begin() {
 }
 
 bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
+    String mdnsHostname = wifiManager->getMDNSHostname();
+    
     // Show appropriate config mode screen
     if (hasPartialConfig) {
-        uiStatus->showConfigModePartialSetup(localIP.c_str());
+        uiStatus->showConfigModePartialSetup(localIP.c_str(), mdnsHostname.c_str());
     } else {
-        uiStatus->showConfigModeSetup(localIP.c_str(), true, CONFIG_MODE_TIMEOUT_MS / 60000);
+        uiStatus->showConfigModeSetup(localIP.c_str(), true, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str());
     }
     
     // Start configuration portal in CONFIG_MODE
     if (configPortal->begin(CONFIG_MODE)) {
         LogBox::begin("Config Mode Active");
-        LogBox::line("Access at: http://" + localIP);
+        if (mdnsHostname.length() > 0) {
+            LogBox::line("Access at: http://" + mdnsHostname + " or http://" + localIP);
+        } else {
+            LogBox::line("Access at: http://" + localIP);
+        }
         if (!hasPartialConfig) {
             LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
         }
@@ -109,14 +115,19 @@ bool ConfigModeController::startConfigPortalWithAP() {
     if (wifiManager->startAccessPoint()) {
         String apName = wifiManager->getAPName();
         String apIP = wifiManager->getAPIPAddress();
+        String mdnsHostname = wifiManager->getMDNSHostname();
         
-        uiStatus->showConfigModeAPFallback(apName.c_str(), apIP.c_str(), !hasPartialConfig, CONFIG_MODE_TIMEOUT_MS / 60000);
+        uiStatus->showConfigModeAPFallback(apName.c_str(), apIP.c_str(), !hasPartialConfig, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str());
         
         // Start configuration portal in CONFIG_MODE (with AP)
         if (configPortal->begin(CONFIG_MODE)) {
             LogBox::begin("Config Mode Active (AP Fallback)");
             LogBox::line("1. Connect to WiFi: " + apName);
-            LogBox::line("2. Open: http://" + apIP);
+            if (mdnsHostname.length() > 0) {
+                LogBox::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
+            } else {
+                LogBox::line("2. Open: http://" + apIP);
+            }
             LogBox::line("3. Update your configuration");
             if (!hasPartialConfig) {
                 LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);

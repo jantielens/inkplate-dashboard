@@ -87,19 +87,22 @@ Connect WiFi
 1. Connect to WiFi:
    inkplate-dashb-XXXXXX
 2. Open browser to:
-   http://192.168.4.1
+   http://inkplate-xxxxxx.local
+   or http://192.168.4.1
 3. Enter WiFi settings
 ```
 
 **How to Configure:**
 
-1. **Look at your device's screen** - it will show the WiFi network name (something like `inkplate-dashb-A1B2C3`)
+1. **Look at your device's screen** - it will show the WiFi network name (something like `inkplate-dashb-A1B2C3`) and the web address to visit
 
 2. **Connect your phone or computer** to this WiFi network:
    - Network name: As shown on the screen
    - Password: None (open network)
 
-3. **Open a web browser** and go to: `http://192.168.4.1`
+3. **Open a web browser** and go to the address shown on screen:
+   - **Option 1 (Recommended)**: `http://inkplate-xxxxxx.local` (replace `xxxxxx` with the code from your screen)
+   - **Option 2 (Fallback)**: `http://192.168.4.1`
    - **Note**: Use `http://` not `https://`
    - On phones, you may need to disable mobile data
 
@@ -1267,12 +1270,17 @@ The retry count sensors (added in v1.3.3) help you monitor network and server he
 
 | Mode | URL | When to Use |
 |------|-----|-------------|
-| Boot Mode (AP) | `http://192.168.4.1` | First setup, WiFi configuration |
-| Config Mode (WiFi) | Shown on display | After WiFi setup, configuration changes |
+| Boot Mode (AP) | `http://inkplate-xxxxxx.local` or `http://192.168.4.1` | First setup, WiFi configuration |
+| Config Mode (WiFi) | `http://yourname.local` or shown IP | After WiFi setup, configuration changes |
+
+**Note:** `.local` hostnames (mDNS) work on most modern devices. If they don't work on your network, use the IP address instead.
 
 ---
 
 ## Frequently Asked Questions
+
+**Q: What is the `.local` hostname and how does it work?**  
+A: The device uses mDNS (Multicast DNS) to advertise itself on your local network with a friendly hostname like `kitchen.local` or `inkplate-xxxxxx.local`. This means you don't need to remember IP addresses - you can always access the config portal at `http://yourname.local`. This works on most devices (Windows with Bonjour, macOS, Linux, iOS, Android). If it doesn't work on your network, you can always use the IP address instead.
 
 **Q: Can I use JPG or GIF images?**  
 A: JPEG images are supported, but only baseline encoding (not progressive JPEG). PNG is also supported. GIF is not supported.

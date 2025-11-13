@@ -715,9 +715,9 @@ function sanitizeFriendlyNamePreview() {
   } else if (sanitized.length === 0) {
     preview.innerHTML = '<span style="color: #d32f2f;">❌ Invalid: No valid characters remaining</span>';
   } else if (inputValue !== sanitized) {
-    preview.innerHTML = '<span style="color: #1976d2;">✓ Your input will be used as device name. Internally used as <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">' + sanitized + '</code> for MQTT topics, entity IDs, and hostname.</span>';
+    preview.innerHTML = '<span style="color: #1976d2;">✓ Your input will be used as device name. Internally used as <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">' + sanitized + '</code> for MQTT topics, entity IDs, and hostname (<code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">' + sanitized + '.local</code>).</span>';
   } else {
-    preview.innerHTML = '<span style="color: #388e3c;">✓ Valid device name (will be used for MQTT topics, entity IDs, and hostname)</span>';
+    preview.innerHTML = '<span style="color: #388e3c;">✓ Valid device name (will be used for MQTT topics, entity IDs, and hostname: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">' + sanitized + '.local</code>)</span>';
   }
 }
 

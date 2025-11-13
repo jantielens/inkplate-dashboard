@@ -8,14 +8,19 @@ bool APModeController::begin() {
     if (wifiManager->startAccessPoint()) {
         String apName = wifiManager->getAPName();
         String apIP = wifiManager->getAPIPAddress();
+        String mdnsHostname = wifiManager->getMDNSHostname();
         
-        uiStatus->showAPModeSetup(apName.c_str(), apIP.c_str());
+        uiStatus->showAPModeSetup(apName.c_str(), apIP.c_str(), mdnsHostname.c_str());
         
         // Start configuration portal in BOOT_MODE
         if (configPortal->begin(BOOT_MODE)) {
             LogBox::begin("Configuration Portal Active (Boot Mode)");
             LogBox::line("1. Connect to WiFi: " + apName);
-            LogBox::line("2. Open: http://" + apIP);
+            if (mdnsHostname.length() > 0) {
+                LogBox::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
+            } else {
+                LogBox::line("2. Open: http://" + apIP);
+            }
             LogBox::line("3. Enter WiFi credentials");
             LogBox::end();
             return true;
