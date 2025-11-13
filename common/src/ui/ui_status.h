@@ -14,14 +14,14 @@ public:
     UIStatus(DisplayManager* display);
     
     // AP Mode screens
-    void showAPModeSetup(const char* apName, const char* apIP);
+    void showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname = "");
     
     // Config Mode screens
-    void showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes);
-    void showConfigModePartialSetup(const char* localIP);
+    void showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname = "");
+    void showConfigModePartialSetup(const char* localIP, const char* mdnsHostname = "");
     void showConfigModeConnecting(const char* ssid, bool isPartialConfig);
     void showConfigModeWiFiFailed(const char* ssid);
-    void showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes);
+    void showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname = "");
     void showConfigModeTimeout();
     
     // Normal operation screens

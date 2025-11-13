@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-11-13
+
+### Added
+- **mDNS Support for Friendly Hostname Access** (Issue #90)
+  - Access config portal via `http://friendlyname.local` (e.g., `http://kitchen.local`)
+  - Falls back to `http://inkplate-XXXXXX.local` if no friendly name is set
+  - Uses existing sanitized friendly name (lowercase a-z, digits 0-9, hyphens, max 24 chars)
+  - Works in both AP mode and station mode
+  - mDNS hostname displayed prominently on e-ink screen alongside IP address
+  - Config portal web UI shows both mDNS hostname and IP address
+  - Home Assistant-like user experience
+  - No external dependencies (uses built-in ESPmDNS library)
+  - IP address access still works as before (backward compatible)
+  - Network hostname automatically advertises HTTP service on port 80
+  - Survives DHCP IP address changes
+- **Two-Step Setup with Friendly Name in Step 1**
+  - Device Name (friendly name) can now be set in Step 1 (Boot Mode) during WiFi setup
+  - Setting friendly name in Step 1 enables accessing Step 2 via `http://yourname.local` instead of IP address
+  - Friendly name persists from Step 1 to Step 2 and pre-populates the Device Name field
+  - Improves setup UX by eliminating need to look at e-ink screen for IP address
+  - Mode-specific help text guides users on when/why to set friendly name
+
+### Fixed
+- Factory reset button JavaScript error when device in CONFIG_MODE without full configuration
+- Friendly name not being saved when set in BOOT_MODE (Step 1) - now uses `setFriendlyName()` method
+- Friendly name from Step 1 not displaying in Step 2 form field - now loads from preferences in partial config
+
 ## [1.3.8] - 2025-11-12
 
 ### Changed

@@ -273,21 +273,21 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // In CONFIG_MODE, validate friendly name and static IP configuration
-    if (_mode == CONFIG_MODE) {
-        // Sanitize and validate friendly name (if provided)
-        String sanitizedFriendlyName;
-        if (friendlyName.length() > 0) {
-            if (!ConfigManager::sanitizeFriendlyName(friendlyName, sanitizedFriendlyName)) {
-                _server->send(400, "text/html", generateErrorPage("Invalid device name: no valid characters after sanitization"));
-                return;
-            }
-            if (sanitizedFriendlyName.length() == 0) {
-                _server->send(400, "text/html", generateErrorPage("Invalid device name: must contain at least one valid character (a-z, 0-9, -)"));
-                return;
-            }
+    // Sanitize and validate friendly name in both modes (if provided)
+    String sanitizedFriendlyName;
+    if (friendlyName.length() > 0) {
+        if (!ConfigManager::sanitizeFriendlyName(friendlyName, sanitizedFriendlyName)) {
+            _server->send(400, "text/html", generateErrorPage("Invalid device name: no valid characters after sanitization"));
+            return;
         }
-        
+        if (sanitizedFriendlyName.length() == 0) {
+            _server->send(400, "text/html", generateErrorPage("Invalid device name: must contain at least one valid character (a-z, 0-9, -)"));
+            return;
+        }
+    }
+    
+    // In CONFIG_MODE, validate static IP configuration
+    if (_mode == CONFIG_MODE) {
         // Validate static IP configuration if enabled
         if (useStaticIP) {
             if (staticIP.length() == 0 || !validateIPv4Format(staticIP)) {
@@ -319,9 +319,15 @@ void ConfigPortal::handleSubmit() {
         return;
     }
     
-    // In BOOT_MODE, only save WiFi credentials
+    // In BOOT_MODE, save WiFi credentials and friendly name
     if (_mode == BOOT_MODE) {
         _configManager->setWiFiCredentials(ssid, password);
+        
+        // Save friendly name if provided (use setFriendlyName to avoid saveConfig validation)
+        if (friendlyName.length() > 0) {
+            _configManager->setFriendlyName(friendlyName);
+        }
+        
         LogBox::message("Config Saved", "WiFi credentials saved (boot mode)");
         _configReceived = true;
         _server->send(200, "text/html", generateSuccessPage());
@@ -478,6 +484,7 @@ String ConfigPortal::generateConfigPage() {
     if (!hasConfig && _configManager->hasWiFiConfig()) {
         currentConfig.wifiSSID = _configManager->getWiFiSSID();
         currentConfig.wifiPassword = _configManager->getWiFiPassword();
+        currentConfig.friendlyName = _configManager->getFriendlyName();  // Load friendly name if set in Step 1
         hasPartialConfig = true;
     }
     
@@ -500,9 +507,15 @@ String ConfigPortal::generateConfigPage() {
     html += "<div class='device-info'>";
     html += "<strong>Device:</strong> " + _wifiManager->getAPName() + "<br>";
     
-    // Show appropriate IP address
+    // Show appropriate IP address and mDNS hostname
     if (_wifiManager->isConnected()) {
+        String mdnsHostname = _wifiManager->getMDNSHostname();
         html += "<strong>IP:</strong> " + _wifiManager->getLocalIP() + "<br>";
+        
+        // Show mDNS hostname if available
+        if (mdnsHostname.length() > 0) {
+            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a><br>";
+        }
         
         // Show WiFi optimization info
         if (_configManager->hasWiFiChannelLock()) {
@@ -518,7 +531,13 @@ String ConfigPortal::generateConfigPage() {
             html += "<strong>WiFi Optimization:</strong> Will activate on next power cycle";
         }
     } else {
-        html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress();
+        String mdnsHostname = _wifiManager->getMDNSHostname();
+        html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress() + "<br>";
+        
+        // Show mDNS hostname if available
+        if (mdnsHostname.length() > 0) {
+            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a>";
+        }
     }
     html += "</div>";
     
@@ -548,22 +567,28 @@ String ConfigPortal::generateConfigPage() {
     }
     html += "</div>";
     
-    // Friendly Name and IP config only shown in CONFIG_MODE
-    if (_mode == CONFIG_MODE) {
-        // Friendly Name (Device Name) - optional
-        html += "<div class='form-group'>";
-        html += "<label for='friendlyname'>Device Name (optional)</label>";
-        String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
-        html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
-        html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
-        html += "<div class='help-text'>";
-        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname. ";
+    // Friendly Name (Device Name) - optional, shown in both modes
+    html += "<div class='form-group'>";
+    html += "<label for='friendlyname'>Device Name (optional)</label>";
+    String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
+    html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
+    html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
+    html += "<div class='help-text'>";
+    if (_mode == BOOT_MODE) {
+        html += "Set a friendly name now to access Step 2 via <code>yourname.local</code> (instead of IP address). ";
+        html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
+        html += "Leave empty to use MAC-based ID.";
+    } else {
+        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname (e.g., <code>kitchen.local</code>). ";
         html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
         html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
         html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
-        html += "</div>";
-        html += "</div>";
-        
+    }
+    html += "</div>";
+    html += "</div>";
+    
+    // IP config only shown in CONFIG_MODE
+    if (_mode == CONFIG_MODE) {
         // Network Settings (Static IP)
         html += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
         html += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
@@ -849,9 +874,8 @@ String ConfigPortal::generateConfigPage() {
     html += "</div>";
     
     // Modal dialog for factory reset confirmation (only in CONFIG_MODE)
-    if (_mode == CONFIG_MODE && hasConfig) {
+    if (_mode == CONFIG_MODE) {
         html += CONFIG_PORTAL_RESET_MODAL_HTML;
-        html += CONFIG_PORTAL_MODAL_SCRIPT;
     }
     
     // Footer with version
@@ -859,15 +883,18 @@ String ConfigPortal::generateConfigPage() {
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
     html += footer;
     
+    // Factory Reset Modal JavaScript - needed in CONFIG_MODE (for factory reset button in danger zone)
+    if (_mode == CONFIG_MODE) {
+        html += CONFIG_PORTAL_MODAL_SCRIPT;
+    }
+    
+    // Friendly Name Sanitization JavaScript - needed in both modes (friendly name field now in BOOT_MODE too)
+    html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
+    
     // Battery Life Estimator JavaScript - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         html += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
         html += CONFIG_PORTAL_BADGE_SCRIPT;
-    }
-    
-    // Friendly Name Sanitization JavaScript - only in CONFIG_MODE
-    if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_FRIENDLY_NAME_SCRIPT;
     }
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
