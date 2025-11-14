@@ -265,7 +265,7 @@ void NormalModeController::execute() {
     // Handle carousel mode vs single image mode
     if (config.isCarouselMode()) {
         if (success) {
-            // Save CRC32 if enabled (though disabled in carousel, keep for consistency)
+            // Save CRC32 if enabled (works in carousel mode for stay:true images)
             if (config.useCRC32Check && newCRC32 != 0) {
                 imageManager->saveCRC32(newCRC32);
             }
