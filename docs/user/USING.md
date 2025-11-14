@@ -249,17 +249,18 @@ Open browser to:
 #### CRC32-Based Change Detection
 - **What it is**: Checks if the image has changed before downloading it
 - **Default**: Disabled
-- **Battery impact**: Can extend battery life by 2.5× when images change infrequently
-- **Compatibility**: **Only works in single image mode** (disabled automatically in carousel mode)
+- **Battery impact**: Can extend battery life by 2.5× to 8× when images change infrequently
+- **Compatibility**: Works in single image mode and carousel mode (for images with stay:true flag)
 - **Requirements**: Your web server must provide `.crc32` files alongside images (e.g., `image.png.crc32`)
 - **How it works**: Downloads a small checksum file first; if unchanged, skips the full image download
 - **Fallback**: If `.crc32` file is missing or invalid, automatically downloads the full image
+- **Carousel behavior**: Only checks CRC32 for images with stay:true flag (images that refresh in place). Images with stay:false always download (they're advancing to next image anyway).
 - **When to enable**: 
-  - If you're using single image mode (not carousel)
   - If you're running on battery power
   - If your image doesn't change on every refresh (e.g., once per day)
+  - If you're using carousel mode with images that have stay:true flag
   - If you're using [@jantielens/ha-screenshotter](https://github.com/jantielens/ha-screenshotter) which automatically generates CRC32 files
-- **When to disable**: If using carousel mode, if your server doesn't provide `.crc32` files, or if your image changes frequently
+- **When to disable**: If your server doesn't provide `.crc32` files, or if your image changes on every single refresh
 
 #### Timezone Offset
 - **What it is**: Your timezone offset from UTC for adjusting hourly schedule times

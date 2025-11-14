@@ -45,6 +45,7 @@
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
+#define PREF_IMAGE_STAY "img_stay_"  // Followed by index 0-9
 #define CONFIG_VERSION_CURRENT 2
 
 // Carousel constraints
@@ -83,6 +84,7 @@ struct DashboardConfig {
     uint8_t imageCount;           // How many URLs provided (0-10)
     String imageUrls[MAX_IMAGE_SLOTS];    // Image URLs
     int imageIntervals[MAX_IMAGE_SLOTS];  // Display duration per image in minutes
+    bool imageStay[MAX_IMAGE_SLOTS];      // Stay on image (don't auto-advance)
     
     // Frontlight configuration (only for boards with HAS_FRONTLIGHT)
     uint8_t frontlightDuration;   // Duration in seconds (0 = disabled, default 0)
@@ -119,6 +121,7 @@ struct DashboardConfig {
         for (int i = 0; i < MAX_IMAGE_SLOTS; i++) {
             imageUrls[i] = "";
             imageIntervals[i] = 0;
+            imageStay[i] = false;
         }
     }
     

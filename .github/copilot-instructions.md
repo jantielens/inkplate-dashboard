@@ -273,6 +273,9 @@ common/                              # Shared code library
     config_manager.h/cpp             # Configuration storage
     wifi_manager.h/cpp               # WiFi management
     config_portal.h/cpp              # Web configuration portal
+    config_portal_css.h              # CSS stylesheet (pure CSS, no <style> tags)
+    config_portal_js.h               # JavaScript code (pure JS, no <script> tags)
+    config_portal_html.h             # HTML fragments
     display_manager.h/cpp            # Display abstraction
     image_manager.h/cpp              # Image download/display
     power_manager.h/cpp              # Deep sleep management
@@ -403,6 +406,39 @@ UI components are in `common/src/ui/`:
   ```cpp
   int y = DISPLAY_MINIMAL_UI ? MARGIN : (SCREEN_HEIGHT / 2 - 50);
   ```
+
+### Modifying Web Configuration Portal
+
+The web portal serves HTML, CSS, and JavaScript as **separate resources** to avoid ESP32 memory overflow:
+
+**Architecture (see ADR-WEB_PORTAL_OPTIMIZATION.MD):**
+- **HTML pages** generated in `config_portal.cpp` (8 pages total)
+- **CSS** served from `/styles.css` endpoint (pure CSS, no `<style>` tags)
+- **JavaScript** served from `/scripts/*.js` endpoints (pure JS, no `<script>` tags)
+
+**Files:**
+- `config_portal.cpp` - Route handlers and HTML generation
+- `config_portal_css.h` - Single CSS constant (15.3KB)
+- `config_portal_js.h` - 6 JavaScript constants (modal, battery calc, OTA, etc.)
+- `config_portal_html.h` - Reusable HTML fragments
+
+**CRITICAL RULES:**
+1. **Never add `<style>` or `<script>` wrapper tags** to CSS/JS constants
+2. **Use external resource links** in HTML: `<link rel='stylesheet' href='/styles.css'>`
+3. **Serve CSS with MIME type** `text/css`, JavaScript with `application/javascript`
+4. **Keep HTML generation under ~40KB** to avoid ESP32 String buffer overflow
+5. **Test all 8 pages** after CSS/JS changes (config, success, error, OTA, etc.)
+
+**JavaScript endpoints:**
+- `/scripts/main.js` - Main config page (4 combined scripts)
+- `/scripts/ota.js` - OTA update page
+- `/scripts/ota-status.js` - OTA progress monitoring
+
+**Why separate resources:**
+- ESP32 has ~50-60KB String concatenation limit (crashes beyond)
+- Browser caching reduces bandwidth (CSS/JS cached after first load)
+- Professional web architecture with proper MIME types
+- Easier debugging (CSS/JS served independently)
 
 ## Validation & Testing
 

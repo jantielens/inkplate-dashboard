@@ -109,9 +109,11 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     for (uint8_t i = 0; i < config.imageCount; i++) {
         String urlKey = "img_url_" + String(i);
         String intKey = "img_int_" + String(i);
+        String stayKey = String(PREF_IMAGE_STAY) + String(i);
         
         config.imageUrls[i] = _preferences.getString(urlKey.c_str(), "");
         config.imageIntervals[i] = _preferences.getInt(intKey.c_str(), DEFAULT_INTERVAL_MINUTES);
+        config.imageStay[i] = _preferences.getBool(stayKey.c_str(), false);
     }
     
     // Load frontlight configuration (only for boards with HAS_FRONTLIGHT)
@@ -211,6 +213,7 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     for (uint8_t i = 0; i < config.imageCount; i++) {
         String urlKey = "img_url_" + String(i);
         String intKey = "img_int_" + String(i);
+        String stayKey = String(PREF_IMAGE_STAY) + String(i);
         
         size_t urlBytes = _preferences.putString(urlKey.c_str(), config.imageUrls[i]);
         if (urlBytes == 0) {
@@ -219,14 +222,17 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
         }
         
         _preferences.putInt(intKey.c_str(), config.imageIntervals[i]);
+        _preferences.putBool(stayKey.c_str(), config.imageStay[i]);
     }
     
     // Clear unused slots
     for (uint8_t i = config.imageCount; i < MAX_IMAGE_SLOTS; i++) {
         String urlKey = "img_url_" + String(i);
         String intKey = "img_int_" + String(i);
+        String stayKey = String(PREF_IMAGE_STAY) + String(i);
         _preferences.remove(urlKey.c_str());
         _preferences.remove(intKey.c_str());
+        _preferences.remove(stayKey.c_str());
     }
     
     // Save frontlight configuration (only for boards with HAS_FRONTLIGHT)

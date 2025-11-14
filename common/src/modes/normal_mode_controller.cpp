@@ -162,8 +162,32 @@ void NormalModeController::execute() {
     LogBox::end();
     
 
-    // Get current image index and URL from carousel
+    // Get current image index from carousel
     uint8_t currentIndex = *imageStateIndex % config.imageCount;
+    
+    // Carousel advancement logic - BEFORE displaying
+    if (config.isCarouselMode()) {
+        if (wakeReason == WAKEUP_BUTTON) {
+            // Button press: advance to next image
+            LogBox::message("Carousel", "Button press - advancing to next image");
+            currentIndex = (currentIndex + 1) % config.imageCount;
+            *imageStateIndex = currentIndex;
+        } else {
+            // Timer wake: check stay flag
+            bool currentStay = config.imageStay[currentIndex];
+            if (!currentStay) {
+                // stay=false: skip this image, advance to next
+                LogBox::message("Carousel", "Auto-advancing (stay:false) - skipping to next image");
+                currentIndex = (currentIndex + 1) % config.imageCount;
+                *imageStateIndex = currentIndex;
+            } else {
+                // stay=true: display this image
+                LogBox::message("Carousel", "Stay flag set - displaying current image");
+            }
+        }
+    }
+    
+    // Now get URL and interval for the (potentially advanced) index
     String currentImageUrl = config.imageUrls[currentIndex];
     int currentInterval = config.imageIntervals[currentIndex];
     
@@ -195,19 +219,38 @@ void NormalModeController::execute() {
         LogBox::end();
     }
     
-    // Check CRC32 and potentially skip download (only for single image mode)
+    // Check CRC32 and potentially skip download
     uint32_t newCRC32 = 0;
     bool crc32WasChecked = false;
     bool crc32Matched = false;
-    bool shouldCheckCRC32 = config.useCRC32Check && !config.isCarouselMode();
+    bool shouldCheckCRC32 = config.useCRC32Check;
+    bool shouldFetchCRC32ForSaving = config.useCRC32Check;  // Always fetch if enabled, even if not checking for skip
+    
+    // For carousel mode: only check CRC32 on timer wake + stay:true
+    if (shouldCheckCRC32 && config.isCarouselMode()) {
+        bool currentStay = config.imageStay[currentIndex];
+        shouldCheckCRC32 = (wakeReason == WAKEUP_TIMER && currentStay);
+        
+        if (!shouldCheckCRC32) {
+            if (wakeReason == WAKEUP_BUTTON) {
+                LogBox::message("CRC32 Check", "Skipped - button press requires immediate update");
+            } else if (!currentStay) {
+                LogBox::message("CRC32 Check", "Skipped - image has stay:false (advancing)");
+            }
+        }
+    }
     
     if (shouldCheckCRC32) {
         if (!checkAndHandleCRC32(config, newCRC32, crc32WasChecked, crc32Matched, loopStartTime, now, deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, wifiBSSID, timings)) {
             return;  // CRC32 matched and timer wake - already went to sleep (timing already captured)
         }
         // Timing already captured inside checkAndHandleCRC32
-    } else if (config.isCarouselMode()) {
-        LogBox::message("CRC32 Check", "CRC32 disabled in carousel mode");
+    } else if (shouldFetchCRC32ForSaving) {
+        // CRC32 enabled but not checking for skip (e.g., button press or stay:false in carousel)
+        // Still fetch the CRC32 value so we can save it for future comparisons
+        uint8_t crcRetryCount = 0;
+        imageManager->checkCRC32Changed(currentImageUrl.c_str(), &newCRC32, &crcRetryCount);
+        // Ignore the return value - we're downloading regardless
     }
     
     // Download and display image (measure timing)
@@ -222,10 +265,7 @@ void NormalModeController::execute() {
     // Handle carousel mode vs single image mode
     if (config.isCarouselMode()) {
         if (success) {
-            // Success - advance to next image
-            *imageStateIndex = (currentIndex + 1) % config.imageCount;
-            
-            // Save CRC32 if enabled (though disabled in carousel, keep for consistency)
+            // Save CRC32 if enabled (works in carousel mode for stay:true images)
             if (config.useCRC32Check && newCRC32 != 0) {
                 imageManager->saveCRC32(newCRC32);
             }
@@ -243,7 +283,8 @@ void NormalModeController::execute() {
             publishMQTTTelemetry(deviceId, deviceName, wakeReason, batteryVoltage, batteryPercentage, wifiRSSI, loopTimeSeconds,
                                0, wifiBSSID, timings, "Carousel image displayed successfully", "info");
             
-            // Sleep with current image's interval
+            // Advancement already happened before display (see lines ~168-186)
+            // Just sleep with the current image's interval
             powerManager->disableWatchdog();
             powerManager->prepareForSleep();
             unsigned long loopTimeMs = millis() - loopStartTime;
