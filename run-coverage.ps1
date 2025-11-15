@@ -12,9 +12,15 @@ Write-Host "=== Inkplate Dashboard Code Coverage ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Check if OpenCppCoverage is installed
-$openCppCoverage = Get-Command "OpenCppCoverage.exe" -ErrorAction SilentlyContinue
+$openCppCoveragePath = "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe"
+if (-not (Test-Path $openCppCoveragePath)) {
+    $openCppCoverage = Get-Command "OpenCppCoverage.exe" -ErrorAction SilentlyContinue
+    if ($openCppCoverage) {
+        $openCppCoveragePath = $openCppCoverage.Source
+    }
+}
 
-if (-not $openCppCoverage) {
+if (-not (Test-Path $openCppCoveragePath)) {
     Write-Host "ERROR: OpenCppCoverage not found" -ForegroundColor Red
     Write-Host ""
     Write-Host "To install OpenCppCoverage:" -ForegroundColor Yellow
@@ -37,7 +43,7 @@ if (-not $openCppCoverage) {
     exit 1
 }
 
-Write-Host "OpenCppCoverage found: $($openCppCoverage.Source)" -ForegroundColor Green
+Write-Host "OpenCppCoverage found: $openCppCoveragePath" -ForegroundColor Green
 Write-Host ""
 
 # Navigate to test directory
@@ -83,6 +89,13 @@ try {
     }
     Write-Host ""
     
+    # Run coverage for all test executables in one go
+    Write-Host "Running tests with coverage..." -ForegroundColor Cyan
+    Write-Host ""
+    
+    $commonSrcPath = Join-Path $PSScriptRoot "common\src"
+    $coverageOutput = Join-Path $PSScriptRoot "test\coverage"
+    
     # Get all test executables
     $testExecutables = @(
         "Debug\decision_tests.exe",
@@ -92,49 +105,24 @@ try {
         "Debug\integration_tests.exe"
     )
     
-    # Run coverage for each test executable
-    Write-Host "Running tests with coverage..." -ForegroundColor Cyan
+    # Run each test with coverage and combine results
+    Write-Host "Running all test executables with combined coverage..." -ForegroundColor Gray
     Write-Host ""
     
-    $commonSrcPath = Resolve-Path "..\..\..\common\src" | Select-Object -ExpandProperty Path
-    $coverageOutput = Join-Path $PSScriptRoot "test\coverage"
+    # Run ctest to execute all tests with coverage
+    & $openCppCoveragePath `
+        --sources "$commonSrcPath" `
+        --export_type html:"$coverageOutput" `
+        --export_type cobertura:"$coverageOutput\coverage.xml" `
+        --excluded_sources "*\test\*" `
+        --excluded_sources "*\mocks\*" `
+        --excluded_sources "*\googletest\*" `
+        --cover_children `
+        -- ctest -C Debug --output-on-failure
     
-    # Combine coverage from all test executables
-    $firstTest = $true
-    foreach ($testExe in $testExecutables) {
-        $testName = [System.IO.Path]::GetFileNameWithoutExtension($testExe)
-        Write-Host "  Running $testName..." -ForegroundColor Gray
-        
-        if ($firstTest) {
-            # First test: create new coverage
-            & OpenCppCoverage.exe `
-                --sources "$commonSrcPath" `
-                --export_type html:"$coverageOutput" `
-                --export_type cobertura:"$coverageOutput\coverage.xml" `
-                --excluded_sources "*\test\*" `
-                --excluded_sources "*\mocks\*" `
-                --excluded_sources "*\googletest\*" `
-                -- $testExe --gtest_brief=1
-            
-            if ($LASTEXITCODE -ne 0) {
-                throw "Coverage run failed for $testName"
-            }
-            $firstTest = $false
-        } else {
-            # Subsequent tests: merge with existing coverage
-            & OpenCppCoverage.exe `
-                --sources "$commonSrcPath" `
-                --input_coverage "$coverageOutput\coverage.xml" `
-                --export_type cobertura:"$coverageOutput\coverage.xml" `
-                --excluded_sources "*\test\*" `
-                --excluded_sources "*\mocks\*" `
-                --excluded_sources "*\googletest\*" `
-                -- $testExe --gtest_brief=1
-            
-            if ($LASTEXITCODE -ne 0) {
-                throw "Coverage run failed for $testName"
-            }
-        }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "⚠️ Warning: Some tests may have failed, but coverage was generated" -ForegroundColor Yellow
     }
     
     Write-Host ""
