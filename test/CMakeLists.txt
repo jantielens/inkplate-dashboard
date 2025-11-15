@@ -8,6 +8,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Define UNIT_TEST for conditional compilation
 add_compile_definitions(UNIT_TEST)
 
+# =============================================================================
+# Code Coverage Support
+# =============================================================================
+
+option(ENABLE_COVERAGE "Enable code coverage" OFF)
+
+if(ENABLE_COVERAGE)
+  if(MSVC)
+    # MSVC: Use /PROFILE flag for coverage (requires external tools like OpenCppCoverage)
+    message(STATUS "Code coverage enabled (MSVC) - use OpenCppCoverage for reports")
+    add_compile_options(/DEBUG:FULL)
+  else()
+    # GCC/Clang: Use gcov/llvm-cov
+    message(STATUS "Code coverage enabled (GCC/Clang)")
+    add_compile_options(--coverage -O0 -g)
+    add_link_options(--coverage)
+  endif()
+endif()
+
 # Fetch Google Test
 include(FetchContent)
 FetchContent_Declare(

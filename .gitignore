@@ -5,6 +5,14 @@ build/
 *.map
 *.d
 
+# Test artifacts
+test/build/
+test/coverage/
+*.gcov
+*.gcda
+*.gcno
+*.info
+
 # Arduino CLI
 .arduino15/
 arduino-cli.yaml

@@ -109,6 +109,93 @@ common/src/
 .\run-tests.ps1 -Verbose
 ```
 
+### Linux/macOS (Bash)
+
+**Run all tests:**
+```bash
+chmod +x run-tests.sh  # First time only
+./run-tests.sh
+```
+
+**Clean build and run:**
+```bash
+./run-tests.sh --clean
+```
+
+## Code Coverage
+
+### Windows (PowerShell)
+
+**Prerequisites:**
+- OpenCppCoverage - Install via: `winget install OpenCppCoverage.OpenCppCoverage`
+- Or download from: https://github.com/OpenCppCoverage/OpenCppCoverage/releases
+
+**Run coverage:**
+```powershell
+.\run-coverage.ps1
+```
+
+**Auto-install and run:**
+```powershell
+.\run-coverage.ps1 -Install
+```
+
+**Clean build:**
+```powershell
+.\run-coverage.ps1 -Clean
+```
+
+**Output:**
+- HTML report: `test/coverage/index.html` (opens automatically)
+- XML report: `test/coverage/coverage.xml` (Cobertura format)
+
+### Linux/macOS (Bash)
+
+**Prerequisites:**
+- lcov - Install via:
+  - Ubuntu/Debian: `sudo apt-get install lcov`
+  - macOS: `brew install lcov`
+  - Fedora: `sudo dnf install lcov`
+
+**Run coverage:**
+```bash
+chmod +x run-coverage.sh  # First time only
+./run-coverage.sh
+```
+
+**Auto-install and run:**
+```bash
+./run-coverage.sh --install
+```
+
+**Clean build:**
+```bash
+./run-coverage.sh --clean
+```
+
+**Output:**
+- HTML report: `test/coverage/index.html` (opens automatically)
+- LCOV report: `test/build/coverage_filtered.info`
+
+### Coverage Reports
+
+Coverage reports show:
+- **Line coverage** - Which lines of code are executed by tests
+- **Function coverage** - Which functions are called by tests
+- **Branch coverage** - Which code branches (if/else) are tested
+
+**What's covered:**
+- `common/src/modes/decision_logic.cpp` - Normal mode decision functions
+- `common/src/battery_logic.cpp` - Battery percentage calculation
+- `common/src/sleep_logic.cpp` - Sleep duration compensation
+- `common/src/config_logic.cpp` - Configuration validation helpers
+
+**What's excluded:**
+- Test files (`test/unit/*`, `test/integration/*`)
+- Mock files (`test/mocks/*`)
+- Google Test framework
+- System headers
+
 ### Expected Output
 
 ```
