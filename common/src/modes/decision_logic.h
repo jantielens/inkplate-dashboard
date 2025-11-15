@@ -101,4 +101,33 @@ float calculateSleepMinutesToNextEnabledHour(time_t currentTime,
                                              int timezoneOffset, 
                                              const uint8_t updateHours[3]);
 
+/**
+ * @brief Decision orchestration result (all three decisions combined)
+ */
+struct NormalModeDecisions {
+    ImageTargetDecision imageTarget;
+    CRC32Decision crc32Action;
+    uint8_t finalIndex;          // Final index to use (after potential advance)
+    uint8_t indexForCRC32;       // Index that should be used for CRC32 check
+};
+
+/**
+ * @brief Orchestrate all normal mode decisions in correct order
+ * 
+ * This function ensures the three decision functions are called with
+ * the correct parameters in the correct order. This is critical for
+ * carousel mode where the index may be updated between decisions.
+ * 
+ * CRITICAL: CRC32 decision must use the ORIGINAL index (before any
+ * carousel advance) to check the correct image's stay flag.
+ * 
+ * @param config Dashboard configuration
+ * @param wakeReason Why the device woke up
+ * @param currentIndex Current carousel position (0-9)
+ * @return NormalModeDecisions with all three decisions
+ */
+NormalModeDecisions orchestrateNormalModeDecisions(const DashboardConfig& config,
+                                                    WakeupReason wakeReason,
+                                                    uint8_t currentIndex);
+
 #endif // DECISION_LOGIC_H

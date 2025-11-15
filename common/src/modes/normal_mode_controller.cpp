@@ -207,20 +207,20 @@ void NormalModeController::execute() {
     }
     LogBox::end();
     
-    // DECISION POINT 1: Determine which image to display and whether to advance
+    // DECISION ORCHESTRATION: Use tested orchestration function to ensure correct behavior
     uint8_t currentIndex = *imageStateIndex % config.imageCount;
-    ImageTargetDecision targetDecision = determineImageTarget(config, wakeReason, currentIndex);
+    NormalModeDecisions decisions = orchestrateNormalModeDecisions(config, wakeReason, currentIndex);
     
     LogBox::begin(config.isCarouselMode() ? "Carousel Mode" : "Single Image Mode");
-    LogBox::linef("Decision: %s", targetDecision.reason);
+    LogBox::linef("Decision: %s", decisions.imageTarget.reason);
     if (config.isCarouselMode()) {
-        LogBox::linef("Target image: %d of %d", targetDecision.targetIndex + 1, config.imageCount);
+        LogBox::linef("Target image: %d of %d", decisions.imageTarget.targetIndex + 1, config.imageCount);
     }
     
     // Update index if we should advance before display
-    if (targetDecision.shouldAdvance) {
-        *imageStateIndex = targetDecision.targetIndex;
-        currentIndex = targetDecision.targetIndex;
+    if (decisions.imageTarget.shouldAdvance) {
+        *imageStateIndex = decisions.finalIndex;
+        currentIndex = decisions.finalIndex;
     }
     
     String currentImageUrl = config.imageUrls[currentIndex];
@@ -239,8 +239,8 @@ void NormalModeController::execute() {
     }
     LogBox::end();
     
-    // DECISION POINT 2: Determine CRC32 check behavior
-    CRC32Decision crc32Decision = determineCRC32Action(config, wakeReason, currentIndex);
+    // CRC32 decision already determined by orchestration
+    CRC32Decision crc32Decision = decisions.crc32Action;
     
     LogBox::begin("CRC32 Check Decision");
     LogBox::linef("Decision: %s", crc32Decision.reason);

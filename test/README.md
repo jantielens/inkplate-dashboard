@@ -34,7 +34,7 @@ Configuration validation helpers from `config_manager.cpp`:
 - `isHourEnabledInBitmask()` - Hour-based scheduling validation
 - `areAllHoursEnabled()` - 24/7 schedule detection
 
-### Integration Tests (10 tests)
+### Integration Tests (36 tests)
 
 End-to-end scenario tests that validate **complete decision flows** for real-world configurations:
 - Single image mode with CRC32 optimization
@@ -42,10 +42,13 @@ End-to-end scenario tests that validate **complete decision flows** for real-wor
 - Button wake bypassing hourly schedules
 - Carousel wrap-around (last to first image)
 - Button-only mode (interval = 0)
+- Carousel edge cases (CRC32 disabled, single-image carousel, boundary conditions)
+- Hourly schedule integration (calculateSleepMinutesToNextEnabledHour validation)
+- End-to-end orchestration scenarios (orchestrateNormalModeDecisions validation)
 
 Integration tests verify that multiple decision functions work correctly together to produce expected system behavior, covering **40+ execution paths** documented in [NORMAL_MODE_FLOW.md](../docs/dev/NORMAL_MODE_FLOW.md).
 
-**Total: 88 tests (78 unit + 10 integration)**
+**Total: 114 tests (78 unit + 36 integration)**
 
 ## Test Architecture
 
@@ -61,7 +64,7 @@ test/
 │   ├── test_sleep_logic.cpp            # Sleep duration tests (21 tests)
 │   └── test_config_logic.cpp           # Config validation tests (25 tests)
 ├── integration/
-│   ├── test_normal_mode_scenarios.cpp  # End-to-end scenario tests (10 tests)
+│   ├── test_normal_mode_scenarios.cpp  # End-to-end scenario tests (36 tests)
 │   └── test_helpers.h                  # ConfigBuilder and test utilities
 ├── mocks/
 │   ├── Arduino.h                       # Mock Arduino types (String, millis, etc.)
@@ -120,9 +123,9 @@ Building tests...
 [... build output ...]
 
 Running tests...
-100% tests passed, 0 tests failed out of 88
+100% tests passed, 0 tests failed out of 114
 
-Total Test time (real) = 0.85 sec
+Total Test time (real) = 1.15 sec
 
 ✅ All tests passed!
 ```
@@ -238,7 +241,7 @@ Total Test time (real) = 0.85 sec
 - Timezone-aware bitmask checking
 - Cross-midnight schedule validation
 
-### Integration Tests (10 tests)
+### Integration Tests (36 tests)
 
 Complete end-to-end scenario tests validating multiple decisions working together:
 
@@ -255,6 +258,21 @@ Complete end-to-end scenario tests validating multiple decisions working togethe
 **Additional Scenarios (2 tests):**
 9. Carousel wrap-around → Last image advances to first
 10. Button-only mode (interval=0) → Indefinite sleep
+
+**Refactored Orchestration Tests (7 tests):**
+11-17. All core integration tests refactored to use `orchestrateNormalModeDecisions()` function
+
+**Carousel Edge Cases (4 tests):**
+18. Carousel wrap-around with orchestration → Validates carousel boundary
+19. CRC32 disabled in carousel → Verifies orchestration with CRC32 off
+20. Carousel boundary conditions → Tests first/last image transitions
+21. Single-image carousel → Validates degenerate case
+
+**Hourly Schedule Tests (9 tests):**
+22-30. Comprehensive tests for `calculateSleepMinutesToNextEnabledHour()` including disabled hours, wrap-around, partial schedules, business hours, and seconds rounding
+
+**End-to-End Orchestration Tests (5 tests):**
+31-35. Complete orchestration validation including button wake bypass, index preservation for CRC32, hourly schedule integration, and all-hours-enabled scenarios
 
 **Integration Test Benefits:**
 - Validates **complete decision flows** (image target + CRC32 + sleep)

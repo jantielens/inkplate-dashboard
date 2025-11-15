@@ -160,3 +160,34 @@ float calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOff
     // Fallback: all hours disabled (shouldn't happen with defaults)
     return -1;
 }
+
+/**
+ * @brief Orchestrate all normal mode decisions in correct order
+ * 
+ * Ensures the three decision functions are called with correct parameters.
+ * CRITICAL: CRC32 decision must use ORIGINAL index before carousel advance.
+ */
+NormalModeDecisions orchestrateNormalModeDecisions(const DashboardConfig& config,
+                                                    WakeupReason wakeReason,
+                                                    uint8_t currentIndex) {
+    NormalModeDecisions result;
+    
+    // Preserve original index for CRC32 decision
+    uint8_t originalIndex = currentIndex;
+    
+    // Step 1: Determine image target
+    result.imageTarget = determineImageTarget(config, wakeReason, currentIndex);
+    
+    // Step 2: Update index if advancing
+    uint8_t finalIndex = currentIndex;
+    if (result.imageTarget.shouldAdvance) {
+        finalIndex = result.imageTarget.targetIndex;
+    }
+    result.finalIndex = finalIndex;
+    
+    // Step 3: Determine CRC32 action - MUST use originalIndex!
+    result.crc32Action = determineCRC32Action(config, wakeReason, originalIndex);
+    result.indexForCRC32 = originalIndex;
+    
+    return result;
+}
