@@ -58,6 +58,7 @@ public:
     float readBatteryVoltage(void* inkplate = nullptr);
     
     // Calculate battery percentage from voltage
+    // DEPRECATED: Use calculateBatteryPercentage() from battery_logic.h instead
     // Uses lithium-ion discharge curve typical for ESP32 devices
     // voltage: battery voltage in volts
     // Returns percentage (0-100), rounded to 5% increments

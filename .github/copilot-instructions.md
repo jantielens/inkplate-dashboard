@@ -9,9 +9,10 @@
 - **Platform:** ESP32 (Inkplate_Boards package)
 - **Build Tool:** Arduino CLI 1.3.1
 - **Libraries:** InkplateLibrary, ArduinoJson, PubSubClient (MQTT)
+- **Testing:** CMake 4.1.2+ with Google Test 1.12.1 (78 unit tests)
 - **Target Runtime:** ESP32 with e-ink displays (1-bit and 3-bit grayscale)
 
-**Project Size:** ~30 source files, ~50 documentation files
+**Project Size:** ~30 source files, ~50 documentation files, 78 unit tests
 
 ## Critical Build Requirements
 
@@ -35,6 +36,10 @@ chmod +x build.sh
 - InkplateLibrary
 - ArduinoJson
 - PubSubClient
+
+**Optional (for testing):**
+- CMake 4.1.2+ (for unit tests): `winget install --id Kitware.CMake`
+- Visual Studio 2022 Build Tools or full VS 2022 (for unit tests)
 
 ### Build Commands (TRUST THESE)
 
@@ -61,6 +66,14 @@ chmod +x build.sh
 **Upload to device (development only):**
 ```powershell
 .\upload.ps1 -Board inkplate5v2 -Port COM7
+```
+
+**Run unit tests (optional):**
+```powershell
+# Windows
+.\run-tests.ps1
+
+# All boards must build AND tests must pass before claiming work complete
 ```
 
 ### Build System Architecture (CRITICAL)
@@ -270,6 +283,9 @@ common/                              # Shared code library
   src/
     main_sketch.ino.inc              # Shared setup() and loop() (200+ lines)
     version.h                        # FIRMWARE_VERSION (UPDATE THIS)
+    battery_logic.h/cpp              # Battery percentage calculation (pure C++, testable)
+    sleep_logic.h/cpp                # Sleep duration compensation (pure C++, testable)
+    config_logic.h/cpp               # Config validation helpers (pure C++, testable)
     config_manager.h/cpp             # Configuration storage
     wifi_manager.h/cpp               # WiFi management
     config_portal.h/cpp              # Web configuration portal
@@ -284,6 +300,7 @@ common/                              # Shared code library
     logger.h/cpp                     # Serial logging
     utils.h/cpp                      # Utility functions
     modes/                           # Mode controllers
+      decision_logic.h/cpp           # Normal mode decision functions (pure C++, testable)
       ap_mode_controller.h/cpp       # AP mode (WiFi setup)
       config_mode_controller.h/cpp   # Config mode (dashboard setup)
       normal_mode_controller.h/cpp   # Normal mode (display images)
@@ -304,6 +321,21 @@ scripts/
   prepare_release.sh                 # Manual release preparation
   setup_local_testing.sh             # Local flasher testing setup
 
+test/                                # Unit tests (CMake + Google Test)
+  unit/
+    test_decision_functions.cpp      # Decision logic tests (19 tests)
+    test_battery_logic.cpp           # Battery calculation tests (17 tests)
+    test_sleep_logic.cpp             # Sleep duration tests (21 tests)
+    test_config_logic.cpp            # Config validation tests (25 tests)
+  mocks/
+    Arduino.h                        # Mock Arduino types (String, millis, etc.)
+    Inkplate.h                       # Mock Inkplate display class
+    config.h                         # Mock DashboardConfig struct
+    config_manager.cpp/h             # Mock ConfigManager (delegates to config_logic)
+  CMakeLists.txt                     # CMake build configuration (4 test executables)
+  README.md                          # Unit testing documentation
+  run-tests.ps1                      # PowerShell test runner
+
 docs/
   user/                              # End user documentation
     USING.md                         # Main user guide
@@ -316,6 +348,7 @@ docs/
     adr/                             # Architecture Decision Records
       ADR-ARCHITECTURE.MD            # Multi-board design
       ADR-MODES.MD                   # Device modes
+      ADR-UNIT_TESTING.MD            # Unit testing pattern
       ADR-ADDBOARD.MD                # Adding board support
       ... (see docs/dev/adr/ for full list)
 ```
@@ -349,12 +382,19 @@ docs/
 
 3. **Update version** in `common/src/version.h`
 4. **Update CHANGELOG.md** with feature description
-5. **Update documentation** if needed:
+4. **Update documentation** if needed:
    - `docs/user/` - End user guides (USING.md, config guides, etc.)
    - `docs/dev/` - Developer docs (BUILD_SYSTEM.md, RELEASE_WORKFLOW.md, etc.)
    - `docs/dev/adr/` - Architecture Decision Records (ADR-*.MD)
+   - `test/README.md` - Unit testing documentation (if adding testable code)
    - Create new ADR for significant architectural decisions
    - Update relevant README.md files to index new documentation
+5. **Add unit tests if extracting pure logic** (optional but recommended):
+   - Extract pure C++ functions to standalone modules (e.g., `battery_logic.cpp`)
+   - Add test file to `test/unit/` (e.g., `test_battery_logic.cpp`)
+   - Update `test/CMakeLists.txt` to include new test executable
+   - Run tests: `.\run-tests.ps1` (Windows)
+   - See `docs/dev/adr/ADR-UNIT_TESTING.MD` for pattern details
 6. **Test on all boards**: `./build.sh all`
 
 ### Board-Specific Optimizations
@@ -461,8 +501,13 @@ The web portal serves HTML, CSS, and JavaScript as **separate resources** to avo
    - **ALL 4 boards MUST compile without errors**
    - If Arduino CLI not installed: Use setup scripts OR clearly state build not tested
    - **DO NOT** claim "implementation complete" without successful builds
-6. ✅ **No compilation errors** in build output
-7. ✅ **Firmware sizes reasonable** (<1.5MB per board - check build output)
+6. ✅ **Run unit tests if code was modified** (optional but recommended):
+   - Run: `.\run-tests.ps1` (Windows)
+   - **All 78 tests should pass**
+   - If tests fail, fix the code or update test expectations
+   - If CMake not installed: Clearly state tests not run
+7. ✅ **No compilation errors** in build output
+8. ✅ **Firmware sizes reasonable** (<1.5MB per board - check build output)
 
 **NOTE:** Do NOT create or push git tags. Release tagging is a manual user action only.
 
@@ -613,9 +658,14 @@ python3 -m http.server 8000
 - `RELEASE_WORKFLOW.md` - Complete release process
 - `README.md` - Developer doc index
 
+**Unit Testing Documentation** (`test/`):
+- `README.md` - Unit testing setup, execution, and coverage (78 tests)
+- See `docs/dev/adr/ADR-UNIT_TESTING.MD` for testing pattern details
+
 **Architecture Decision Records** (`docs/dev/adr/`):
 - `ADR-ARCHITECTURE.MD` - Multi-board design rationale
 - `ADR-MODES.MD` - Device mode state machine
+- `ADR-UNIT_TESTING.MD` - Unit testing pattern for embedded firmware
 - `ADR-HOURLY_SCHEDULING.MD` - Sleep/wake scheduling
 - `ADR-CRC32_GUIDE.MD` - Battery-saving CRC checks
 - `ADR-ADDBOARD.MD` - Adding new board support
@@ -645,6 +695,10 @@ git push origin v1.3.2                         # Push tag (triggers release)
 # Local testing
 ./scripts/setup_local_testing.sh               # Setup local flasher
 cd flasher && python3 -m http.server 8000      # Serve flasher locally
+
+# Unit tests (optional)
+.\run-tests.ps1                                # Run all unit tests (Windows)
+.\run-tests.ps1 -Clean                         # Clean build and run tests
 ```
 
 ## Final Notes
@@ -664,4 +718,6 @@ cd flasher && python3 -m http.server 8000      # Serve flasher locally
    - `ADR-CAROUSEL_IMPLEMENTATION.MD` - Carousel mode implementation
    - `ADR-CRC32_GUIDE.MD` - CRC32 optimization details
    - `ADR-HOURLY_SCHEDULING.MD` - Hourly scheduling implementation
-5. Check `CHANGELOG.md` for recent changes affecting your task
+   - `ADR-UNIT_TESTING.MD` - Unit testing pattern and strategy
+5. Check `test/README.md` for unit testing setup and execution
+6. Check `CHANGELOG.md` for recent changes affecting your task

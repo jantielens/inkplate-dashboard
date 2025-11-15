@@ -1,4 +1,5 @@
 #include <src/modes/normal_mode_controller.h>
+#include <src/modes/decision_logic.h>
 #include <WiFi.h>
 #include <src/frontlight_manager.h>
 
@@ -12,124 +13,6 @@ NormalModeController::NormalModeController(Inkplate* disp, ConfigManager* config
     : display(disp), configManager(config), wifiManager(wifi),
       imageManager(image), powerManager(power), mqttManager(mqtt),
       uiStatus(uiStatus), uiError(uiError), imageStateIndex(stateIndex) {
-}
-
-ImageTargetDecision NormalModeController::determineImageTarget(const DashboardConfig& config, 
-                                                                WakeupReason wakeReason, 
-                                                                uint8_t currentIndex) {
-    ImageTargetDecision decision;
-    
-    // Single image mode: always display image 0, never advance
-    if (!config.isCarouselMode()) {
-        decision.targetIndex = 0;
-        decision.shouldAdvance = false;
-        decision.reason = "Single image mode";
-        return decision;
-    }
-    
-    // Carousel mode: decision based on wake reason and stay flag
-    bool currentStay = config.imageStay[currentIndex];
-    
-    if (wakeReason == WAKEUP_BUTTON) {
-        // Button press: advance to next image
-        uint8_t nextIndex = (currentIndex + 1) % config.imageCount;
-        decision.targetIndex = nextIndex;
-        decision.shouldAdvance = true;
-        decision.reason = "Carousel - button press (always advance)";
-        return decision;
-    }
-    
-    // Timer wake: check stay flag
-    if (!currentStay) {
-        // stay=false: auto-advance to next image
-        uint8_t nextIndex = (currentIndex + 1) % config.imageCount;
-        decision.targetIndex = nextIndex;
-        decision.shouldAdvance = true;
-        decision.reason = "Carousel - auto-advance (stay:false)";
-        return decision;
-    }
-    
-    // stay=true: display current image, don't advance
-    decision.targetIndex = currentIndex;
-    decision.shouldAdvance = false;
-    decision.reason = "Carousel - stay flag set (stay:true)";
-    return decision;
-}
-
-CRC32Decision NormalModeController::determineCRC32Action(const DashboardConfig& config, 
-                                                         WakeupReason wakeReason, 
-                                                         uint8_t currentIndex) {
-    CRC32Decision decision;
-    decision.shouldCheck = false;
-    decision.reason = "CRC32 disabled in config";
-    
-    if (!config.useCRC32Check) {
-        return decision;
-    }
-    
-    // CRC32 enabled - decide if we should check for skip optimization
-    // (we always fetch the CRC32 value when enabled, for saving)
-    
-    // Single image mode: check on timer wake only
-    if (!config.isCarouselMode()) {
-        if (wakeReason == WAKEUP_TIMER) {
-            decision.shouldCheck = true;
-            decision.reason = "Single image - timer wake (check for skip)";
-        } else {
-            decision.shouldCheck = false;
-            decision.reason = "Single image - button press (always download)";
-        }
-        return decision;
-    }
-    
-    // Carousel mode: only check on timer wake + stay:true
-    bool currentStay = config.imageStay[currentIndex];
-    
-    if (wakeReason == WAKEUP_BUTTON) {
-        decision.shouldCheck = false;
-        decision.reason = "Carousel - button press (always download)";
-        return decision;
-    }
-    
-    if (!currentStay) {
-        decision.shouldCheck = false;
-        decision.reason = "Carousel - auto-advance (always download)";
-        return decision;
-    }
-    
-    // Timer wake + stay:true
-    decision.shouldCheck = true;
-    decision.reason = "Carousel - timer wake + stay:true (check for skip)";
-    return decision;
-}
-
-SleepDecision NormalModeController::determineSleepDuration(const DashboardConfig& config, 
-                                                           time_t currentTime, 
-                                                           uint8_t currentIndex, 
-                                                           bool crc32Matched) {
-    SleepDecision decision;
-    
-    // Calculate sleep considering hourly schedule
-    float sleepMinutes = calculateSleepMinutesToNextEnabledHour(currentTime, config.timezoneOffset, config.updateHours);
-    
-    if (sleepMinutes > 0) {
-        decision.sleepSeconds = sleepMinutes * 60.0f;
-        decision.reason = "Hourly schedule - sleep until next enabled hour";
-        return decision;
-    }
-    
-    // No hourly schedule constraints - use image interval
-    int currentInterval = config.imageIntervals[currentIndex];
-    
-    if (currentInterval == 0) {
-        decision.sleepSeconds = 0.0f;
-        decision.reason = "Button-only mode (interval = 0)";
-        return decision;
-    }
-    
-    decision.sleepSeconds = (float)currentInterval * 60.0f;
-    decision.reason = crc32Matched ? "Image interval (CRC32 matched)" : "Image interval (image updated)";
-    return decision;
 }
 
 void NormalModeController::execute() {
@@ -301,7 +184,7 @@ void NormalModeController::execute() {
         
         if (!hourEnabled) {
             LogBox::line("Updates disabled for this hour");
-            float sleepMinutes = calculateSleepMinutesToNextEnabledHour(now, config.timezoneOffset, config.updateHours);
+            float sleepMinutes = ::calculateSleepMinutesToNextEnabledHour(now, config.timezoneOffset, config.updateHours);
             LogBox::linef("Sleeping %.1f minutes until next enabled hour", sleepMinutes);
             LogBox::end();
             
@@ -446,55 +329,6 @@ int NormalModeController::calculateSleepUntilNextEnabledHour(uint8_t currentHour
     }
     
     // Fallback: all hours disabled (shouldn't happen with defaults), sleep full refresh rate
-    return -1;
-}
-
-float NormalModeController::calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOffset, const uint8_t updateHours[3]) {
-    // Get current time info
-    struct tm* timeinfo = localtime(&currentTime);
-    
-    // Calculate current local hour and minutes
-    int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, timezoneOffset);
-    int currentMinute = timeinfo->tm_min;
-    int currentSecond = timeinfo->tm_sec;
-    
-    // First check if the current hour is enabled
-    // If it is, we don't need to sleep - return invalid to signal "don't sleep"
-    bool currentHourEnabled = ConfigManager::isHourEnabledInBitmask(currentHour, updateHours);
-    
-    if (currentHourEnabled) {
-        // Current hour is enabled - don't sleep
-        return -1;
-    }
-    
-    // Current hour is disabled - find next enabled hour
-    for (int i = 1; i <= 24; i++) {
-        uint8_t checkHour = (currentHour + i) % 24;
-        
-        bool isEnabled = ConfigManager::isHourEnabledInBitmask(checkHour, updateHours);
-        
-        if (isEnabled) {
-            // Found next enabled hour - calculate precise sleep time
-            float hoursToSleep;
-            
-            if (checkHour <= currentHour) {
-                // Wrapped to next day
-                hoursToSleep = (24 - currentHour) + checkHour;
-            } else {
-                // Same day
-                hoursToSleep = checkHour - currentHour;
-            }
-            
-            // Subtract current minutes and seconds to get precise sleep time
-            // (sleep until the start of the next enabled hour)
-            float minutesAndSecondsToSubtract = currentMinute + (currentSecond / 60.0);
-            float sleepMinutes = (hoursToSleep * 60.0) - minutesAndSecondsToSubtract;
-            
-            return sleepMinutes;
-        }
-    }
-    
-    // Fallback: all hours disabled (shouldn't happen with defaults)
     return -1;
 }
 

@@ -10,31 +10,7 @@
 #include <src/ui/ui_status.h>
 #include <src/ui/ui_error.h>
 #include <src/logger.h>
-
-/**
- * @brief Decision structure for image target determination
- */
-struct ImageTargetDecision {
-    uint8_t targetIndex;        // Which image to display (0-9)
-    bool shouldAdvance;         // Should advance to next image after display
-    const char* reason;         // Human-readable reason for this decision
-};
-
-/**
- * @brief Decision structure for CRC32 check behavior
- */
-struct CRC32Decision {
-    bool shouldCheck;           // Check CRC32 and potentially skip download (always fetch when enabled)
-    const char* reason;         // Human-readable reason for this decision
-};
-
-/**
- * @brief Decision structure for sleep duration calculation
- */
-struct SleepDecision {
-    float sleepSeconds;         // How long to sleep (0 = indefinite/button-only)
-    const char* reason;         // Human-readable reason for this duration
-};
+#include <src/modes/decision_logic.h>
 
 /**
  * @brief Structure to hold loop timing breakdown measurements
@@ -90,15 +66,9 @@ private:
     UIError* uiError;
     uint8_t* imageStateIndex;  // Pointer to RTC memory (carousel position or retry state)
     
-    // Decision functions - pure logic extraction for testability
-    ImageTargetDecision determineImageTarget(const DashboardConfig& config, WakeupReason wakeReason, uint8_t currentIndex);
-    CRC32Decision determineCRC32Action(const DashboardConfig& config, WakeupReason wakeReason, uint8_t currentIndex);
-    SleepDecision determineSleepDuration(const DashboardConfig& config, time_t currentTime, uint8_t currentIndex, bool crc32Matched);
-    
     // Helper methods
     bool loadConfiguration(DashboardConfig& config);
     int calculateSleepUntilNextEnabledHour(uint8_t currentHour, const uint8_t updateHours[3]);
-    float calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOffset, const uint8_t updateHours[3]);
     void publishMQTTTelemetry(const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32, const String& wifiBSSID, const LoopTimings& timings, const char* message = nullptr, const char* severity = nullptr);
     void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, const String& wifiBSSID, const LoopTimings& timings);
     void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, const String& wifiBSSID, const LoopTimings& timings);

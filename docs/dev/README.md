@@ -10,6 +10,13 @@ This section contains documentation for developers, contributors, and maintainer
 | [DISPLAY_CYCLE.md](DISPLAY_CYCLE.md) | Overview of the device's display cycle and runtime flow |
 | [NORMAL_MODE_FLOW.md](NORMAL_MODE_FLOW.md) | Normal mode execution flow, decision logic, and architecture |
 
+**Testing Documentation**
+
+| File | Description |
+|------|-------------|
+| [../test/README.md](../../test/README.md) | Unit testing setup, execution, and coverage (78 tests) |
+| [ADR-UNIT_TESTING.MD](adr/ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with CMake/Google Test |
+
 **Architecture Decision Records & Reports**
 
 | File | Description |
@@ -31,6 +38,7 @@ This section contains documentation for developers, contributors, and maintainer
 | [ADR-TESTING.MD](adr/ADR-TESTING.MD) | Testing the CI/CD workflow |
 | [ADR-TESTING_RETRY_MECHANISM.MD](adr/ADR-TESTING_RETRY_MECHANISM.MD) | Testing the image download retry mechanism |
 | [ADR-TIMEZONE_ANALYSIS_REPORT.MD](adr/ADR-TIMEZONE_ANALYSIS_REPORT.MD) | Analysis of timezone handling and DST feasibility |
+| [ADR-UNIT_TESTING.MD](adr/ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with conditional compilation |
 | [ADR-WEB_PORTAL_OPTIMIZATION.MD](adr/ADR-WEB_PORTAL_OPTIMIZATION.MD) | Web portal HTML/CSS/JavaScript separation for memory optimization |
 | [ADR-WORKFLOWS_README.MD](adr/ADR-WORKFLOWS_README.MD) | GitHub Actions CI/CD workflow documentation |
 
