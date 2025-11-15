@@ -237,18 +237,19 @@ void DisplayManager::showVcomTestPattern() {
     
     // Read and display current VCOM
     double currentVcom = readPanelVCOM();
-    _display->setFont(FONT_NORMAL);
-    _display->setTextColor(BLACK);
-    _display->setCursor(5, 5);
-    _display->print("Current VCOM: ");
+    
+    // Format VCOM message
+    String vcomMessage = "Current VCOM: ";
     if (!isnan(currentVcom)) {
-        _display->print(currentVcom, 2);
-        _display->print(" V");
+        vcomMessage += String(currentVcom, 2) + " V";
         LogBox::linef("Current VCOM: %.2f V", currentVcom);
     } else {
-        _display->print("N/A");
+        vcomMessage += "N/A";
         LogBox::line("Current VCOM: N/A (read failed)");
     }
+    
+    // Use showMessage() to properly handle font baseline positioning
+    showMessage(vcomMessage.c_str(), MARGIN, MARGIN, FONT_NORMAL);
     
     #ifdef DISPLAY_MODE_INKPLATE2
     // Inkplate 2 only supports 1-bit mode (black/white)

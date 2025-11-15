@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2025-11-15
+
+### Fixed
+- Fixed VCOM test pattern text positioning - text now displays correctly after font baseline positioning changes (Issue #92)
+
 ## [1.5.0] - 2025-11-13
 
 ### Added
