@@ -6,9 +6,9 @@ This directory contains unit and integration tests for the inkplate-dashboard fi
 
 The test suite validates **standalone pure C++ functions** extracted from the firmware:
 
-### Unit Tests (78 tests)
+### Unit Tests
 
-#### Decision Logic (19 tests)
+#### Decision Logic
 Core decision functions from `normal_mode_controller.cpp`:
 - `determineImageTarget()` - Which image to display and whether to advance
 - `determineCRC32Action()` - Whether to check CRC32 for optimization
@@ -16,25 +16,25 @@ Core decision functions from `normal_mode_controller.cpp`:
 
 Validates individual decisions in isolation.
 
-#### Battery Logic (17 tests)
+#### Battery Logic
 Battery percentage calculation from `power_manager.cpp`:
 - `calculateBatteryPercentage()` - Li-ion voltage to percentage conversion
 - 22-point discharge curve with linear interpolation
 - 5% rounding for stability
 
-### Sleep Logic (21 tests)
+### Sleep Logic
 Sleep duration compensation from `power_manager.cpp`:
 - `calculateAdjustedSleepDuration()` - Active loop time compensation
 - Button-only mode handling
 - Microsecond precision timing
 
-### Config Logic (25 tests)
+### Config Logic
 Configuration validation helpers from `config_manager.cpp`:
 - `applyTimezoneOffset()` - 24-hour wrapping with timezone offsets
 - `isHourEnabledInBitmask()` - Hour-based scheduling validation
 - `areAllHoursEnabled()` - 24/7 schedule detection
 
-### Integration Tests (36 tests)
+### Integration Tests
 
 End-to-end scenario tests that validate **complete decision flows** for real-world configurations:
 - Single image mode with CRC32 optimization
@@ -48,8 +48,6 @@ End-to-end scenario tests that validate **complete decision flows** for real-wor
 
 Integration tests verify that multiple decision functions work correctly together to produce expected system behavior, covering **40+ execution paths** documented in [NORMAL_MODE_FLOW.md](../docs/dev/NORMAL_MODE_FLOW.md).
 
-**Total: 114 tests (78 unit + 36 integration)**
-
 ## Test Architecture
 
 ### Standalone Function Architecture
@@ -59,12 +57,12 @@ Functions are extracted into **standalone pure C++ modules** in `common/src/`. T
 ```
 test/
 ├── unit/
-│   ├── test_decision_functions.cpp     # Decision logic tests (19 tests)
-│   ├── test_battery_logic.cpp          # Battery calculation tests (17 tests)
-│   ├── test_sleep_logic.cpp            # Sleep duration tests (21 tests)
-│   └── test_config_logic.cpp           # Config validation tests (25 tests)
+│   ├── test_decision_functions.cpp     # Decision logic tests
+│   ├── test_battery_logic.cpp          # Battery calculation tests
+│   ├── test_sleep_logic.cpp            # Sleep duration tests
+│   └── test_config_logic.cpp           # Config validation tests
 ├── integration/
-│   ├── test_normal_mode_scenarios.cpp  # End-to-end scenario tests (36 tests)
+│   ├── test_normal_mode_scenarios.cpp  # End-to-end scenario tests
 │   └── test_helpers.h                  # ConfigBuilder and test utilities
 ├── mocks/
 │   ├── Arduino.h                       # Mock Arduino types (String, millis, etc.)
@@ -123,7 +121,8 @@ Building tests...
 [... build output ...]
 
 Running tests...
-100% tests passed, 0 tests failed out of 114
+[==========] Running tests...
+[==========] All tests passed
 
 Total Test time (real) = 1.15 sec
 
@@ -132,18 +131,18 @@ Total Test time (real) = 1.15 sec
 
 ## Test Coverage
 
-### Unit Tests (78 tests)
+### Unit Tests
 
-#### Decision Logic Tests (19 tests)
+#### Decision Logic Tests
 
-**Image Target Tests (5 tests):**
+**Image Target Tests:**
 - Single mode always returns index 0
 - Carousel button wake always advances
 - Carousel timer wake with `stay:false` advances
 - Carousel timer wake with `stay:true` stays on current
 - Mixed stay flags respected per-image
 
-**CRC32 Action Tests (7 tests):**
+**CRC32 Action Tests:**
 - Disabled in config never checks
 - Single mode timer wake checks
 - Single mode button wake does not check
@@ -152,18 +151,18 @@ Total Test time (real) = 1.15 sec
 - Carousel timer wake with `stay:true` checks
 - Mixed stay flags only check on `stay:true` images
 
-**Sleep Duration Tests (4 tests):**
+**Sleep Duration Tests:**
 - Button-only mode returns 0 (indefinite sleep)
 - Normal interval uses config value
 - CRC32 matched uses interval with matched reason
 - Carousel uses per-image interval
 
-**Integration Tests (3 tests):**
+**Integration Tests:**
 - Single image timer wake with CRC32 match
 - Carousel button wake (advance + no check + next interval)
 - Carousel timer stay:true with CRC32 match
 
-#### Battery Logic Tests (17 tests)
+#### Battery Logic Tests
 
 **Out-of-Range Tests:**
 - Voltage below 3.0V returns 0%
@@ -184,7 +183,7 @@ Total Test time (real) = 1.15 sec
 - Monotonic behavior (increasing voltage never decreases percentage)
 - Realistic scenarios (fully charged, half charged, low battery, critically low)
 
-#### Sleep Logic Tests (21 tests)
+#### Sleep Logic Tests
 
 **Button-Only Mode:**
 - Returns 0 for indefinite sleep
@@ -212,7 +211,7 @@ Total Test time (real) = 1.15 sec
 - Almost-zero intervals (1s)
 - Consistency across multiple calls
 
-#### Config Logic Tests (25 tests)
+#### Config Logic Tests
 
 **Timezone Offset Tests:**
 - No offset returns original hour
@@ -241,11 +240,11 @@ Total Test time (real) = 1.15 sec
 - Timezone-aware bitmask checking
 - Cross-midnight schedule validation
 
-### Integration Tests (36 tests)
+### Integration Tests
 
 Complete end-to-end scenario tests validating multiple decisions working together:
 
-**Core Scenarios (8 tests):**
+**Core Scenarios:**
 1. Single image + timer wake + CRC32 match → Skip download, sleep interval
 2. Single image + timer wake + CRC32 changed → Download, display, sleep interval
 3. Single image + button wake → Always download (never check CRC32)

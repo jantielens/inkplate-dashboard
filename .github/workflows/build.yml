@@ -167,7 +167,7 @@ jobs:
             echo "### Test Suite: ${test_icon} ${test_status}"
             echo ""
             if [ "$test_status" = "success" ]; then
-              echo "All 88 tests passed (78 unit + 10 integration)"
+              echo "All tests passed"
             else
               echo "Test suite failed. Check the test job logs for details."
             fi

@@ -9,10 +9,10 @@
 - **Platform:** ESP32 (Inkplate_Boards package)
 - **Build Tool:** Arduino CLI 1.3.1
 - **Libraries:** InkplateLibrary, ArduinoJson, PubSubClient (MQTT)
-- **Testing:** CMake 4.1.2+ with Google Test 1.12.1 (88 tests: 78 unit + 10 integration)
+- **Testing:** CMake 4.1.2+ with Google Test 1.12.1
 - **Target Runtime:** ESP32 with e-ink displays (1-bit and 3-bit grayscale)
 
-**Project Size:** ~30 source files, ~50 documentation files, 88 tests (78 unit + 10 integration)
+**Project Size:** ~30 source files, ~50 documentation files
 
 ## Critical Build Requirements
 
@@ -503,7 +503,7 @@ The web portal serves HTML, CSS, and JavaScript as **separate resources** to avo
    - **DO NOT** claim "implementation complete" without successful builds
 6. ✅ **Run unit tests if code was modified** (optional but recommended):
    - Run: `.\run-tests.ps1` (Windows)
-   - **All 88 tests should pass (78 unit + 10 integration)**
+   - **All tests should pass**
    - If tests fail, fix the code or update test expectations
    - If CMake not installed: Clearly state tests not run
 7. ✅ **No compilation errors** in build output
@@ -659,7 +659,7 @@ python3 -m http.server 8000
 - `README.md` - Developer doc index
 
 **Unit Testing Documentation** (`test/`):
-- `README.md` - Unit & integration testing setup, execution, and coverage (88 tests: 78 unit + 10 integration)
+- `README.md` - Unit & integration testing setup, execution, and coverage
 - See `docs/dev/adr/ADR-UNIT_TESTING.MD` for unit testing pattern details
 - See `docs/dev/adr/ADR-INTEGRATION_TESTING.MD` for integration testing strategy
 
@@ -698,7 +698,7 @@ git push origin v1.3.2                         # Push tag (triggers release)
 cd flasher && python3 -m http.server 8000      # Serve flasher locally
 
 # Unit & integration tests (optional)
-.\run-tests.ps1                                # Run all 88 tests (Windows)
+.\run-tests.ps1                                # Run all tests (Windows)
 .\run-tests.ps1 -Clean                         # Clean build and run tests
 ```
 

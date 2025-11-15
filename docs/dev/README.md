@@ -14,7 +14,7 @@ This section contains documentation for developers, contributors, and maintainer
 
 | File | Description |
 |------|-------------|
-| [../../test/README.md](../../test/README.md) | Unit & integration testing setup, execution, and coverage (88 tests: 78 unit + 10 integration) |
+| [../../test/README.md](../../test/README.md) | Unit & integration testing setup, execution, and coverage |
 | [adr/ADR-UNIT_TESTING.MD](adr/ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with CMake/Google Test |
 | [adr/ADR-INTEGRATION_TESTING.MD](adr/ADR-INTEGRATION_TESTING.MD) | Integration testing for normal mode decision flows |
 
