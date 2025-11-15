@@ -23,6 +23,8 @@ This folder contains records of architectural decisions and deep-dive technical 
 | [SCREEN_ROTATION_IMPLEMENTATION.md](SCREEN_ROTATION_IMPLEMENTATION.md) | Implementation of screen rotation feature |
 | [TESTING.md](TESTING.md) | Testing the CI/CD workflow |
 | [TESTING_RETRY_MECHANISM.md](TESTING_RETRY_MECHANISM.md) | Testing the image download retry mechanism |
+| [UNIT_TESTING.MD](ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with CMake/Google Test (v1.5.2+) |
+| [INTEGRATION_TESTING.MD](ADR-INTEGRATION_TESTING.MD) | Integration testing for normal mode decision flows (v1.5.2+) |
 | [pull_request_template.md](pull_request_template.md) | Pull request template for contributors |
 | [timezone_analysis_report.md](timezone_analysis_report.md) | Analysis of timezone handling and DST feasibility |
 | [workflows_README.md](workflows_README.md) | GitHub Actions CI/CD workflow documentation |

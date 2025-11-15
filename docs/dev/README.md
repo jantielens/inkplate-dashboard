@@ -8,6 +8,15 @@ This section contains documentation for developers, contributors, and maintainer
 | [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) | Complete release workflow from feature development to production deployment |
 | [WEB_FLASHER.md](WEB_FLASHER.md) | Web-based firmware flasher implementation using ESP Web Tools |
 | [DISPLAY_CYCLE.md](DISPLAY_CYCLE.md) | Overview of the device's display cycle and runtime flow |
+| [NORMAL_MODE_FLOW.md](NORMAL_MODE_FLOW.md) | Normal mode execution flow, decision logic, and architecture |
+
+**Testing Documentation**
+
+| File | Description |
+|------|-------------|
+| [../../test/README.md](../../test/README.md) | Unit & integration testing setup, execution, and coverage |
+| [adr/ADR-UNIT_TESTING.MD](adr/ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with CMake/Google Test |
+| [adr/ADR-INTEGRATION_TESTING.MD](adr/ADR-INTEGRATION_TESTING.MD) | Integration testing for normal mode decision flows |
 
 **Architecture Decision Records & Reports**
 
@@ -30,6 +39,8 @@ This section contains documentation for developers, contributors, and maintainer
 | [ADR-TESTING.MD](adr/ADR-TESTING.MD) | Testing the CI/CD workflow |
 | [ADR-TESTING_RETRY_MECHANISM.MD](adr/ADR-TESTING_RETRY_MECHANISM.MD) | Testing the image download retry mechanism |
 | [ADR-TIMEZONE_ANALYSIS_REPORT.MD](adr/ADR-TIMEZONE_ANALYSIS_REPORT.MD) | Analysis of timezone handling and DST feasibility |
+| [ADR-INTEGRATION_TESTING.MD](adr/ADR-INTEGRATION_TESTING.MD) | Integration testing for normal mode decision flows (v1.5.2) |
+| [ADR-UNIT_TESTING.MD](adr/ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with conditional compilation |
 | [ADR-WEB_PORTAL_OPTIMIZATION.MD](adr/ADR-WEB_PORTAL_OPTIMIZATION.MD) | Web portal HTML/CSS/JavaScript separation for memory optimization |
 | [ADR-WORKFLOWS_README.MD](adr/ADR-WORKFLOWS_README.MD) | GitHub Actions CI/CD workflow documentation |
 

@@ -4,7 +4,25 @@
 
 ## [Unreleased]
 
-## [1.5.1] - 2025-11-15
+## [1.5.2] - 2025-11-15
+
+### Changed
+- **Normal Mode Controller Refactored for Improved Maintainability** (Issue #95)
+  - Extracted decision logic into dedicated functions with clear return structs
+  - Main execute() method reduced from ~350 lines to ~190 lines of actual code (plus 60-line truth table)
+  - Maximum nesting depth reduced from 5 levels to 2 levels
+  - Added truth table documentation covering 40+ execution paths
+  - Created visual flowchart in ADR-NORMAL_MODE_FLOW.MD
+  - No functional changes - pure refactoring for readability
+  - All decision points now isolated in testable functions:
+    - `determineImageTarget()` - Carousel advancement logic (9 decision paths)
+    - `determineCRC32Action()` - CRC32 check decisions (6 decision paths)
+    - `determineSleepDuration()` - Sleep calculation with hourly scheduling
+  - Improved code organization with ImageTargetDecision, CRC32Decision, SleepDecision structs
+  - Removed checkAndHandleCRC32() and enterSleep() methods (logic now cleaner and inlined)
+  - Better separation of concerns: decision logic vs orchestration vs execution
+
+## [1.5.0] - 2025-11-13
 
 ### Fixed
 - Fixed VCOM test pattern text positioning - text now displays correctly after font baseline positioning changes (Issue #92)
