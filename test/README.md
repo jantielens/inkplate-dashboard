@@ -1,20 +1,22 @@
-# Unit Tests
+# Unit & Integration Tests
 
-This directory contains unit tests for the inkplate-dashboard firmware decision functions using CMake and Google Test.
+This directory contains unit and integration tests for the inkplate-dashboard firmware using CMake and Google Test.
 
 ## Overview
 
-The test suite validates **standalone pure C++ functions** extracted from the firmware for true unit testing:
+The test suite validates **standalone pure C++ functions** extracted from the firmware:
 
-### Decision Logic (19 tests)
+### Unit Tests (78 tests)
+
+#### Decision Logic (19 tests)
 Core decision functions from `normal_mode_controller.cpp`:
 - `determineImageTarget()` - Which image to display and whether to advance
 - `determineCRC32Action()` - Whether to check CRC32 for optimization
 - `determineSleepDuration()` - How long to sleep until next wake
 
-Validates **40+ execution paths** documented in [NORMAL_MODE_FLOW.md](../docs/dev/NORMAL_MODE_FLOW.md).
+Validates individual decisions in isolation.
 
-### Battery Logic (17 tests)
+#### Battery Logic (17 tests)
 Battery percentage calculation from `power_manager.cpp`:
 - `calculateBatteryPercentage()` - Li-ion voltage to percentage conversion
 - 22-point discharge curve with linear interpolation
@@ -32,7 +34,18 @@ Configuration validation helpers from `config_manager.cpp`:
 - `isHourEnabledInBitmask()` - Hour-based scheduling validation
 - `areAllHoursEnabled()` - 24/7 schedule detection
 
-**Total: 78 tests across 4 modules**
+### Integration Tests (10 tests)
+
+End-to-end scenario tests that validate **complete decision flows** for real-world configurations:
+- Single image mode with CRC32 optimization
+- Carousel auto-advance and stay behavior
+- Button wake bypassing hourly schedules
+- Carousel wrap-around (last to first image)
+- Button-only mode (interval = 0)
+
+Integration tests verify that multiple decision functions work correctly together to produce expected system behavior, covering **40+ execution paths** documented in [NORMAL_MODE_FLOW.md](../docs/dev/NORMAL_MODE_FLOW.md).
+
+**Total: 88 tests (78 unit + 10 integration)**
 
 ## Test Architecture
 
@@ -47,13 +60,16 @@ test/
 │   ├── test_battery_logic.cpp          # Battery calculation tests (17 tests)
 │   ├── test_sleep_logic.cpp            # Sleep duration tests (21 tests)
 │   └── test_config_logic.cpp           # Config validation tests (25 tests)
+├── integration/
+│   ├── test_normal_mode_scenarios.cpp  # End-to-end scenario tests (10 tests)
+│   └── test_helpers.h                  # ConfigBuilder and test utilities
 ├── mocks/
 │   ├── Arduino.h                       # Mock Arduino types (String, millis, etc.)
 │   ├── Inkplate.h                      # Mock Inkplate display class
 │   ├── config.h                        # Mock DashboardConfig struct and types
 │   ├── config_manager.cpp              # Mock ConfigManager (delegates to config_logic)
 │   └── config_manager.h                # Prevent Arduino Preferences.h include
-├── CMakeLists.txt                      # CMake build configuration (4 test executables)
+├── CMakeLists.txt                      # CMake build configuration (5 test executables)
 └── run-tests.ps1                       # PowerShell test runner
 
 common/src/
@@ -104,16 +120,18 @@ Building tests...
 [... build output ...]
 
 Running tests...
-100% tests passed, 0 tests failed out of 78
+100% tests passed, 0 tests failed out of 88
 
-Total Test time (real) = 0.79 sec
+Total Test time (real) = 0.85 sec
 
 ✅ All tests passed!
 ```
 
 ## Test Coverage
 
-### Decision Logic Tests (19 tests)
+### Unit Tests (78 tests)
+
+#### Decision Logic Tests (19 tests)
 
 **Image Target Tests (5 tests):**
 - Single mode always returns index 0
@@ -142,7 +160,7 @@ Total Test time (real) = 0.79 sec
 - Carousel button wake (advance + no check + next interval)
 - Carousel timer stay:true with CRC32 match
 
-### Battery Logic Tests (17 tests)
+#### Battery Logic Tests (17 tests)
 
 **Out-of-Range Tests:**
 - Voltage below 3.0V returns 0%
@@ -163,7 +181,7 @@ Total Test time (real) = 0.79 sec
 - Monotonic behavior (increasing voltage never decreases percentage)
 - Realistic scenarios (fully charged, half charged, low battery, critically low)
 
-### Sleep Logic Tests (21 tests)
+#### Sleep Logic Tests (21 tests)
 
 **Button-Only Mode:**
 - Returns 0 for indefinite sleep
@@ -191,7 +209,7 @@ Total Test time (real) = 0.79 sec
 - Almost-zero intervals (1s)
 - Consistency across multiple calls
 
-### Config Logic Tests (25 tests)
+#### Config Logic Tests (25 tests)
 
 **Timezone Offset Tests:**
 - No offset returns original hour
@@ -220,13 +238,62 @@ Total Test time (real) = 0.79 sec
 - Timezone-aware bitmask checking
 - Cross-midnight schedule validation
 
+### Integration Tests (10 tests)
+
+Complete end-to-end scenario tests validating multiple decisions working together:
+
+**Core Scenarios (8 tests):**
+1. Single image + timer wake + CRC32 match → Skip download, sleep interval
+2. Single image + timer wake + CRC32 changed → Download, display, sleep interval
+3. Single image + button wake → Always download (never check CRC32)
+4. Carousel + timer wake + stay:false → Advance to next, download, use next interval
+5. Carousel + timer wake + stay:true → Stay on current, check CRC32, use current interval
+6. Carousel + button wake → Always advance (overrides stay:true)
+7. Hourly schedule disabled hour → Sleep until next enabled hour
+8. Button wake → Bypass hourly schedule (always proceed)
+
+**Additional Scenarios (2 tests):**
+9. Carousel wrap-around → Last image advances to first
+10. Button-only mode (interval=0) → Indefinite sleep
+
+**Integration Test Benefits:**
+- Validates **complete decision flows** (image target + CRC32 + sleep)
+- Tests **realistic user configurations** (not just isolated functions)
+- Covers **40+ execution paths** from NORMAL_MODE_FLOW.md
+- Catches **interaction bugs** between decision functions
+- Serves as **executable documentation** of system behavior
+
+**Example Integration Test:**
+```cpp
+TEST_F(NormalModeIntegrationTest, Carousel_TimerWake_StayFalse_AdvancesToNext) {
+    // GIVEN: Carousel config with stay:false
+    DashboardConfig config = ConfigBuilder()
+        .carousel()
+        .addImage("img1.png", 10, false)
+        .addImage("img2.png", 15, false)
+        .addImage("img3.png", 20, false)
+        .build();
+    
+    // WHEN: Timer wake on image 1
+    auto imageTarget = determineImageTarget(config, WAKEUP_TIMER, 1);
+    auto crc32Action = determineCRC32Action(config, WAKEUP_TIMER, 1);
+    auto sleepDuration = determineSleepDuration(config, time, 2, false);
+    
+    // THEN: Verify complete flow
+    EXPECT_EQ(imageTarget.targetIndex, 2);      // Advance 1→2
+    EXPECT_FALSE(crc32Action.shouldCheck);      // No CRC32 check
+    EXPECT_EQ(sleepDuration.sleepSeconds, 1200.0f);  // Image 2 interval (20 min)
+}
+```
+
 ## Build Artifacts
 
 Build outputs are in `test/build/` (gitignored):
-- `Release/decision_tests.exe` - Decision logic test executable (19 tests)
-- `Release/battery_tests.exe` - Battery logic test executable (17 tests)
-- `Release/sleep_tests.exe` - Sleep logic test executable (21 tests)
-- `Release/config_tests.exe` - Config logic test executable (25 tests)
+- `Release/decision_tests.exe` - Decision logic unit tests (19 tests)
+- `Release/battery_tests.exe` - Battery logic unit tests (17 tests)
+- `Release/sleep_tests.exe` - Sleep logic unit tests (21 tests)
+- `Release/config_tests.exe` - Config logic unit tests (25 tests)
+- `Release/integration_tests.exe` - Integration scenario tests (10 tests)
 - `lib/Release/*.lib` - Google Test libraries
 - `CTestTestfile.cmake` - CTest configuration
 - `compile_commands.json` - Clang tooling support
@@ -249,15 +316,32 @@ When modifying extracted functions:
 
 ### Adding New Tests
 
-1. Add test case to appropriate file:
-   - `test/unit/test_decision_functions.cpp` - Decision logic
-   - `test/unit/test_battery_logic.cpp` - Battery calculations
-   - `test/unit/test_sleep_logic.cpp` - Sleep duration
-   - `test/unit/test_config_logic.cpp` - Config validation
+**Unit Tests:**
+1. Add test case to appropriate file in `test/unit/`:
+   - `test_decision_functions.cpp` - Decision logic
+   - `test_battery_logic.cpp` - Battery calculations
+   - `test_sleep_logic.cpp` - Sleep duration
+   - `test_config_logic.cpp` - Config validation
 2. Use Google Test macros: `TEST_F(TestSuiteName, TestName)` or `TEST(TestSuiteName, TestName)`
 3. Call standalone functions directly: `calculateBatteryPercentage(voltage)`
 4. Assert results: `EXPECT_EQ()`, `EXPECT_TRUE()`, `EXPECT_FLOAT_EQ()`
 5. Run tests to validate: `.\run-tests.ps1`
+
+**Integration Tests:**
+1. Add test case to `test/integration/test_normal_mode_scenarios.cpp`
+2. Use `ConfigBuilder` for fluent config creation:
+   ```cpp
+   DashboardConfig config = ConfigBuilder()
+       .carousel()
+       .addImage("url1", 10, false)
+       .addImage("url2", 15, true)
+       .withCRC32(true)
+       .build();
+   ```
+3. Execute all relevant decision functions (image target, CRC32, sleep)
+4. Assert complete flow outcomes (not just individual decisions)
+5. Add integration assertions that verify decision interactions
+6. Run tests to validate: `.\run-tests.ps1`
 
 ## Troubleshooting
 

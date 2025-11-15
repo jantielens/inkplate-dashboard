@@ -26,9 +26,13 @@ enable_testing()
 include_directories(
   ${CMAKE_SOURCE_DIR}/mocks
   ${CMAKE_SOURCE_DIR}/../common/src
+  ${CMAKE_SOURCE_DIR}/integration  # Integration test helpers
 )
 
-# Add test executables
+# =============================================================================
+# Unit Test Executables
+# =============================================================================
+
 add_executable(
   decision_tests
   unit/test_decision_functions.cpp
@@ -55,6 +59,23 @@ add_executable(
   ../common/src/config_logic.cpp  # Real production code!
 )
 
+# =============================================================================
+# Integration Test Executables
+# =============================================================================
+
+add_executable(
+  integration_tests
+  integration/test_normal_mode_scenarios.cpp
+  ../common/src/modes/decision_logic.cpp  # Real production code!
+  ../common/src/config_logic.cpp          # Real production code!
+  ../common/src/sleep_logic.cpp           # Real production code!
+  mocks/config_manager.cpp                # Mock that delegates to config_logic
+)
+
+# =============================================================================
+# Link Google Test to All Executables
+# =============================================================================
+
 # Link Google Test
 target_link_libraries(
   decision_tests
@@ -76,9 +97,19 @@ target_link_libraries(
   GTest::gtest_main
 )
 
+target_link_libraries(
+  integration_tests
+  GTest::gtest_main
+)
+
+# =============================================================================
+# Discover Tests
+# =============================================================================
+
 # Discover tests
 include(GoogleTest)
 gtest_discover_tests(decision_tests)
 gtest_discover_tests(battery_tests)
 gtest_discover_tests(sleep_tests)
 gtest_discover_tests(config_tests)
+gtest_discover_tests(integration_tests)
