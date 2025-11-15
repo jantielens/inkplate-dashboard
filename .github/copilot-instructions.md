@@ -315,7 +315,6 @@ docs/
     README.md                        # Developer doc index
     adr/                             # Architecture Decision Records
       ADR-ARCHITECTURE.MD            # Multi-board design
-      ADR-BUILD_SYSTEM.MD            # Build system details
       ADR-MODES.MD                   # Device modes
       ADR-ADDBOARD.MD                # Adding board support
       ... (see docs/dev/adr/ for full list)
@@ -605,9 +604,17 @@ python3 -m http.server 8000
 - `RELEASE_WORKFLOW.md` - Complete release process
 - `README.md` - Developer doc index
 
+**Core Developer Documentation** (`docs/dev/`):
+- **`NORMAL_MODE_FLOW.md`** - **CRITICAL:** Normal mode execution flow, decision logic, and 40+ execution paths (v1.5.2)
+  - **Must read** before modifying `normal_mode_controller.cpp`
+  - Documents decision-based architecture with flowchart and truth table
+  - Covers carousel advancement, CRC32 optimization, hourly scheduling integration
+- `BUILD_SYSTEM.md` - Build system deep dive
+- `RELEASE_WORKFLOW.md` - Complete release process
+- `README.md` - Developer doc index
+
 **Architecture Decision Records** (`docs/dev/adr/`):
 - `ADR-ARCHITECTURE.MD` - Multi-board design rationale
-- `ADR-BUILD_SYSTEM.MD` - Build system deep dive
 - `ADR-MODES.MD` - Device mode state machine
 - `ADR-HOURLY_SCHEDULING.MD` - Sleep/wake scheduling
 - `ADR-CRC32_GUIDE.MD` - Battery-saving CRC checks
@@ -650,5 +657,11 @@ cd flasher && python3 -m http.server 8000      # Serve flasher locally
 **When in doubt:**
 1. Check `docs/dev/BUILD_SYSTEM.md` for build details
 2. Check `docs/dev/RELEASE_WORKFLOW.md` for release process
-3. Check relevant ADR in `docs/dev/adr/` for architecture decisions
-4. Check `CHANGELOG.md` for recent changes affecting your task
+3. **Check `docs/dev/NORMAL_MODE_FLOW.md` for normal mode execution flow and decision logic**
+   - Required reading before modifying normal_mode_controller.cpp
+   - Documents 40+ execution paths with flowchart and truth table
+4. Check relevant ADR in `docs/dev/adr/` for architecture decisions
+   - `ADR-CAROUSEL_IMPLEMENTATION.MD` - Carousel mode implementation
+   - `ADR-CRC32_GUIDE.MD` - CRC32 optimization details
+   - `ADR-HOURLY_SCHEDULING.MD` - Hourly scheduling implementation
+5. Check `CHANGELOG.md` for recent changes affecting your task

@@ -8,6 +8,7 @@ This section contains documentation for developers, contributors, and maintainer
 | [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) | Complete release workflow from feature development to production deployment |
 | [WEB_FLASHER.md](WEB_FLASHER.md) | Web-based firmware flasher implementation using ESP Web Tools |
 | [DISPLAY_CYCLE.md](DISPLAY_CYCLE.md) | Overview of the device's display cycle and runtime flow |
+| [NORMAL_MODE_FLOW.md](NORMAL_MODE_FLOW.md) | Normal mode execution flow, decision logic, and architecture |
 
 **Architecture Decision Records & Reports**
 
