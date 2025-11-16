@@ -275,18 +275,6 @@ Logger::linef("Config: mode=%d, interval=%d, url=%s, wifi=%s, mqtt=%s, ...",
     mode, interval, veryLongUrl.c_str(), ssid.c_str(), broker.c_str(), ...);
 ```
 
-## Backward Compatibility
-
-The old `LogBox` name still works via a type alias:
-
-```cpp
-LogBox::begin("Old Code");  // Same as Logger::begin()
-LogBox::line("Still works");
-LogBox::end();
-```
-
-However, new code should use `Logger::` for consistency.
-
 ## When NOT to Log
 
 Avoid logging in these scenarios:

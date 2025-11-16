@@ -64,7 +64,7 @@ We chose to refactor the existing logging system to use simple indentation inste
 
 #### 1. Logger Class Refactor
 
-**Previous Implementation (LogBox):**
+**Previous Implementation:**
 ```cpp
 class LogBox {
     static unsigned long startTime;  // Single global timer
@@ -81,14 +81,11 @@ class Logger {
     static uint8_t nestLevel;            // Current depth (0-3)
     static const char* indent();         // Returns "" / "  " / "    " / "      "
 };
-
-// Backward compatibility
-using LogBox = Logger;
 ```
 
 **Key Changes:**
 - Renamed `LogBox` → `Logger` (more accurate, clearer intent)
-- Added `LogBox` as type alias for backward compatibility
+- Replaced all `Logger::` calls with `Logger::` throughout codebase
 - Replaced Unicode box-drawing with indentation (`""`, `"  "`, `"    "`, `"      "`)
 - Added nesting support (up to 3 levels deep)
 - Reduced buffer size from 256 to 128 bytes
@@ -124,10 +121,10 @@ Before (45+ lines of switch statement):
 ```cpp
 switch (state) {
     case -2:
-        LogBox::line("  → MQTT_CONNECT_FAILED - Network connection failed");
-        LogBox::line("  → Check: Is the broker IP/hostname correct?");
-        LogBox::line("  → Check: Is the broker port correct? (usually 1883)");
-        LogBox::line("  → Check: Can you ping the broker from your network?");
+        Logger::line("  → MQTT_CONNECT_FAILED - Network connection failed");
+        Logger::line("  → Check: Is the broker IP/hostname correct?");
+        Logger::line("  → Check: Is the broker port correct? (usually 1883)");
+        Logger::line("  → Check: Can you ping the broker from your network?");
         break;
     // ... 8 more cases
 }
@@ -141,21 +138,21 @@ const char* getMQTTStateDesc(int state) {
         // ... 8 more cases
     }
 }
-LogBox::linef("  %s", getMQTTStateDesc(state));
+Logger::linef("  %s", getMQTTStateDesc(state));
 ```
 
 **WiFi Connection Logging:**
 
 Before:
 ```cpp
-LogBox::line("Connected to WiFi!");
-LogBox::line("IP Address: " + WiFi.localIP().toString());
-LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
+Logger::line("Connected to WiFi!");
+Logger::line("IP Address: " + WiFi.localIP().toString());
+Logger::linef("Signal Strength: %d dBm", WiFi.RSSI());
 ```
 
 After:
 ```cpp
-LogBox::linef("Connected! IP: %s, RSSI: %d dBm", 
+Logger::linef("Connected! IP: %s, RSSI: %d dBm", 
     WiFi.localIP().toString().c_str(), WiFi.RSSI());
 ```
 
@@ -163,20 +160,20 @@ LogBox::linef("Connected! IP: %s, RSSI: %d dBm",
 
 Before:
 ```cpp
-LogBox::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, timeout);
-LogBox::linef("CRC32 fetched successfully in %lums (attempt %d)", elapsed, attempt + 1);
-LogBox::linef("Parsed CRC32: 0x%08X", newCRC32);
-LogBox::linef("Stored CRC32: 0x%08X", storedCRC32);
-LogBox::end("CRC32 UNCHANGED - Skipping download");
+Logger::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, timeout);
+Logger::linef("CRC32 fetched successfully in %lums (attempt %d)", elapsed, attempt + 1);
+Logger::linef("Parsed CRC32: 0x%08X", newCRC32);
+Logger::linef("Stored CRC32: 0x%08X", storedCRC32);
+Logger::end("CRC32 UNCHANGED - Skipping download");
 ```
 
 After:
 ```cpp
-LogBox::linef("CRC32 attempt %d/%d", attempt + 1, maxRetries);
-LogBox::linef("CRC32 fetched (%lums)", elapsed);
-LogBox::linef("New: 0x%08X", newCRC32);
-LogBox::linef("Stored: 0x%08X", storedCRC32);
-LogBox::end("UNCHANGED - Skipping download");
+Logger::linef("CRC32 attempt %d/%d", attempt + 1, maxRetries);
+Logger::linef("CRC32 fetched (%lums)", elapsed);
+Logger::linef("New: 0x%08X", newCRC32);
+Logger::linef("Stored: 0x%08X", storedCRC32);
+Logger::end("UNCHANGED - Skipping download");
 ```
 
 ### Logging Best Practices (for Contributors)
@@ -241,7 +238,6 @@ Created comprehensive unit tests (`test/unit/test_logger.cpp`) with 13 test case
 - Empty blocks
 - Null messages
 - Long messages (truncation)
-- Backward compatibility (LogBox alias)
 
 ## Consequences
 
@@ -262,10 +258,10 @@ Created comprehensive unit tests (`test/unit/test_logger.cpp`) with 13 test case
    - Visual grouping makes it clear which operations succeeded/failed
    - Less noise in successful operations
 
-4. **Backward Compatible**:
-   - All existing `LogBox::` calls continue to work
-   - No breaking changes for contributors
-   - Can migrate gradually to new conventions
+4. **Consistent Codebase**:
+   - All code now uses `Logger::` uniformly
+   - No legacy naming to maintain
+   - Clear, modern API
 
 5. **Maintainable**:
    - Clear guidelines for contributors
@@ -275,9 +271,9 @@ Created comprehensive unit tests (`test/unit/test_logger.cpp`) with 13 test case
 ### Negative
 
 1. **Migration Effort**:
-   - Takes time to update all logging call sites
+   - Took time to update all logging call sites
    - Contributors must learn new conventions
-   - Requires documentation updates
+   - Required documentation updates
 
 2. **Limited Nesting Depth**:
    - Only 3 levels supported
@@ -297,9 +293,9 @@ Created comprehensive unit tests (`test/unit/test_logger.cpp`) with 13 test case
 
 ## Validation
 
-1. **Unit Tests**: All 127 tests pass (114 existing + 13 new logger tests)
-2. **Backward Compatibility**: LogBox alias works correctly
-3. **No Functional Changes**: Only output format changed, not behavior
+1. **Unit Tests**: All 126 tests pass (114 existing + 12 new logger tests)
+2. **Code Migration**: All `LogBox::` calls replaced with `Logger::`
+3. **No Functional Changes**: Only output format and naming changed, not behavior
 
 ## References
 

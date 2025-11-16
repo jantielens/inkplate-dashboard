@@ -187,9 +187,6 @@ void Logger::resetForTesting() {
     }
 }
 
-// Backward compatibility alias
-using LogBox = Logger;
-
 class LoggerTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -414,17 +411,4 @@ TEST_F(LoggerTest, LongMessage_Truncated) {
     EXPECT_FALSE(output.empty());
 }
 
-// ============================================================================
-// Backward Compatibility Tests (LogBox alias)
-// ============================================================================
 
-TEST_F(LoggerTest, LogBoxAlias_WorksCorrectly) {
-    LogBox::begin("Test");
-    LogBox::line("Message");
-    LogBox::end();
-    
-    std::string output = getOutput();
-    EXPECT_NE(output.find("[Test] Starting..."), std::string::npos);
-    EXPECT_NE(output.find("Message"), std::string::npos);
-    EXPECT_NE(output.find("Done"), std::string::npos);
-}

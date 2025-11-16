@@ -484,7 +484,7 @@ if (wakeReason == BUTTON_WAKE && config.frontlightEnabled) {
 1. **Decision Logging** (Debug Mode)
    ```cpp
    if (config.debugMode) {
-       LogBox::linef("Decision: %s", targetDecision.reason);
+       Logger::linef("Decision: %s", targetDecision.reason);
    }
    ```
 

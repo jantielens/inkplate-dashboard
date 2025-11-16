@@ -61,7 +61,4 @@ private:
     static const char* indent();         // Returns indentation string based on nestLevel
 };
 
-// Backward compatibility alias - allows existing code to continue using LogBox
-using LogBox = Logger;
-
 #endif // LOGGER_H

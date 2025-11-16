@@ -43,7 +43,7 @@ unsigned long elapsed = millis() - startTime;
 
 // Force timeout if we exceeded our deadline, even if request "succeeded"
 if (elapsed > deadline) {
-    LogBox::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
+    Logger::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
     http.end();
     httpCode = -1;  // Force retry
     // ... retry logic ...

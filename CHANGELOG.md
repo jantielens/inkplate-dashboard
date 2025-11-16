@@ -8,7 +8,8 @@
 
 ### Changed
 - **Logger Refactored for Improved Firmware Size and Debugging Value** (Issue #105)
-  - Renamed `LogBox` class to `Logger` (LogBox remains as backward-compatible alias)
+  - Renamed `LogBox` class to `Logger`
+  - Replaced all `LogBox::` calls with `Logger::` throughout codebase
   - Replaced Unicode box-drawing characters with indentation-based formatting
   - Supports nested operations (up to 3 levels) with automatic indentation
   - Each nested block shows independent timing measurements
@@ -26,8 +27,12 @@
       Connected!
     Done (1234ms)
     ```
-  - Fully backward compatible - existing LogBox calls continue to work
-  - Comprehensive unit tests added (13 test cases covering nesting, timing, edge cases)
+  - Applied logging best practices throughout codebase:
+    - Combined multi-line messages into single formatted lines
+    - Removed redundant labels and context
+    - Shortened verbose module names and descriptions
+    - Focused logging on state changes and errors
+  - Comprehensive unit tests added (12 test cases covering nesting, timing, edge cases)
 
 ## [1.5.2] - 2025-11-15
 
