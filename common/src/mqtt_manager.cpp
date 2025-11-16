@@ -3,6 +3,22 @@
 #include "logger.h"
 #include <WiFi.h>
 
+// Helper function to get concise MQTT state description
+static const char* getMQTTStateDesc(int state) {
+    switch (state) {
+        case -4: return "Timeout - server didn't respond";
+        case -3: return "Connection lost";
+        case -2: return "Network failed - check broker IP/port";
+        case -1: return "Disconnected";
+        case 1: return "Bad protocol version";
+        case 2: return "Client ID rejected";
+        case 3: return "Broker unavailable";
+        case 4: return "Bad credentials";
+        case 5: return "Not authorized";
+        default: return nullptr;
+    }
+}
+
 MQTTManager::MQTTManager(ConfigManager* configManager)
     : _configManager(configManager), _mqttClient(nullptr), _port(1883), _isConfigured(false) {
 }
@@ -117,43 +133,12 @@ bool MQTTManager::connect() {
         
         if (!connected) {
             int state = _mqttClient->state();
-            LogBox::linef("Attempt %d failed. State: %d", attempt, state);
+            LogBox::linef("Attempt %d failed (state: %d)", attempt, state);
             
-            // Decode MQTT error states
-            switch (state) {
-                case -4:
-                    LogBox::line("  → MQTT_CONNECTION_TIMEOUT - Server didn't respond");
-                    break;
-                case -3:
-                    LogBox::line("  → MQTT_CONNECTION_LOST - Network connection was broken");
-                    break;
-                case -2:
-                    LogBox::line("  → MQTT_CONNECT_FAILED - Network connection failed");
-                    LogBox::line("  → Check: Is the broker IP/hostname correct?");
-                    LogBox::line("  → Check: Is the broker port correct? (usually 1883)");
-                    LogBox::line("  → Check: Can you ping the broker from your network?");
-                    break;
-                case -1:
-                    LogBox::line("  → MQTT_DISCONNECTED");
-                    break;
-                case 1:
-                    LogBox::line("  → MQTT_CONNECT_BAD_PROTOCOL - Wrong protocol version");
-                    break;
-                case 2:
-                    LogBox::line("  → MQTT_CONNECT_BAD_CLIENT_ID - Client ID rejected");
-                    break;
-                case 3:
-                    LogBox::line("  → MQTT_CONNECT_UNAVAILABLE - Broker unavailable");
-                    break;
-                case 4:
-                    LogBox::line("  → MQTT_CONNECT_BAD_CREDENTIALS - Username/password incorrect");
-                    break;
-                case 5:
-                    LogBox::line("  → MQTT_CONNECT_UNAUTHORIZED - Not authorized");
-                    break;
-                default:
-                    LogBox::linef("  → Unknown state: %d", state);
-                    break;
+            // Show concise error description
+            const char* error = getMQTTStateDesc(state);
+            if (error) {
+                LogBox::linef("  %s", error);
             }
             
             if (attempt < maxRetries) {

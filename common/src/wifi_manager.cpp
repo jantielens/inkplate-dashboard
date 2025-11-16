@@ -155,18 +155,18 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         // Use channel lock only for timer wakeups (optimization for regular updates)
         if (wakeReason == WAKEUP_TIMER && _configManager && _configManager->hasWiFiChannelLock()) {
             useChannelLock = true;
-            LogBox::line("Wake reason: Timer - using channel lock for fast connect");
+            LogBox::line("Using channel lock (timer wake)");
         } else {
             // For boot, reset, or button wakeups, do full scan and save new channel/BSSID
             shouldSaveChannel = true;
             const char* wakeReasonStr = 
-                wakeReason == WAKEUP_FIRST_BOOT ? "First boot" :
-                wakeReason == WAKEUP_RESET_BUTTON ? "Reset button" :
-                wakeReason == WAKEUP_BUTTON ? "Button press" : "Timer (no lock)";
-            LogBox::linef("Wake reason: %s - performing full scan", wakeReasonStr);
+                wakeReason == WAKEUP_FIRST_BOOT ? "first boot" :
+                wakeReason == WAKEUP_RESET_BUTTON ? "reset" :
+                wakeReason == WAKEUP_BUTTON ? "button" : "timer (no lock)";
+            LogBox::linef("Full scan (%s)", wakeReasonStr);
         }
     } else {
-        LogBox::line("PowerManager not set - using full scan");
+        LogBox::line("Full scan (no PowerManager)");
         shouldSaveChannel = true;
     }
     
@@ -176,7 +176,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         uint8_t bssid[6];
         _configManager->getWiFiBSSID(bssid);
         
-        LogBox::linef("Attempting channel-locked connection (channel %d)", channel);
+        LogBox::linef("Channel %d locked connection", channel);
         WiFi.begin(ssid.c_str(), password.c_str(), channel, bssid);
         
         // Wait with shorter timeout for channel-locked connection
@@ -187,9 +187,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         
         if (WiFi.status() == WL_CONNECTED) {
             WiFi.setSleep(false);
-            LogBox::line("Fast connect successful!");
-            LogBox::line("IP Address: " + WiFi.localIP().toString());
-            LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
+            LogBox::linef("Connected! IP: %s, RSSI: %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
             LogBox::end();
             if (outRetryCount) *outRetryCount = retryCount;  // 0 retries for channel lock success
             return true;
@@ -197,7 +195,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         
         // Channel lock failed - fall back to full scan
         // This counts as the first retry (fallback to full scan)
-        LogBox::line("Channel lock failed (network moved/changed) - falling back to full scan");
+        LogBox::line("Lock failed - falling back to full scan");
         WiFi.disconnect();
         delay(100);
         shouldSaveChannel = true;  // Save new channel after successful full scan
@@ -207,7 +205,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     // Optimized timeouts: 3s per attempt (down from 5s), 300ms retry delay (down from 1s)
     // Max retries: 4 (up from 3) to compensate for shorter timeout
     // Total max time: 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s = 16.2s (vs 23s previously)
-    LogBox::line("Performing full network scan...");
+    LogBox::line("Scanning...");
     WiFi.begin(ssid.c_str(), password.c_str());
     
     // Wait for connection with optimized timeout
@@ -219,7 +217,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     
     while (WiFi.status() != WL_CONNECTED && fullScanRetries < maxRetries) {
         if (millis() - startTime > timeout) {
-            LogBox::line("Connection timeout, retrying...");
+            LogBox::linef("Timeout, retry %d/%d", fullScanRetries + 1, maxRetries);
             WiFi.disconnect();
             delay(retryDelay);
             WiFi.begin(ssid.c_str(), password.c_str());
@@ -241,13 +239,11 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     
     if (WiFi.status() == WL_CONNECTED) {
         WiFi.setSleep(false);
-        LogBox::line("Connected to WiFi!");
-        LogBox::line("IP Address: " + WiFi.localIP().toString());
-        LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
+        LogBox::linef("Connected! IP: %s, RSSI: %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
         
         // Start mDNS service
         if (startMDNS()) {
-            LogBox::line("Access via: http://" + getMDNSHostname());
+            LogBox::linef("mDNS: http://%s", getMDNSHostname().c_str());
         }
         
         // Save channel and BSSID for future fast connections
@@ -256,7 +252,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
             uint8_t* bssid = WiFi.BSSID();
             if (channel > 0 && bssid != nullptr) {
                 _configManager->setWiFiChannelLock(channel, bssid);
-                LogBox::line("Saved channel/BSSID for future fast connects");
+                LogBox::linef("Saved ch%d for fast reconnect", channel);
             }
         }
         

@@ -93,7 +93,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
         http.setTimeout(crcTimeouts[attempt]);
         http.setUserAgent("InkplateDashboard/1.0");
         
-        LogBox::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, crcTimeouts[attempt]);
+        LogBox::linef("CRC32 attempt %d/%d", attempt + 1, maxRetries);
         
         // Enforce deadline - track actual elapsed time
         unsigned long startTime = millis();
@@ -106,7 +106,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
         
         // Force timeout if we exceeded our deadline, even if request "succeeded"
         if (elapsed > deadline) {
-            LogBox::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
+            LogBox::linef("Deadline exceeded (%lums)", elapsed);
             http.end();
             httpCode = -1;  // Force retry
             
@@ -124,10 +124,10 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.end();
             
             if (crc32Content.length() > 0) {
-                LogBox::linef("CRC32 fetched successfully in %lums (attempt %d)", elapsed, attempt + 1);
+                LogBox::linef("CRC32 fetched (%lums)", elapsed);
                 break;  // Success - exit loop without incrementing retry count
             } else {
-                LogBox::line("CRC32 file is empty");
+                LogBox::line("CRC32 file empty");
                 http.end();
                 httpCode = -1;  // Treat as failure
             }
@@ -151,21 +151,20 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     }
     
     if (httpCode != HTTP_CODE_OK || crc32Content.length() == 0) {
-        LogBox::linef("CRC32 file not found or error after %d attempts (%d retries)", retryCount + 1, retryCount);
-        LogBox::line("Falling back to full image download");
+        LogBox::linef("CRC32 unavailable after %d attempts, downloading image", retryCount + 1);
         LogBox::end();
         return true;  // Fallback to download
     }
     
-    LogBox::line("CRC32 file content: " + crc32Content);
+    LogBox::line("Content: " + crc32Content);
     
     // Parse hex CRC32
     uint32_t newCRC32 = parseHexCRC32(crc32Content);
-    LogBox::linef("Parsed CRC32: 0x%08X", newCRC32);
+    LogBox::linef("New: 0x%08X", newCRC32);
     
     // Get stored CRC32
     uint32_t storedCRC32 = _configManager->getLastCRC32();
-    LogBox::linef("Stored CRC32: 0x%08X", storedCRC32);
+    LogBox::linef("Stored: 0x%08X", storedCRC32);
     
     // Return the new CRC32 value if caller requested it
     if (outNewCRC32) {
@@ -174,11 +173,10 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     
     // Compare
     if (newCRC32 == storedCRC32 && storedCRC32 != 0) {
-        LogBox::end("CRC32 UNCHANGED - Skipping download");
+        LogBox::end("UNCHANGED - Skipping download");
         return false;  // No change, skip download
     } else {
-        LogBox::line("CRC32 CHANGED - Will download image");
-        LogBox::end();
+        LogBox::end("CHANGED - Downloading");
         // NOTE: Deferred - CRC32 is NOT saved here, caller must call saveCRC32()
         // after confirming successful image display
         return true;  // Changed, proceed with download
