@@ -21,7 +21,10 @@ const char* Logger::indent() {
 }
 
 void Logger::begin(const char* module) {
-    Serial.printf("%s[%s] Starting...\n", indent(), module);
+    Serial.print(indent());
+    Serial.print("[");
+    Serial.print(module);
+    Serial.println("] Starting...");
     
     // Save start time if we haven't exceeded max depth
     if (nestLevel < 3) {
@@ -39,7 +42,8 @@ void Logger::begin(const String& module) {
 }
 
 void Logger::line(const char* message) {
-    Serial.printf("%s%s\n", indent(), message);
+    Serial.print(indent());
+    Serial.println(message);
 }
 
 void Logger::line(const String& message) {
@@ -53,7 +57,8 @@ void Logger::linef(const char* format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     
-    Serial.printf("%s%s\n", indent(), buffer);
+    Serial.print(indent());
+    Serial.println(buffer);
 }
 
 void Logger::end(const char* message) {
@@ -73,7 +78,11 @@ void Logger::end(const char* message) {
     
     // Print end message with timing
     const char* msg = (message && strlen(message) > 0) ? message : "Done";
-    Serial.printf("%s%s (%lums)\n", indent(), msg, elapsed);
+    Serial.print(indent());
+    Serial.print(msg);
+    Serial.print(" (");
+    Serial.print(elapsed);
+    Serial.println("ms)");
 }
 
 void Logger::end(const String& message) {
