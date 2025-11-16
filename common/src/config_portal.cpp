@@ -176,6 +176,7 @@ void ConfigPortal::handleRoot() {
 
 void ConfigPortal::handleCSS() {
     Logger::message("Web Request", "Serving CSS stylesheet");
+    _server->sendHeader("Connection", "close");
     _server->send(200, "text/css", CONFIG_PORTAL_CSS);
 }
 
@@ -189,14 +190,17 @@ void ConfigPortal::handleMainJS() {
     js += CONFIG_PORTAL_BATTERY_CALC_SCRIPT;
     js += "\n";
     js += CONFIG_PORTAL_BADGE_SCRIPT;
+    _server->sendHeader("Connection", "close");
     _server->send(200, "application/javascript", js);
 }
 
 void ConfigPortal::handleOTAJS() {
+    _server->sendHeader("Connection", "close");
     _server->send(200, "application/javascript", CONFIG_PORTAL_OTA_SCRIPT);
 }
 
 void ConfigPortal::handleOTAStatusJS() {
+    _server->sendHeader("Connection", "close");
     _server->send(200, "application/javascript", CONFIG_PORTAL_OTA_STATUS_SCRIPT);
 }
 
