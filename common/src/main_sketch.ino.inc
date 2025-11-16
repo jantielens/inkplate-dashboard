@@ -70,8 +70,8 @@ void setup() {
     Serial.begin(115200);
     delay(100);  // Give serial time to initialize
     
-    LogBox::begin("Starting " + String(BOARD_NAME));
-    LogBox::end();
+    Logger::begin("Starting " + String(BOARD_NAME));
+    Logger::end();
     
     // Initialize power manager first to detect wake reason
     powerManager.begin(WAKE_BUTTON_PIN);
@@ -106,21 +106,21 @@ void setup() {
         // Read and log the panel VCOM for diagnostic purposes (not available on Inkplate 2)
         double panelVcom = displayManager.readPanelVCOM();
         if (!isnan(panelVcom)) {
-            LogBox::begin("VCOM");
-            LogBox::linef("VCOM: %.2f V", panelVcom);
-            LogBox::end();
+            Logger::begin("VCOM");
+            Logger::linef("VCOM: %.2f V", panelVcom);
+            Logger::end();
         } else {
-            LogBox::begin("VCOM");
-            LogBox::line("VCOM read failed or not supported");
-            LogBox::end();
+            Logger::begin("VCOM");
+            Logger::line("VCOM read failed or not supported");
+            Logger::end();
         }
         #endif
     }
 
     if (!configInitialized) {
-        LogBox::begin("Configuration");
-        LogBox::line("Failed to initialize ConfigManager!");
-        LogBox::end();
+        Logger::begin("Configuration");
+        Logger::line("Failed to initialize ConfigManager!");
+        Logger::end();
         uiMessages.showConfigInitError();
         return;
     }
@@ -132,9 +132,9 @@ void setup() {
     // RESET BUTTON PRESSED -> Enter config mode (only for button-less boards)
     #if !defined(HAS_BUTTON) || HAS_BUTTON == false
     if (wakeReason == WAKEUP_RESET_BUTTON) {
-        LogBox::begin("Mode Selection");
-        LogBox::line("Hardware reset button detected (button-less board) - entering config mode");
-        LogBox::end();
+        Logger::begin("Mode Selection");
+        Logger::line("Hardware reset button detected (button-less board) - entering config mode");
+        Logger::end();
         if (isFullyConfigured) {
             configModeController.begin();
             configModeActive = true;
@@ -146,9 +146,9 @@ void setup() {
     }
     #else
     if (wakeReason == WAKEUP_RESET_BUTTON) {
-        LogBox::begin("Mode Selection");
-        LogBox::line("Hardware reset button detected - ignoring (wake button available)");
-        LogBox::end();
+        Logger::begin("Mode Selection");
+        Logger::line("Hardware reset button detected - ignoring (wake button available)");
+        Logger::end();
         // For boards with wake button, ignore reset button and continue to normal operation
         // Users should use long press on wake button for config mode
     }
@@ -156,9 +156,9 @@ void setup() {
     
     // FIRST BOOT (no WiFi configuration) -> AP Mode (Boot Mode)
     if (!hasWiFi && wakeReason == WAKEUP_FIRST_BOOT) {
-        LogBox::begin("Mode Selection");
-        LogBox::line("Device NOT configured - entering AP mode (boot mode)");
-        LogBox::end();
+        Logger::begin("Mode Selection");
+        Logger::line("Device NOT configured - entering AP mode (boot mode)");
+        Logger::end();
         apModeController.begin();
         apModeActive = true;
         return;
@@ -166,9 +166,9 @@ void setup() {
     
     // PARTIAL CONFIG (has WiFi but no Image URL) -> Auto-enter Config Mode
     if (hasWiFi && !isFullyConfigured) {
-        LogBox::begin("Mode Selection");
-        LogBox::line("WiFi configured but missing Image URL - auto-entering config mode");
-        LogBox::end();
+        Logger::begin("Mode Selection");
+        Logger::line("WiFi configured but missing Image URL - auto-entering config mode");
+        Logger::end();
         configModeController.begin();
         configModeActive = true;
         return;
@@ -179,24 +179,24 @@ void setup() {
     if (isFullyConfigured) {
         ButtonPressType pressType = powerManager.detectButtonPressType();
         
-        LogBox::begin("Button Detection");
-        LogBox::linef("pressType=%d, wakeReason=%d (WAKEUP_BUTTON=%d)", 
+        Logger::begin("Button Detection");
+        Logger::linef("pressType=%d, wakeReason=%d (WAKEUP_BUTTON=%d)", 
                      pressType, wakeReason, WAKEUP_BUTTON);
-        LogBox::end();
+        Logger::end();
         
         if (pressType == BUTTON_PRESS_LONG) {
-            LogBox::begin("Mode Selection");
-            LogBox::line("Long button press detected - entering config mode");
-            LogBox::end();
+            Logger::begin("Mode Selection");
+            Logger::line("Long button press detected - entering config mode");
+            Logger::end();
             configModeController.begin();
             configModeActive = true;
             return;
         } else if (pressType == BUTTON_PRESS_SHORT && wakeReason == WAKEUP_BUTTON) {
             // Only trigger immediate update for short press if it was a button wake
             // (not during timer wake or normal boot)
-            LogBox::begin("Mode Selection");
-            LogBox::line("Short button press detected - performing normal update");
-            LogBox::end();
+            Logger::begin("Mode Selection");
+            Logger::line("Short button press detected - performing normal update");
+            Logger::end();
             
             // Show immediate visual feedback for manual refresh
             uiStatus.showManualRefresh();
@@ -210,17 +210,17 @@ void setup() {
     
     // TIMER WAKE or normal boot with full configuration -> Normal Operation
     if (isFullyConfigured) {
-        LogBox::begin("Mode Selection");
-        LogBox::line("Device is fully configured - entering normal operation mode");
-        LogBox::end();
+        Logger::begin("Mode Selection");
+        Logger::line("Device is fully configured - entering normal operation mode");
+        Logger::end();
         normalModeController.execute();
         return;
     }
     
     // Fallback - shouldn't reach here
-    LogBox::begin("Mode Selection");
-    LogBox::line("WARNING: Unexpected state - entering AP mode");
-    LogBox::end();
+    Logger::begin("Mode Selection");
+    Logger::line("WARNING: Unexpected state - entering AP mode");
+    Logger::end();
     apModeController.begin();
     apModeActive = true;
 }
@@ -232,10 +232,10 @@ void loop() {
         
         // Check if configuration was received
         if (apModeController.isConfigReceived()) {
-            LogBox::begin("WiFi Configured");
-            LogBox::line("WiFi credentials received (boot mode)");
-            LogBox::line("Restarting to configure dashboard");
-            LogBox::end();
+            Logger::begin("WiFi Configured");
+            Logger::line("WiFi credentials received (boot mode)");
+            Logger::line("Restarting to configure dashboard");
+            Logger::end();
             
 #if DISPLAY_FAST_REFRESH
             uiStatus.showWiFiConfigured();
@@ -251,9 +251,9 @@ void loop() {
         
         // Check if configuration was received
         if (configModeController.isConfigReceived()) {
-            LogBox::begin("Configuration Updated");
-            LogBox::line("Restarting in 3 seconds");
-            LogBox::end();
+            Logger::begin("Configuration Updated");
+            Logger::line("Restarting in 3 seconds");
+            Logger::end();
             
             // Publish log message for settings updated (if MQTT is configured)
             if (mqttManager.begin() && mqttManager.isConfigured()) {
