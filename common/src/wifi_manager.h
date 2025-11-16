@@ -5,12 +5,14 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
+#include <DNSServer.h>
 #include "config_manager.h"
 #include "power_manager.h"
 
 // Access Point configuration
 #define AP_SSID_PREFIX "inkplate-dashb-"
 #define AP_TIMEOUT_MS 300000  // 5 minutes timeout for AP mode
+#define DNS_PORT 53  // Standard DNS port for captive portal
 
 // WiFi Client configuration
 #define WIFI_CONNECT_TIMEOUT_MS 10000  // 10 seconds timeout for WiFi connection
@@ -55,12 +57,16 @@ public:
     void stopMDNS();            // Stop mDNS service
     String getMDNSHostname();   // Get the .local hostname (empty if mDNS not active)
     
+    // DNS server for captive portal (AP mode only)
+    void handleDNS();           // Process DNS requests (call in loop)
+    
 private:
     ConfigManager* _configManager;
     PowerManager* _powerManager;
     String _apName;
     bool _apActive;
     bool _mdnsActive;
+    DNSServer* _dnsServer;  // DNS server for captive portal
 };
 
 #endif // WIFI_MANAGER_H

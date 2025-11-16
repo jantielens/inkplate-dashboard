@@ -37,6 +37,7 @@ bool APModeController::begin() {
 }
 
 void APModeController::handleClient() {
+    wifiManager->handleDNS();  // Process DNS requests for captive portal
     configPortal->handleClient();
 }
 

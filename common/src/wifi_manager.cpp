@@ -2,7 +2,7 @@
 #include "logger.h"
 
 WiFiManager::WiFiManager(ConfigManager* configManager) 
-    : _configManager(configManager), _powerManager(nullptr), _apActive(false), _mdnsActive(false) {
+    : _configManager(configManager), _powerManager(nullptr), _apActive(false), _mdnsActive(false), _dnsServer(nullptr) {
     _apName = String(AP_SSID_PREFIX) + generateDeviceID();
 }
 
@@ -15,6 +15,10 @@ WiFiManager::~WiFiManager() {
         stopAccessPoint();
     }
     stopMDNS();
+    if (_dnsServer) {
+        delete _dnsServer;
+        _dnsServer = nullptr;
+    }
     disconnect();
 }
 
@@ -62,6 +66,13 @@ bool WiFiManager::startAccessPoint() {
         Logger::line("Access Point started successfully");
         Logger::line("IP Address: " + ip.toString());
         
+        // Start DNS server for captive portal
+        if (!_dnsServer) {
+            _dnsServer = new DNSServer();
+        }
+        _dnsServer->start(DNS_PORT, "*", ip);  // Redirect all domains to AP IP
+        Logger::line("DNS server started for captive portal");
+        
         // Start mDNS service
         if (startMDNS()) {
             Logger::line("Access via: http://" + getMDNSHostname());
@@ -82,6 +93,14 @@ bool WiFiManager::startAccessPoint() {
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
         Logger::message("Access Point", "Stopping Access Point...");
+        
+        // Stop DNS server
+        if (_dnsServer) {
+            _dnsServer->stop();
+            delete _dnsServer;
+            _dnsServer = nullptr;
+        }
+        
         stopMDNS();
         WiFi.softAPdisconnect(true);
         _apActive = false;
@@ -411,4 +430,10 @@ String WiFiManager::getMDNSHostname() {
         return getDeviceIdentifier() + ".local";
     }
     return "";
+}
+
+void WiFiManager::handleDNS() {
+    if (_dnsServer && _apActive) {
+        _dnsServer->processNextRequest();
+    }
 }
