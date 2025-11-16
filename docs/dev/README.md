@@ -2,6 +2,12 @@
 
 This section contains documentation for developers, contributors, and maintainers.
 
+## Getting Started
+
+If you're using **GitHub Copilot**, check out [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) for repository-wide AI assistance guidelines. These instructions help Copilot understand the project structure, build requirements, and coding standards.
+
+## Core Documentation
+
 | File | Description |
 |------|-------------|
 | [BUILD_SYSTEM.md](BUILD_SYSTEM.md) | Documentation for the custom build system and workflow |
