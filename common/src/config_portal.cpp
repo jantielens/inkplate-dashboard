@@ -473,6 +473,16 @@ void ConfigPortal::handleReboot() {
 }
 
 void ConfigPortal::handleNotFound() {
+    // Captive portal detection: redirect all unknown requests to root
+    // This enables mobile devices to automatically detect and open the portal
+    if (_wifiManager && _wifiManager->isAPActive()) {
+        // Send redirect to root page
+        _server->sendHeader("Location", "/", true);
+        _server->send(302, "text/plain", "");
+        return;
+    }
+    
+    // If not in AP mode, show 404 error
     _server->send(404, "text/html", generateErrorPage("Page not found"));
 }
 
