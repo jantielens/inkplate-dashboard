@@ -57,6 +57,9 @@ bool WiFiManager::startAccessPoint() {
     // Disconnect from any WiFi network first
     WiFi.mode(WIFI_AP);
     
+    // Disable power saving for better AP performance and responsiveness
+    WiFi.setSleep(false);
+    
     // Start AP with no password (open network)
     bool success = WiFi.softAP(_apName.c_str());
     
