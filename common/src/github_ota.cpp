@@ -75,7 +75,8 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
         info.version = info.version.substring(1);
     }
     
-    Logger::message("GitHub Release", "Latest version: " + info.tagName);
+    Logger::begin("GitHub Release");
+    Logger::line("Latest: " + info.tagName);
     
     // Find matching asset for this board
     String assetPrefix = boardNameToAssetPrefix(boardName);
@@ -94,9 +95,7 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
                 info.assetSize = asset["size"].as<size_t>();
                 info.found = true;
                 
-                Logger::begin("GitHub Asset");
-                Logger::line("Found: " + info.assetName);
-                Logger::linef("Size: %d KB", info.assetSize / 1024);
+                Logger::linef("Asset: %s (%d KB)", info.assetName.c_str(), info.assetSize / 1024);
                 Logger::end();
                 
                 break;
@@ -156,12 +155,13 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     
     g_otaProgress.totalBytes = contentLength;
     
-    Logger::messagef("GitHub OTA", "Firmware size: %d KB", contentLength / 1024);
+    Logger::begin("GitHub OTA");
+    Logger::linef("Size: %d KB", contentLength / 1024);
     
     // Begin OTA update
     if (!Update.begin(contentLength)) {
         _lastError = "Not enough space for OTA update";
-        Logger::message("GitHub OTA Error", _lastError);
+        Logger::end("ERROR: " + _lastError);
         _http.end();
         g_otaProgress.inProgress = false;
         return false;
@@ -174,7 +174,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     size_t written = 0;
     uint8_t buffer[4096];
     
-    Logger::message("GitHub OTA", "Writing firmware...");
+    Logger::line("Writing firmware...");
     
     while (_http.connected() && (written < contentLength)) {
         // Get available data size
