@@ -10,6 +10,7 @@
 #include <src/ui/ui_status.h>
 #include <src/ui/ui_error.h>
 #include <src/logger.h>
+#include <src/modes/decision_logic.h>
 
 /**
  * @brief Structure to hold loop timing breakdown measurements
@@ -68,13 +69,10 @@ private:
     // Helper methods
     bool loadConfiguration(DashboardConfig& config);
     int calculateSleepUntilNextEnabledHour(uint8_t currentHour, const uint8_t updateHours[3]);
-    float calculateSleepMinutesToNextEnabledHour(time_t currentTime, int timezoneOffset, const uint8_t updateHours[3]);
-    bool checkAndHandleCRC32(const DashboardConfig& config, uint32_t& newCRC32, bool& crc32WasChecked, bool& crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, const String& wifiBSSID, LoopTimings& timings);
     void publishMQTTTelemetry(const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, float loopTimeSeconds, uint32_t imageCRC32, const String& wifiBSSID, const LoopTimings& timings, const char* message = nullptr, const char* severity = nullptr);
     void handleImageSuccess(const DashboardConfig& config, uint32_t newCRC32, bool crc32WasChecked, bool crc32Matched, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, const String& wifiBSSID, const LoopTimings& timings);
     void handleImageFailure(const DashboardConfig& config, unsigned long loopStartTime, time_t currentTime, const String& deviceId, const String& deviceName, WakeupReason wakeReason, float batteryVoltage, int batteryPercentage, int wifiRSSI, const String& wifiBSSID, const LoopTimings& timings);
     void handleWiFiFailure(const DashboardConfig& config, unsigned long loopStartTime);
-    void enterSleep(const DashboardConfig& config, time_t currentTime, unsigned long loopStartTime);
 };
 
 #endif // NORMAL_MODE_CONTROLLER_H

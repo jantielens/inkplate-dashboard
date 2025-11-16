@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include "config_logic.h"
 
 // Configuration keys for Preferences storage
 #define PREF_NAMESPACE "dashboard"
@@ -235,10 +236,8 @@ public:
      * @return true if hour is enabled for updates, false otherwise
      */
     static bool isHourEnabledInBitmask(uint8_t hour, const uint8_t updateHours[3]) {
-        if (hour > 23) return false;
-        uint8_t byteIndex = hour / 8;
-        uint8_t bitPosition = hour % 8;
-        return (updateHours[byteIndex] >> bitPosition) & 1;
+        // Delegate to standalone function for testability
+        return ::isHourEnabledInBitmask(hour, updateHours);
     }
     
     /**
@@ -249,11 +248,8 @@ public:
      * @return Local hour (0-23) adjusted for timezone
      */
     static int applyTimezoneOffset(int utcHour, int timezoneOffset) {
-        int localHour = (utcHour + timezoneOffset) % 24;
-        if (localHour < 0) {
-            localHour += 24;
-        }
-        return localHour;
+        // Delegate to standalone function for testability
+        return ::applyTimezoneOffset(utcHour, timezoneOffset);
     }
     
     /**
@@ -262,8 +258,8 @@ public:
      * @return true if all 24 hours are enabled, false otherwise
      */
     static bool areAllHoursEnabled(const uint8_t updateHours[3]) {
-        // All 24 hours are enabled when all bits in all 3 bytes are set (0xFF)
-        return (updateHours[0] == 0xFF && updateHours[1] == 0xFF && updateHours[2] == 0xFF);
+        // Delegate to standalone function for testability
+        return ::areAllHoursEnabled(updateHours);
     }
     
 private:
