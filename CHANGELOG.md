@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2025-11-16
+
+### Fixed
+- **Configuration Portal Stability Improvements** (Issue #106)
+  - Fixed intermittent loading issues when accessing portal via IP address
+  - Disabled WiFi auto-reconnect during portal operation to prevent connection stalls
+  - Reduced memory usage by 89% with chunked HTML delivery (36KB → 4KB)
+  - Added DNS server and captive portal detection for better mobile device support
+  - Improved connection management to prevent exhaustion on ESP32
+  - Disabled WiFi power saving in AP mode for better responsiveness
+
 ## [1.6.0] - 2025-11-16
 
 ### Changed
