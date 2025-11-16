@@ -4,6 +4,31 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2025-11-16
+
+### Changed
+- **Logger Refactored for Improved Firmware Size and Debugging Value** (Issue #105)
+  - Renamed `LogBox` class to `Logger` (LogBox remains as backward-compatible alias)
+  - Replaced Unicode box-drawing characters with indentation-based formatting
+  - Supports nested operations (up to 3 levels) with automatic indentation
+  - Each nested block shows independent timing measurements
+  - Reduced buffer size from 256 to 128 bytes (saves ~128 bytes per buffer)
+  - Graceful overflow/underflow handling:
+    - Exceeds max depth (3 levels): continues logging with indentation but shows 0ms timing
+    - Extra `end()` calls beyond nesting: silently ignored, no warnings
+  - Example output format:
+    ```
+    [WiFi] Starting...
+      SSID: MyNetwork
+      [Channel Lock] Starting...
+        Using channel 6
+      Done (45ms)
+      Connected!
+    Done (1234ms)
+    ```
+  - Fully backward compatible - existing LogBox calls continue to work
+  - Comprehensive unit tests added (13 test cases covering nesting, timing, edge cases)
+
 ## [1.5.2] - 2025-11-15
 
 ### Changed
