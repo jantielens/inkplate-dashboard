@@ -32,7 +32,7 @@ MQTTManager::~MQTTManager() {
 }
 
 bool MQTTManager::begin() {
-    LogBox::begin("Initializing MQTT Manager");
+    Logger::begin("MQTT Init");
     
     // Load MQTT configuration
     _broker = _configManager->getMQTTBroker();
@@ -41,8 +41,7 @@ bool MQTTManager::begin() {
     
     // Check if MQTT is configured
     if (_broker.length() == 0) {
-        LogBox::line("MQTT not configured - skipping");
-        LogBox::end();
+        Logger::end("Not configured - skipping");
         _isConfigured = false;
         return true;  // Not an error, just not configured
     }
@@ -51,14 +50,13 @@ bool MQTTManager::begin() {
     String host;
     if (!parseBrokerURL(_broker, host, _port)) {
         _lastError = "Invalid broker URL format";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::end("ERROR: " + _lastError);
         _isConfigured = false;
         return false;
     }
     
-    LogBox::line("Broker: " + host + ":" + String(_port));
-    LogBox::line("Username: " + (_username.length() > 0 ? _username : "(none)"));
+    Logger::linef("%s:%d (user: %s)", host.c_str(), _port, 
+        _username.length() > 0 ? _username.c_str() : "none");
     
     // Create MQTT client
     if (_mqttClient == nullptr) {
@@ -74,41 +72,38 @@ bool MQTTManager::begin() {
     _mqttClient->setSocketTimeout(2);  // Reduced from 10s to 2s
     
     _isConfigured = true;
-    LogBox::end("MQTT Manager initialized successfully");
+    Logger::end();
     
     return true;
 }
 
 bool MQTTManager::connect() {
     if (!_isConfigured) {
-        LogBox::message("MQTT Connection", "MQTT not configured - skipping connection");
+        Logger::message("MQTT Connection", "MQTT not configured - skipping connection");
         return true;  // Not an error
     }
     
     if (_mqttClient == nullptr) {
         _lastError = "MQTT client not initialized";
-        LogBox::message("MQTT Connection", "ERROR: " + _lastError);
+        Logger::message("MQTT", "ERROR: " + _lastError);
         return false;
     }
     
-    LogBox::begin("Connecting to MQTT broker");
+    Logger::begin("MQTT Connect");
     
     // Parse broker URL again to get host and port
     String host;
     int port;
     if (!parseBrokerURL(_broker, host, port)) {
         _lastError = "Failed to parse broker URL";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::end("ERROR: " + _lastError);
         return false;
     }
     
-    LogBox::line("Broker Host: " + host);
-    LogBox::linef("Broker Port: %d", port);
+    Logger::linef("%s:%d", host.c_str(), port);
     
     // Generate unique client ID based on chip ID
     String clientId = "inkplate-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-    LogBox::line("Client ID: " + clientId);
     
     // Set server again (ensure it's set correctly)
     _mqttClient->setServer(host.c_str(), port);
@@ -121,24 +116,22 @@ bool MQTTManager::connect() {
     bool connected = false;
     
     for (int attempt = 1; attempt <= maxRetries && !connected; attempt++) {
-        LogBox::linef("Connection attempt %d/%d...", attempt, maxRetries);
+        Logger::linef("Attempt %d/%d", attempt, maxRetries);
         
         if (_username.length() > 0) {
-            LogBox::line("Connecting with username: " + _username);
             connected = _mqttClient->connect(clientId.c_str(), _username.c_str(), _password.c_str());
         } else {
-            LogBox::line("Connecting without authentication");
             connected = _mqttClient->connect(clientId.c_str());
         }
         
         if (!connected) {
             int state = _mqttClient->state();
-            LogBox::linef("Attempt %d failed (state: %d)", attempt, state);
+            Logger::linef("Attempt %d failed (state: %d)", attempt, state);
             
             // Show concise error description
             const char* error = getMQTTStateDesc(state);
             if (error) {
-                LogBox::linef("  %s", error);
+                Logger::linef("  %s", error);
             }
             
             if (attempt < maxRetries) {
@@ -148,12 +141,11 @@ bool MQTTManager::connect() {
     }
     
     if (connected) {
-        LogBox::end("MQTT connected successfully!");
+        Logger::end("MQTT connected successfully!");
         return true;
     } else {
         _lastError = "Connection failed after " + String(maxRetries) + " attempts, state: " + String(_mqttClient->state());
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::end("Failed: " + _lastError);
         return false;
     }
 }
@@ -161,7 +153,6 @@ bool MQTTManager::connect() {
 void MQTTManager::disconnect() {
     if (_mqttClient != nullptr && _mqttClient->connected()) {
         _mqttClient->disconnect();
-        LogBox::message("MQTT", "Disconnected");
     }
 }
 
@@ -170,7 +161,7 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing Home Assistant discovery");
+    Logger::begin("Publishing Home Assistant discovery");
     
     bool allSuccess = true;
     
@@ -178,15 +169,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "battery_voltage");
         
-        LogBox::line("Battery Voltage Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("Battery Voltage Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "battery_voltage", "Battery Voltage", 
                                    "voltage", "V", deviceName, modelName, true)) {
-            LogBox::line("  ERROR: Failed to publish battery voltage discovery");
+            Logger::line("  ERROR: Failed to publish battery voltage discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
@@ -194,15 +185,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "battery_percentage");
         
-        LogBox::line("Battery Percentage Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("Battery Percentage Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "battery_percentage", "Battery Percentage",
                                    "battery", "%", deviceName, modelName, false)) {
-            LogBox::line("  ERROR: Failed to publish battery percentage discovery");
+            Logger::line("  ERROR: Failed to publish battery percentage discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
@@ -210,15 +201,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "loop_time");
         
-        LogBox::line("Loop Time Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("Loop Time Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "loop_time", "Loop Time",
                                    "duration", "s", deviceName, modelName, false)) {
-            LogBox::line("  ERROR: Failed to publish loop time discovery");
+            Logger::line("  ERROR: Failed to publish loop time discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
@@ -226,15 +217,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "wifi_signal");
         
-        LogBox::line("WiFi Signal Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("WiFi Signal Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "wifi_signal", "WiFi Signal",
                                    "signal_strength", "dBm", deviceName, modelName, false)) {
-            LogBox::line("  ERROR: Failed to publish WiFi signal discovery");
+            Logger::line("  ERROR: Failed to publish WiFi signal discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
@@ -242,15 +233,15 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "last_log");
         
-        LogBox::line("Last Log Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("Last Log Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "last_log", "Last Log", 
                                    "", "", deviceName, modelName, false)) {
-            LogBox::line("  ERROR: Failed to publish last log discovery");
+            Logger::line("  ERROR: Failed to publish last log discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
@@ -258,23 +249,23 @@ bool MQTTManager::publishDiscovery(const String& deviceId, const String& deviceN
     {
         String discoveryTopic = getDiscoveryTopic(deviceId, "image_crc32");
         
-        LogBox::line("Image CRC32 Discovery:");
-        LogBox::line("  Topic: " + discoveryTopic);
+        Logger::line("Image CRC32 Discovery:");
+        Logger::line("  Topic: " + discoveryTopic);
         
         if (!publishSensorDiscovery(discoveryTopic, deviceId, "image_crc32", "Image CRC32",
                                    "", "", deviceName, modelName, false)) {
-            LogBox::line("  ERROR: Failed to publish image CRC32 discovery");
+            Logger::line("  ERROR: Failed to publish image CRC32 discovery");
             allSuccess = false;
         } else {
-            LogBox::line("  Success!");
+            Logger::line("  Success!");
         }
     }
     
     if (allSuccess) {
-        LogBox::end("All discovery messages published successfully");
+        Logger::end("All discovery messages published successfully");
     } else {
         _lastError = "Some discovery messages failed to publish";
-        LogBox::end("Some discovery messages failed");
+        Logger::end("Some discovery messages failed");
     }
     
     return allSuccess;
@@ -285,22 +276,22 @@ bool MQTTManager::publishBatteryVoltage(const String& deviceId, float voltage) {
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing battery voltage to MQTT");
+    Logger::begin("Publishing battery voltage to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "battery_voltage");
     String payload = String(voltage, 3);  // 3 decimal places
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("Voltage: " + payload + " V");
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("Voltage: " + payload + " V");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("Battery voltage published successfully");
+        Logger::end("Battery voltage published successfully");
     } else {
         _lastError = "Failed to publish battery voltage";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -311,22 +302,22 @@ bool MQTTManager::publishBatteryPercentage(const String& deviceId, int percentag
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing battery percentage to MQTT");
+    Logger::begin("Publishing battery percentage to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "battery_percentage");
     String payload = String(percentage);
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("Percentage: " + payload + " %");
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("Percentage: " + payload + " %");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("Battery percentage published successfully");
+        Logger::end("Battery percentage published successfully");
     } else {
         _lastError = "Failed to publish battery percentage";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -337,22 +328,22 @@ bool MQTTManager::publishLoopTime(const String& deviceId, float loopTimeSeconds)
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing loop time to MQTT");
+    Logger::begin("Publishing loop time to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "loop_time");
     String payload = String(loopTimeSeconds, 2);  // 2 decimal places
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("Loop Time: " + payload + " s");
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("Loop Time: " + payload + " s");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("Loop time published successfully");
+        Logger::end("Loop time published successfully");
     } else {
         _lastError = "Failed to publish loop time";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -363,22 +354,22 @@ bool MQTTManager::publishWiFiSignal(const String& deviceId, int rssi) {
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing WiFi signal to MQTT");
+    Logger::begin("Publishing WiFi signal to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "wifi_signal");
     String payload = String(rssi);  // Integer value
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("WiFi Signal: " + payload + " dBm");
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("WiFi Signal: " + payload + " dBm");
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("WiFi signal published successfully");
+        Logger::end("WiFi signal published successfully");
     } else {
         _lastError = "Failed to publish WiFi signal";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -389,7 +380,7 @@ bool MQTTManager::publishLastLog(const String& deviceId, const String& message, 
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing last log to MQTT");
+    Logger::begin("Publishing last log to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "last_log");
     
@@ -398,17 +389,17 @@ bool MQTTManager::publishLastLog(const String& deviceId, const String& message, 
     severityUpper.toUpperCase();
     String payload = "[" + severityUpper + "] " + message;
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("Message: " + payload);
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("Message: " + payload);
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("Last log published successfully");
+        Logger::end("Last log published successfully");
     } else {
         _lastError = "Failed to publish last log";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -419,7 +410,7 @@ bool MQTTManager::publishImageCRC32(const String& deviceId, uint32_t crc32) {
         return true;  // Skip if not configured or not connected
     }
     
-    LogBox::begin("Publishing image CRC32 to MQTT");
+    Logger::begin("Publishing image CRC32 to MQTT");
     
     String stateTopic = getStateTopic(deviceId, "image_crc32");
     String payload;
@@ -434,17 +425,17 @@ bool MQTTManager::publishImageCRC32(const String& deviceId, uint32_t crc32) {
         payload = String(buffer);
     }
     
-    LogBox::line("State Topic: " + stateTopic);
-    LogBox::line("CRC32: " + payload);
+    Logger::line("State Topic: " + stateTopic);
+    Logger::line("CRC32: " + payload);
     
     bool success = _mqttClient->publish(stateTopic.c_str(), payload.c_str());
     
     if (success) {
-        LogBox::end("Image CRC32 published successfully");
+        Logger::end("Image CRC32 published successfully");
     } else {
         _lastError = "Failed to publish image CRC32";
-        LogBox::line("ERROR: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: " + _lastError);
+        Logger::end();
     }
     
     return success;
@@ -590,28 +581,28 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
                                       float crcTimeSeconds, float imageTimeSeconds,
                                       uint8_t wifiRetryCount, uint8_t crcRetryCount, uint8_t imageRetryCount) {
     if (!_isConfigured) {
-        LogBox::message("MQTT", "MQTT not configured - skipping");
+        Logger::message("MQTT", "MQTT not configured - skipping");
         return true;  // Not an error
     }
     
-    LogBox::begin("Publishing All Telemetry to MQTT");
-    LogBox::line("Connecting to MQTT broker...");
+    Logger::begin("Publishing All Telemetry to MQTT");
+    Logger::line("Connecting to MQTT broker...");
     
     // Connect to MQTT
     if (!connect()) {
-        LogBox::line("ERROR: Failed to connect to MQTT broker");
-        LogBox::line("Error: " + _lastError);
-        LogBox::end();
+        Logger::line("ERROR: Failed to connect to MQTT broker");
+        Logger::line("Error: " + _lastError);
+        Logger::end();
         return false;
     }
     
-    LogBox::line("Connected successfully");
+    Logger::line("Connected successfully");
     
     int publishCount = 0;
     
     // Publish discovery messages (conditionally based on wake reason)
     if (shouldPublishDiscovery(wakeReason)) {
-        LogBox::line("Publishing discovery messages...");
+        Logger::line("Publishing discovery messages...");
         
         // Battery voltage sensor discovery
         publishSensorDiscovery(getDiscoveryTopic(deviceId, "battery_voltage"), deviceId, "battery_voltage",
@@ -678,10 +669,10 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
                               "Loop Time - Image Retries", "", "", deviceName, modelName, false);
         publishCount++;
         
-        LogBox::linef("Published %d discovery messages", publishCount);
+        Logger::linef("Published %d discovery messages", publishCount);
         publishCount = 0;  // Reset for state messages
     } else {
-        LogBox::line("Skipping discovery (normal wake cycle)");
+        Logger::line("Skipping discovery (normal wake cycle)");
     }
     
     // Publish battery voltage state
@@ -689,7 +680,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "battery_voltage");
         String payload = String(batteryVoltage, 3);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Battery: " + payload + " V");
+        Logger::line("Battery: " + payload + " V");
         publishCount++;
     }
     
@@ -698,7 +689,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "battery_percentage");
         String payload = String(batteryPercentage);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Battery Percentage: " + payload + " %");
+        Logger::line("Battery Percentage: " + payload + " %");
         publishCount++;
     }
     
@@ -707,7 +698,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "wifi_signal");
         String payload = String(wifiRSSI);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("WiFi Signal: " + payload + " dBm");
+        Logger::line("WiFi Signal: " + payload + " dBm");
         publishCount++;
     }
     
@@ -716,7 +707,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time");
         String payload = String(loopTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time: " + payload + " s");
+        Logger::line("Loop Time: " + payload + " s");
         publishCount++;
     }
     
@@ -727,7 +718,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         severityUpper.toUpperCase();
         String payload = "[" + severityUpper + "] " + lastLogMessage;
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Last Log: " + payload);
+        Logger::line("Last Log: " + payload);
         publishCount++;
     }
     
@@ -747,7 +738,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         }
         
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Image CRC32: " + payload);
+        Logger::line("Image CRC32: " + payload);
         publishCount++;
     }
     
@@ -755,7 +746,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     if (wifiBSSID.length() > 0) {
         String stateTopic = getStateTopic(deviceId, "wifi_bssid");
         _mqttClient->publish(stateTopic.c_str(), wifiBSSID.c_str(), true);
-        LogBox::line("WiFi BSSID: " + wifiBSSID);
+        Logger::line("WiFi BSSID: " + wifiBSSID);
         publishCount++;
     }
     
@@ -764,7 +755,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_wifi");
         String payload = String(wifiTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - WiFi: " + payload + " s");
+        Logger::line("Loop Time - WiFi: " + payload + " s");
         publishCount++;
     }
     
@@ -772,7 +763,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_ntp");
         String payload = String(ntpTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - NTP: " + payload + " s");
+        Logger::line("Loop Time - NTP: " + payload + " s");
         publishCount++;
     }
     
@@ -780,7 +771,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_crc");
         String payload = String(crcTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - CRC: " + payload + " s");
+        Logger::line("Loop Time - CRC: " + payload + " s");
         publishCount++;
     }
     
@@ -788,7 +779,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_image");
         String payload = String(imageTimeSeconds, 2);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - Image: " + payload + " s");
+        Logger::line("Loop Time - Image: " + payload + " s");
         publishCount++;
     }
     
@@ -797,7 +788,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_wifi_retries");
         String payload = String(wifiRetryCount);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - WiFi Retries: " + payload);
+        Logger::line("Loop Time - WiFi Retries: " + payload);
         publishCount++;
     }
     
@@ -805,7 +796,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_crc_retries");
         String payload = String(crcRetryCount);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - CRC Retries: " + payload);
+        Logger::line("Loop Time - CRC Retries: " + payload);
         publishCount++;
     }
     
@@ -813,11 +804,11 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
         String stateTopic = getStateTopic(deviceId, "loop_time_image_retries");
         String payload = String(imageRetryCount);
         _mqttClient->publish(stateTopic.c_str(), payload.c_str(), true);
-        LogBox::line("Loop Time - Image Retries: " + payload);
+        Logger::line("Loop Time - Image Retries: " + payload);
         publishCount++;
     }
     
-    LogBox::linef("Published %d state messages", publishCount);
+    Logger::linef("Published %d state messages", publishCount);
     
     // Give MQTT client time to transmit all queued messages
     // PubSubClient needs loop() calls to actually send queued data
@@ -830,7 +821,7 @@ bool MQTTManager::publishAllTelemetry(const String& deviceId, const String& devi
     // Disconnect
     disconnect();
     
-    LogBox::end("All telemetry published");
+    Logger::end("All telemetry published");
     
     return true;
 }

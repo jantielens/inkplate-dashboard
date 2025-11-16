@@ -20,10 +20,10 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
     // Build API URL for latest release
     String url = String(GITHUB_API_BASE) + "/repos/" + GITHUB_REPO_OWNER + "/" + GITHUB_REPO_NAME + "/releases/latest";
     
-    LogBox::begin("GitHub OTA");
-    LogBox::line("Checking for updates...");
-    LogBox::line("URL: " + url);
-    LogBox::end();
+    Logger::begin("GitHub OTA");
+    Logger::line("Checking for updates...");
+    Logger::line("URL: " + url);
+    Logger::end();
     
     // Configure HTTP client
     _http.begin(url);
@@ -45,7 +45,7 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
             _lastError = "HTTP error: " + String(httpCode);
         }
         
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         
         _http.end();
         return false;
@@ -61,7 +61,7 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
     
     if (error) {
         _lastError = "Failed to parse JSON: " + String(error.c_str());
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         return false;
     }
     
@@ -75,7 +75,7 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
         info.version = info.version.substring(1);
     }
     
-    LogBox::message("GitHub Release", "Latest version: " + info.tagName);
+    Logger::message("GitHub Release", "Latest version: " + info.tagName);
     
     // Find matching asset for this board
     String assetPrefix = boardNameToAssetPrefix(boardName);
@@ -94,10 +94,10 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
                 info.assetSize = asset["size"].as<size_t>();
                 info.found = true;
                 
-                LogBox::begin("GitHub Asset");
-                LogBox::line("Found: " + info.assetName);
-                LogBox::linef("Size: %d KB", info.assetSize / 1024);
-                LogBox::end();
+                Logger::begin("GitHub Asset");
+                Logger::line("Found: " + info.assetName);
+                Logger::linef("Size: %d KB", info.assetSize / 1024);
+                Logger::end();
                 
                 break;
             }
@@ -106,7 +106,7 @@ bool GitHubOTA::checkLatestRelease(const String& boardName, ReleaseInfo& info) {
     
     if (!info.found) {
         _lastError = "No firmware asset found for board: " + boardName + " (looking for: " + assetPrefix + "-v*.bin)";
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         return false;
     }
     
@@ -122,10 +122,10 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     g_otaProgress.totalBytes = 0;
     g_otaProgress.percentComplete = 0;
     
-    LogBox::begin("GitHub OTA");
-    LogBox::line("Starting download...");
-    LogBox::line("URL: " + assetUrl);
-    LogBox::end();
+    Logger::begin("GitHub OTA");
+    Logger::line("Starting download...");
+    Logger::line("URL: " + assetUrl);
+    Logger::end();
     
     // Configure HTTP client for download
     _http.begin(assetUrl);
@@ -137,7 +137,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     
     if (httpCode != HTTP_CODE_OK) {
         _lastError = "Download failed: HTTP " + String(httpCode);
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         _http.end();
         g_otaProgress.inProgress = false;
         return false;
@@ -148,7 +148,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     
     if (contentLength <= 0) {
         _lastError = "Invalid content length";
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         _http.end();
         g_otaProgress.inProgress = false;
         return false;
@@ -156,12 +156,12 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     
     g_otaProgress.totalBytes = contentLength;
     
-    LogBox::messagef("GitHub OTA", "Firmware size: %d KB", contentLength / 1024);
+    Logger::messagef("GitHub OTA", "Firmware size: %d KB", contentLength / 1024);
     
     // Begin OTA update
     if (!Update.begin(contentLength)) {
         _lastError = "Not enough space for OTA update";
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         _http.end();
         g_otaProgress.inProgress = false;
         return false;
@@ -174,7 +174,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     size_t written = 0;
     uint8_t buffer[4096];
     
-    LogBox::message("GitHub OTA", "Writing firmware...");
+    Logger::message("GitHub OTA", "Writing firmware...");
     
     while (_http.connected() && (written < contentLength)) {
         // Get available data size
@@ -190,7 +190,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
             
             if (bytesWritten != bytesRead) {
                 _lastError = "Write error during OTA update";
-                LogBox::message("GitHub OTA Error", _lastError);
+                Logger::message("GitHub OTA Error", _lastError);
                 Update.abort();
                 _http.end();
                 return false;
@@ -211,7 +211,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
             static size_t lastLoggedKB = 0;
             size_t currentKB = written / 1024;
             if (currentKB - lastLoggedKB >= 100) {
-                LogBox::messagef("GitHub OTA Progress", "%d KB / %d KB (%d%%)", 
+                Logger::messagef("GitHub OTA Progress", "%d KB / %d KB (%d%%)", 
                     currentKB, 
                     contentLength / 1024, 
                     (written * 100) / contentLength);
@@ -227,7 +227,7 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     // Verify download completed
     if (written != contentLength) {
         _lastError = "Download incomplete: " + String(written) + " / " + String(contentLength);
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         Update.abort();
         g_otaProgress.inProgress = false;
         return false;
@@ -236,15 +236,15 @@ bool GitHubOTA::downloadAndInstall(const String& assetUrl, ProgressCallback prog
     // Finalize update
     if (!Update.end(true)) {
         _lastError = "Update finalization failed: " + String(Update.getError());
-        LogBox::message("GitHub OTA Error", _lastError);
+        Logger::message("GitHub OTA Error", _lastError);
         g_otaProgress.inProgress = false;
         return false;
     }
     
-    LogBox::begin("GitHub OTA");
-    LogBox::line("✓ Firmware update successful!");
-    LogBox::line("Device will reboot...");
-    LogBox::end();
+    Logger::begin("GitHub OTA");
+    Logger::line("✓ Firmware update successful!");
+    Logger::line("Device will reboot...");
+    Logger::end();
     
     g_otaProgress.inProgress = false;
     g_otaProgress.percentComplete = 100;
