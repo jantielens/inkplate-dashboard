@@ -395,18 +395,18 @@ Configuration: Sleep 11 PM - 6 AM (hours 0-5 disabled, 6-23 enabled)
 ### Utilities
 
 #### logger.h/cpp
-Structured serial logging with LogBox.
+Structured serial logging with the Logger class.
 
 **Usage:**
 ```cpp
-LogBox::begin("Operation Name");
-LogBox::line("Simple message");
-LogBox::linef("Formatted: %d", value);
-LogBox::end();
+Logger::begin("Operation Name");
+Logger::line("Simple message");
+Logger::linef("Formatted: %d", value);
+Logger::end();
 ```
 
 **Features:**
-- Box-drawing characters for visual structure
+- Indentation-based visual structure
 - Automatic line prefixing
 - Printf-style formatting
 - Persistent last log for MQTT publishing

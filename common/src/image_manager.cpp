@@ -19,12 +19,12 @@ bool ImageManager::isHttps(const char* url) {
 }
 
 void ImageManager::showDownloadProgress(const char* message) {
-    LogBox::line(message);
+    Logger::line(message);
 }
 
 void ImageManager::showError(const char* error) {
     _lastError = error;
-    LogBox::line("Image Error: " + _lastError);
+    Logger::line("Image Error: " + _lastError);
 }
 
 uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
@@ -44,7 +44,7 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
     
     // Check if parsing was successful
     if (*endptr != '\0' && *endptr != '\n' && *endptr != '\r') {
-        LogBox::line("Warning: CRC32 parsing may be incomplete");
+        Logger::line("Warning: CRC32 parsing may be incomplete");
     }
     
     return result;
@@ -52,16 +52,16 @@ uint32_t ImageManager::parseHexCRC32(const String& hexStr) {
 
 bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uint8_t* outRetryCount) {
     if (!_configManager) {
-        LogBox::message("CRC32 Check", "ConfigManager not set - cannot check CRC32");
+        Logger::message("CRC32 Check", "ConfigManager not set - cannot check CRC32");
         if (outRetryCount) *outRetryCount = 0;
         return true;  // Fallback to download
     }
     
-    LogBox::begin("Checking CRC32 for changes");
+    Logger::begin("Checking CRC32 for changes");
     
     // Construct CRC32 URL
     String crc32Url = String(url) + ".crc32";
-    LogBox::line("CRC32 URL: " + crc32Url);
+    Logger::line("CRC32 URL: " + crc32Url);
     
     // Determine if HTTPS or HTTP
     bool useHttps = isHttps(crc32Url.c_str());
@@ -93,7 +93,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
         http.setTimeout(crcTimeouts[attempt]);
         http.setUserAgent("InkplateDashboard/1.0");
         
-        LogBox::linef("Attempt %d/%d (timeout: %dms)", attempt + 1, maxRetries, crcTimeouts[attempt]);
+        Logger::linef("CRC32 attempt %d/%d", attempt + 1, maxRetries);
         
         // Enforce deadline - track actual elapsed time
         unsigned long startTime = millis();
@@ -106,7 +106,7 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
         
         // Force timeout if we exceeded our deadline, even if request "succeeded"
         if (elapsed > deadline) {
-            LogBox::linef("Deadline exceeded: %lums > %lums - treating as timeout", elapsed, deadline);
+            Logger::linef("Deadline exceeded (%lums)", elapsed);
             http.end();
             httpCode = -1;  // Force retry
             
@@ -124,15 +124,15 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
             http.end();
             
             if (crc32Content.length() > 0) {
-                LogBox::linef("CRC32 fetched successfully in %lums (attempt %d)", elapsed, attempt + 1);
+                Logger::linef("CRC32 fetched (%lums)", elapsed);
                 break;  // Success - exit loop without incrementing retry count
             } else {
-                LogBox::line("CRC32 file is empty");
+                Logger::line("CRC32 file empty");
                 http.end();
                 httpCode = -1;  // Treat as failure
             }
         } else {
-            LogBox::linef("CRC32 fetch failed (code: %d)", httpCode);
+            Logger::linef("CRC32 fetch failed (code: %d)", httpCode);
             http.end();
         }
         
@@ -151,21 +151,20 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     }
     
     if (httpCode != HTTP_CODE_OK || crc32Content.length() == 0) {
-        LogBox::linef("CRC32 file not found or error after %d attempts (%d retries)", retryCount + 1, retryCount);
-        LogBox::line("Falling back to full image download");
-        LogBox::end();
+        Logger::linef("CRC32 unavailable after %d attempts, downloading image", retryCount + 1);
+        Logger::end();
         return true;  // Fallback to download
     }
     
-    LogBox::line("CRC32 file content: " + crc32Content);
+    Logger::line("Content: " + crc32Content);
     
     // Parse hex CRC32
     uint32_t newCRC32 = parseHexCRC32(crc32Content);
-    LogBox::linef("Parsed CRC32: 0x%08X", newCRC32);
+    Logger::linef("New: 0x%08X", newCRC32);
     
     // Get stored CRC32
     uint32_t storedCRC32 = _configManager->getLastCRC32();
-    LogBox::linef("Stored CRC32: 0x%08X", storedCRC32);
+    Logger::linef("Stored: 0x%08X", storedCRC32);
     
     // Return the new CRC32 value if caller requested it
     if (outNewCRC32) {
@@ -174,11 +173,10 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
     
     // Compare
     if (newCRC32 == storedCRC32 && storedCRC32 != 0) {
-        LogBox::end("CRC32 UNCHANGED - Skipping download");
+        Logger::end("UNCHANGED - Skipping download");
         return false;  // No change, skip download
     } else {
-        LogBox::line("CRC32 CHANGED - Will download image");
-        LogBox::end();
+        Logger::end("CHANGED - Downloading");
         // NOTE: Deferred - CRC32 is NOT saved here, caller must call saveCRC32()
         // after confirming successful image display
         return true;  // Changed, proceed with download
@@ -187,25 +185,25 @@ bool ImageManager::checkCRC32Changed(const char* url, uint32_t* outNewCRC32, uin
 
 void ImageManager::saveCRC32(uint32_t crc32Value) {
     if (!_configManager) {
-        LogBox::line("ConfigManager not set - cannot save CRC32");
+        Logger::line("ConfigManager not set - cannot save CRC32");
         return;
     }
     
-    LogBox::linef("CRC32 updated: 0x%08X", crc32Value);
+    Logger::linef("CRC32 updated: 0x%08X", crc32Value);
     _configManager->setLastCRC32(crc32Value);
 }
 
 bool ImageManager::downloadAndDisplay(const char* url) {
     _lastError = "";
     
-    LogBox::begin("Starting image download");
-    LogBox::line("URL: " + String(url));
+    Logger::begin("Starting image download");
+    Logger::line("URL: " + String(url));
     
     // Log connection type for debugging
     if (isHttps(url)) {
-        LogBox::line("Using HTTPS connection");
+        Logger::line("Using HTTPS connection");
     } else {
-        LogBox::line("Using HTTP connection");
+        Logger::line("Using HTTP connection");
     }
     
     showDownloadProgress("Downloading and rendering image...");
@@ -224,7 +222,7 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     // Draw the image directly from URL
     // The InkPlate library's drawImage method downloads and renders in one operation
     if (_display->drawImage(url, 0, 0, true, false)) {
-        LogBox::line("Image downloaded and displayed successfully!");
+        Logger::line("Image downloaded and displayed successfully!");
         
         // Restore the original rotation before calling display()
         // This ensures text overlays (like version label) use correct rotation
@@ -242,9 +240,9 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     }
     
     if (success) {
-        LogBox::end("Image display complete!");
+        Logger::end("Image display complete!");
     } else {
-        LogBox::end();
+        Logger::end();
     }
     
     return success;

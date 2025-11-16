@@ -142,16 +142,16 @@ void NormalModeController::execute() {
     time_t now;
     
     if (allHoursEnabled) {
-        LogBox::begin("NTP Time Sync");
-        LogBox::line("Skipped - all 24 hours enabled");
-        LogBox::end();
+        Logger::begin("NTP Time Sync");
+        Logger::line("Skipped - all 24 hours enabled");
+        Logger::end();
         now = time(nullptr);
         timings.ntp_ms = 0;
     } else {
         timerStart = millis();
         configTime(0, 0, "pool.ntp.org", "time.nist.gov");
         
-        LogBox::begin("NTP Time Sync");
+        Logger::begin("NTP Time Sync");
         now = time(nullptr);
         int ntpRetries = 0;
         while (now < 24 * 3600 && ntpRetries < 70) {
@@ -161,11 +161,11 @@ void NormalModeController::execute() {
         }
         
         if (now < 24 * 3600) {
-            LogBox::line("WARNING: NTP sync timeout, using last known time");
+            Logger::line("WARNING: NTP sync timeout, using last known time");
         } else {
-            LogBox::line("Time synced via NTP");
+            Logger::line("Time synced via NTP");
         }
-        LogBox::end();
+        Logger::end();
         timings.ntp_ms = millis() - timerStart;
     }
     
@@ -173,20 +173,20 @@ void NormalModeController::execute() {
     struct tm* timeinfo = localtime(&now);
     int currentHour = ConfigManager::applyTimezoneOffset(timeinfo->tm_hour, config.timezoneOffset);
     
-    LogBox::begin("Hourly Schedule Check");
-    LogBox::linef("Current time (UTC): %04d-%02d-%02d %02d:%02d:%02d",
+    Logger::begin("Hourly Schedule Check");
+    Logger::linef("Current time (UTC): %04d-%02d-%02d %02d:%02d:%02d",
                   timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
                   timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    LogBox::linef("Timezone offset: %+d, Local hour: %d", config.timezoneOffset, currentHour);
+    Logger::linef("Timezone offset: %+d, Local hour: %d", config.timezoneOffset, currentHour);
     
     if (wakeReason == WAKEUP_TIMER && !allHoursEnabled) {
         bool hourEnabled = ConfigManager::isHourEnabledInBitmask(currentHour, config.updateHours);
         
         if (!hourEnabled) {
-            LogBox::line("Updates disabled for this hour");
+            Logger::line("Updates disabled for this hour");
             float sleepMinutes = ::calculateSleepMinutesToNextEnabledHour(now, config.timezoneOffset, config.updateHours);
-            LogBox::linef("Sleeping %.1f minutes until next enabled hour", sleepMinutes);
-            LogBox::end();
+            Logger::linef("Sleeping %.1f minutes until next enabled hour", sleepMinutes);
+            Logger::end();
             
             powerManager->disableWatchdog();
             powerManager->prepareForSleep();
@@ -201,20 +201,20 @@ void NormalModeController::execute() {
             }
             return;
         }
-        LogBox::line("Updates enabled for this hour");
+        Logger::line("Updates enabled for this hour");
     } else {
-        LogBox::line("Skipping hourly schedule enforcement (manual trigger or non-timer wakeup)");
+        Logger::line("Skipping hourly schedule enforcement (manual trigger or non-timer wakeup)");
     }
-    LogBox::end();
+    Logger::end();
     
     // DECISION ORCHESTRATION: Use tested orchestration function to ensure correct behavior
     uint8_t currentIndex = *imageStateIndex % config.imageCount;
     NormalModeDecisions decisions = orchestrateNormalModeDecisions(config, wakeReason, currentIndex);
     
-    LogBox::begin(config.isCarouselMode() ? "Carousel Mode" : "Single Image Mode");
-    LogBox::linef("Decision: %s", decisions.imageTarget.reason);
+    Logger::begin(config.isCarouselMode() ? "Carousel Mode" : "Single Image Mode");
+    Logger::linef("Decision: %s", decisions.imageTarget.reason);
     if (config.isCarouselMode()) {
-        LogBox::linef("Target image: %d of %d", decisions.imageTarget.targetIndex + 1, config.imageCount);
+        Logger::linef("Target image: %d of %d", decisions.imageTarget.targetIndex + 1, config.imageCount);
     }
     
     // Update index if we should advance before display
@@ -227,24 +227,24 @@ void NormalModeController::execute() {
     int currentInterval = config.imageIntervals[currentIndex];
     
     if (currentInterval < 0) {
-        LogBox::messagef("Config Error", "Invalid interval for image %d, using default", currentIndex + 1);
+        Logger::messagef("Config Error", "Invalid interval for image %d, using default", currentIndex + 1);
         currentInterval = DEFAULT_INTERVAL_MINUTES;
     }
     
-    LogBox::line("URL: " + currentImageUrl);
+    Logger::line("URL: " + currentImageUrl);
     if (currentInterval == 0) {
-        LogBox::line("Button-only wake mode (interval = 0)");
+        Logger::line("Button-only wake mode (interval = 0)");
     } else {
-        LogBox::linef("Interval: %d minutes", currentInterval);
+        Logger::linef("Interval: %d minutes", currentInterval);
     }
-    LogBox::end();
+    Logger::end();
     
     // CRC32 decision already determined by orchestration
     CRC32Decision crc32Decision = decisions.crc32Action;
     
-    LogBox::begin("CRC32 Check Decision");
-    LogBox::linef("Decision: %s", crc32Decision.reason);
-    LogBox::end();
+    Logger::begin("CRC32 Check Decision");
+    Logger::linef("Decision: %s", crc32Decision.reason);
+    Logger::end();
     
     uint32_t newCRC32 = 0;
     bool crc32Matched = false;
@@ -431,7 +431,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
             // First image - use retry logic (same as single image mode)
             if (*imageStateIndex < 2) {
                 (*imageStateIndex)++;
-                LogBox::messagef("Carousel Error", "First image failed, retry attempt %d of 2", *imageStateIndex);
+                Logger::messagef("Carousel Error", "First image failed, retry attempt %d of 2", *imageStateIndex);
                 
                 // Clear stored CRC32 to force download on next retry
                 configManager->setLastCRC32(0);
@@ -442,7 +442,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
                 powerManager->enterDeepSleep(20.0f, loopTimeMs / 1000.0f);
             } else {
                 // Exhausted retries on first image - show error and move to next
-                LogBox::message("Carousel Error", "First image failed after retries, moving to next");
+                Logger::message("Carousel Error", "First image failed after retries, moving to next");
                 
                 *imageStateIndex = 1;  // Move to second image
                 String currentImageUrl = config.imageUrls[currentIndex];
@@ -464,7 +464,7 @@ void NormalModeController::handleImageFailure(const DashboardConfig& config,
             }
         } else {
             // Non-first image - skip to next immediately
-            LogBox::messagef("Carousel Error", "Image %d failed, skipping to next", currentIndex + 1);
+            Logger::messagef("Carousel Error", "Image %d failed, skipping to next", currentIndex + 1);
             
             *imageStateIndex = (currentIndex + 1) % config.imageCount;
             

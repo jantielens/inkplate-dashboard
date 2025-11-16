@@ -47,8 +47,8 @@ String WiFiManager::getDeviceIdentifier() {
 }
 
 bool WiFiManager::startAccessPoint() {
-    LogBox::begin("Starting Access Point");
-    LogBox::line("AP Name: " + _apName);
+    Logger::begin("Starting Access Point");
+    Logger::line("AP Name: " + _apName);
     
     // Disconnect from any WiFi network first
     WiFi.mode(WIFI_AP);
@@ -59,21 +59,21 @@ bool WiFiManager::startAccessPoint() {
     if (success) {
         _apActive = true;
         IPAddress ip = WiFi.softAPIP();
-        LogBox::line("Access Point started successfully");
-        LogBox::line("IP Address: " + ip.toString());
+        Logger::line("Access Point started successfully");
+        Logger::line("IP Address: " + ip.toString());
         
         // Start mDNS service
         if (startMDNS()) {
-            LogBox::line("Access via: http://" + getMDNSHostname());
+            Logger::line("Access via: http://" + getMDNSHostname());
         }
         
-        LogBox::line("Connect to WiFi network: " + _apName);
-        LogBox::line("Then navigate to: http://" + ip.toString());
-        LogBox::end();
+        Logger::line("Connect to WiFi network: " + _apName);
+        Logger::line("Then navigate to: http://" + ip.toString());
+        Logger::end();
         return true;
     } else {
-        LogBox::line("Failed to start Access Point");
-        LogBox::end();
+        Logger::line("Failed to start Access Point");
+        Logger::end();
         _apActive = false;
         return false;
     }
@@ -81,7 +81,7 @@ bool WiFiManager::startAccessPoint() {
 
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
-        LogBox::message("Access Point", "Stopping Access Point...");
+        Logger::message("Access Point", "Stopping Access Point...");
         stopMDNS();
         WiFi.softAPdisconnect(true);
         _apActive = false;
@@ -104,8 +104,8 @@ bool WiFiManager::isAPActive() {
 }
 
 bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount) {
-    LogBox::begin("Connecting to WiFi");
-    LogBox::line("SSID: " + ssid);
+    Logger::begin("Connecting to WiFi");
+    Logger::line("SSID: " + ssid);
     
     // Initialize retry count
     uint8_t retryCount = 0;
@@ -135,13 +135,13 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         String dns2 = _configManager->getSecondaryDNS();
         
         if (!configureStaticIP(staticIP, gateway, subnet, dns1, dns2)) {
-            LogBox::line("Failed to configure static IP, connection aborted");
-            LogBox::end();
+            Logger::line("Failed to configure static IP, connection aborted");
+            Logger::end();
             if (outRetryCount) *outRetryCount = retryCount;
             return false;
         }
     } else {
-        LogBox::line("Network mode: DHCP");
+        Logger::line("Network mode: DHCP");
     }
     
     // Determine connection strategy based on wake reason
@@ -155,18 +155,18 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         // Use channel lock only for timer wakeups (optimization for regular updates)
         if (wakeReason == WAKEUP_TIMER && _configManager && _configManager->hasWiFiChannelLock()) {
             useChannelLock = true;
-            LogBox::line("Wake reason: Timer - using channel lock for fast connect");
+            Logger::line("Using channel lock (timer wake)");
         } else {
             // For boot, reset, or button wakeups, do full scan and save new channel/BSSID
             shouldSaveChannel = true;
             const char* wakeReasonStr = 
-                wakeReason == WAKEUP_FIRST_BOOT ? "First boot" :
-                wakeReason == WAKEUP_RESET_BUTTON ? "Reset button" :
-                wakeReason == WAKEUP_BUTTON ? "Button press" : "Timer (no lock)";
-            LogBox::linef("Wake reason: %s - performing full scan", wakeReasonStr);
+                wakeReason == WAKEUP_FIRST_BOOT ? "first boot" :
+                wakeReason == WAKEUP_RESET_BUTTON ? "reset" :
+                wakeReason == WAKEUP_BUTTON ? "button" : "timer (no lock)";
+            Logger::linef("Full scan (%s)", wakeReasonStr);
         }
     } else {
-        LogBox::line("PowerManager not set - using full scan");
+        Logger::line("Full scan (no PowerManager)");
         shouldSaveChannel = true;
     }
     
@@ -176,7 +176,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         uint8_t bssid[6];
         _configManager->getWiFiBSSID(bssid);
         
-        LogBox::linef("Attempting channel-locked connection (channel %d)", channel);
+        Logger::linef("Channel %d locked connection", channel);
         WiFi.begin(ssid.c_str(), password.c_str(), channel, bssid);
         
         // Wait with shorter timeout for channel-locked connection
@@ -187,17 +187,15 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
         
         if (WiFi.status() == WL_CONNECTED) {
             WiFi.setSleep(false);
-            LogBox::line("Fast connect successful!");
-            LogBox::line("IP Address: " + WiFi.localIP().toString());
-            LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
-            LogBox::end();
+            Logger::linef("Connected! IP: %s, RSSI: %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+            Logger::end();
             if (outRetryCount) *outRetryCount = retryCount;  // 0 retries for channel lock success
             return true;
         }
         
         // Channel lock failed - fall back to full scan
         // This counts as the first retry (fallback to full scan)
-        LogBox::line("Channel lock failed (network moved/changed) - falling back to full scan");
+        Logger::line("Lock failed - falling back to full scan");
         WiFi.disconnect();
         delay(100);
         shouldSaveChannel = true;  // Save new channel after successful full scan
@@ -207,7 +205,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     // Optimized timeouts: 3s per attempt (down from 5s), 300ms retry delay (down from 1s)
     // Max retries: 4 (up from 3) to compensate for shorter timeout
     // Total max time: 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s + 0.3s + 3s = 16.2s (vs 23s previously)
-    LogBox::line("Performing full network scan...");
+    Logger::line("Scanning...");
     WiFi.begin(ssid.c_str(), password.c_str());
     
     // Wait for connection with optimized timeout
@@ -219,7 +217,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     
     while (WiFi.status() != WL_CONNECTED && fullScanRetries < maxRetries) {
         if (millis() - startTime > timeout) {
-            LogBox::line("Connection timeout, retrying...");
+            Logger::linef("Timeout, retry %d/%d", fullScanRetries + 1, maxRetries);
             WiFi.disconnect();
             delay(retryDelay);
             WiFi.begin(ssid.c_str(), password.c_str());
@@ -241,13 +239,11 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     
     if (WiFi.status() == WL_CONNECTED) {
         WiFi.setSleep(false);
-        LogBox::line("Connected to WiFi!");
-        LogBox::line("IP Address: " + WiFi.localIP().toString());
-        LogBox::linef("Signal Strength: %d dBm", WiFi.RSSI());
+        Logger::linef("Connected! IP: %s, RSSI: %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
         
         // Start mDNS service
         if (startMDNS()) {
-            LogBox::line("Access via: http://" + getMDNSHostname());
+            Logger::linef("mDNS: http://%s", getMDNSHostname().c_str());
         }
         
         // Save channel and BSSID for future fast connections
@@ -256,16 +252,16 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
             uint8_t* bssid = WiFi.BSSID();
             if (channel > 0 && bssid != nullptr) {
                 _configManager->setWiFiChannelLock(channel, bssid);
-                LogBox::line("Saved channel/BSSID for future fast connects");
+                Logger::linef("Saved ch%d for fast reconnect", channel);
             }
         }
         
-        LogBox::end();
+        Logger::end();
         if (outRetryCount) *outRetryCount = retryCount;
         return true;
     } else {
-        LogBox::linef("Failed to connect to WiFi after %d retries", maxRetries);
-        LogBox::end();
+        Logger::linef("Failed to connect to WiFi after %d retries", maxRetries);
+        Logger::end();
         if (outRetryCount) *outRetryCount = retryCount;
         return false;
     }
@@ -273,7 +269,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
 
 bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
     if (!_configManager) {
-        LogBox::message("WiFi Connection", "ConfigManager not set");
+        Logger::message("WiFi Connection", "ConfigManager not set");
         if (outRetryCount) *outRetryCount = 0;
         return false;
     }
@@ -282,7 +278,7 @@ bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
     String password = _configManager->getWiFiPassword();
     
     if (ssid.length() == 0) {
-        LogBox::message("WiFi Connection", "No WiFi credentials stored");
+        Logger::message("WiFi Connection", "No WiFi credentials stored");
         if (outRetryCount) *outRetryCount = 0;
         return false;
     }
@@ -292,7 +288,7 @@ bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
 
 void WiFiManager::disconnect() {
     if (WiFi.status() == WL_CONNECTED) {
-        LogBox::message("WiFi", "Disconnecting from WiFi...");
+        Logger::message("WiFi", "Disconnecting from WiFi...");
         stopMDNS();
         WiFi.disconnect();
     }
@@ -335,35 +331,35 @@ String WiFiManager::getStatusString() {
 
 bool WiFiManager::configureStaticIP(const String& ip, const String& gateway, const String& subnet, 
                                     const String& dns1, const String& dns2) {
-    LogBox::line("Network mode: Static IP");
+    Logger::line("Network mode: Static IP");
     
     // Parse IP addresses
     IPAddress ipAddr, gatewayAddr, subnetAddr, dns1Addr, dns2Addr;
     
     if (!ipAddr.fromString(ip)) {
-        LogBox::line("ERROR: Invalid static IP address: " + ip);
+        Logger::line("ERROR: Invalid static IP address: " + ip);
         return false;
     }
     
     if (!gatewayAddr.fromString(gateway)) {
-        LogBox::line("ERROR: Invalid gateway address: " + gateway);
+        Logger::line("ERROR: Invalid gateway address: " + gateway);
         return false;
     }
     
     if (!subnetAddr.fromString(subnet)) {
-        LogBox::line("ERROR: Invalid subnet mask: " + subnet);
+        Logger::line("ERROR: Invalid subnet mask: " + subnet);
         return false;
     }
     
     if (!dns1Addr.fromString(dns1)) {
-        LogBox::line("ERROR: Invalid primary DNS: " + dns1);
+        Logger::line("ERROR: Invalid primary DNS: " + dns1);
         return false;
     }
     
     // Secondary DNS is optional
     if (dns2.length() > 0) {
         if (!dns2Addr.fromString(dns2)) {
-            LogBox::line("WARNING: Invalid secondary DNS: " + dns2 + ", ignoring");
+            Logger::line("WARNING: Invalid secondary DNS: " + dns2 + ", ignoring");
             dns2Addr = IPAddress(0, 0, 0, 0);
         }
     } else {
@@ -372,16 +368,16 @@ bool WiFiManager::configureStaticIP(const String& ip, const String& gateway, con
     
     // Configure static IP
     if (!WiFi.config(ipAddr, gatewayAddr, subnetAddr, dns1Addr, dns2Addr)) {
-        LogBox::line("ERROR: Failed to configure static IP");
+        Logger::line("ERROR: Failed to configure static IP");
         return false;
     }
     
-    LogBox::line("Static IP: " + ip);
-    LogBox::line("Gateway: " + gateway);
-    LogBox::line("Subnet: " + subnet);
-    LogBox::line("Primary DNS: " + dns1);
+    Logger::line("Static IP: " + ip);
+    Logger::line("Gateway: " + gateway);
+    Logger::line("Subnet: " + subnet);
+    Logger::line("Primary DNS: " + dns1);
     if (dns2.length() > 0) {
-        LogBox::line("Secondary DNS: " + dns2);
+        Logger::line("Secondary DNS: " + dns2);
     }
     
     return true;
@@ -393,11 +389,11 @@ bool WiFiManager::startMDNS() {
     if (MDNS.begin(hostname.c_str())) {
         _mdnsActive = true;
         MDNS.addService("http", "tcp", 80);  // Advertise HTTP service on port 80
-        LogBox::line("mDNS started: " + hostname + ".local");
+        Logger::line("mDNS started: " + hostname + ".local");
         return true;
     }
     
-    LogBox::line("WARNING: Failed to start mDNS");
+    Logger::line("WARNING: Failed to start mDNS");
     _mdnsActive = false;
     return false;
 }

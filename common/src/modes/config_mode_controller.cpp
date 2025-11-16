@@ -17,7 +17,7 @@ bool ConfigModeController::begin() {
     
     // For partial config, we may not have a full config to load
     if (!hasPartialConfig && !configManager->loadConfig(config)) {
-        LogBox::message("Config Mode Error", "Failed to load config");
+        Logger::message("Config Mode Error", "Failed to load config");
         uiError->showConfigLoadError();
         delay(3000);
         
@@ -54,10 +54,10 @@ bool ConfigModeController::begin() {
         return startConfigPortalWithWiFi(localIP);
     } else {
         // WiFi connection failed - fall back to AP mode
-        LogBox::begin("WiFi Failed");
-        LogBox::line("WiFi connection failed in config mode");
-        LogBox::line("Falling back to AP mode");
-        LogBox::end();
+        Logger::begin("WiFi Failed");
+        Logger::line("WiFi connection failed in config mode");
+        Logger::line("Falling back to AP mode");
+        Logger::end();
         
         // Show WiFi failed message (skip on slow displays to reduce screen updates)
 #if DISPLAY_FAST_REFRESH
@@ -81,19 +81,19 @@ bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
     
     // Start configuration portal in CONFIG_MODE
     if (configPortal->begin(CONFIG_MODE)) {
-        LogBox::begin("Config Mode Active");
+        Logger::begin("Config Mode Active");
         if (mdnsHostname.length() > 0) {
-            LogBox::line("Access at: http://" + mdnsHostname + " or http://" + localIP);
+            Logger::line("Access at: http://" + mdnsHostname + " or http://" + localIP);
         } else {
-            LogBox::line("Access at: http://" + localIP);
+            Logger::line("Access at: http://" + localIP);
         }
         if (!hasPartialConfig) {
-            LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
+            Logger::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
         }
-        LogBox::end();
+        Logger::end();
         return true;
     } else {
-        LogBox::message("Portal Error", "Failed to start configuration portal");
+        Logger::message("Portal Error", "Failed to start configuration portal");
         uiError->showPortalError();
         delay(3000);
         
@@ -121,21 +121,21 @@ bool ConfigModeController::startConfigPortalWithAP() {
         
         // Start configuration portal in CONFIG_MODE (with AP)
         if (configPortal->begin(CONFIG_MODE)) {
-            LogBox::begin("Config Mode Active (AP Fallback)");
-            LogBox::line("1. Connect to WiFi: " + apName);
+            Logger::begin("Config Mode Active (AP Fallback)");
+            Logger::line("1. Connect to WiFi: " + apName);
             if (mdnsHostname.length() > 0) {
-                LogBox::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
+                Logger::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
             } else {
-                LogBox::line("2. Open: http://" + apIP);
+                Logger::line("2. Open: http://" + apIP);
             }
-            LogBox::line("3. Update your configuration");
+            Logger::line("3. Update your configuration");
             if (!hasPartialConfig) {
-                LogBox::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
+                Logger::linef("Timeout: %d minutes", CONFIG_MODE_TIMEOUT_MS / 60000);
             }
-            LogBox::end();
+            Logger::end();
             return true;
         } else {
-            LogBox::message("AP Mode Error", "Failed to start AP mode fallback");
+            Logger::message("AP Mode Error", "Failed to start AP mode fallback");
             uiError->showAPStartError();
             delay(3000);
             
@@ -152,7 +152,7 @@ bool ConfigModeController::startConfigPortalWithAP() {
             return false;
         }
     } else {
-        LogBox::message("AP Mode Error", "Failed to start AP mode fallback");
+        Logger::message("AP Mode Error", "Failed to start AP mode fallback");
         uiError->showConfigModeFailure();
         delay(3000);
         
@@ -187,10 +187,10 @@ bool ConfigModeController::isTimedOut(unsigned long startTime) {
 }
 
 void ConfigModeController::handleTimeout(uint16_t refreshMinutes) {
-    LogBox::begin("Config Timeout");
-    LogBox::line("Config mode timeout");
-    LogBox::line("Restarting device");
-    LogBox::end();
+    Logger::begin("Config Timeout");
+    Logger::line("Config mode timeout");
+    Logger::line("Restarting device");
+    Logger::end();
     
     // Publish log message for config mode timeout (if MQTT is configured)
     if (mqttManager->begin() && mqttManager->isConfigured()) {

@@ -47,11 +47,11 @@ bool DisplayManager::programPanelVCOM(double vcom, String* diagnostics) {
     _display->einkOn();
     delay(10);
 
-    LogBox::begin("VCOM Programming");
+    Logger::begin("VCOM Programming");
     
     String localDiag;
     auto log = [&](const String& msg) {
-        LogBox::line(msg);
+        Logger::line(msg);
         localDiag += msg + "<br>";
     };
 
@@ -170,12 +170,12 @@ bool DisplayManager::programPanelVCOM(double vcom, String* diagnostics) {
     log("Post-reload from EEPROM: 0x03=" + String(vL) + ", 0x04=" + String(vH) + ", check=" + String(check));
     if (check != raw) {
         log("Verify failed: wrote " + String(raw) + ", read back " + String(check));
-        LogBox::end();
+        Logger::end();
         if (diagnostics) *diagnostics = localDiag;
         return false;
     }
     log("Programming successful: " + String(vcom, 3) + " V");
-    LogBox::end();
+    Logger::end();
     if (diagnostics) *diagnostics = localDiag;
     return true;
 }
@@ -227,7 +227,7 @@ double DisplayManager::readPanelVCOM() {
 
 // Display VCOM test pattern with grayscale bars (3-bit mode on supported devices)
 void DisplayManager::showVcomTestPattern() {
-    LogBox::begin("VCOM Test Pattern");
+    Logger::begin("VCOM Test Pattern");
     
     // Switch to 3-bit mode for grayscale display (not available on Inkplate 2)
     #ifndef DISPLAY_MODE_INKPLATE2
@@ -242,10 +242,10 @@ void DisplayManager::showVcomTestPattern() {
     String vcomMessage = "Current VCOM: ";
     if (!isnan(currentVcom)) {
         vcomMessage += String(currentVcom, 2) + " V";
-        LogBox::linef("Current VCOM: %.2f V", currentVcom);
+        Logger::linef("Current VCOM: %.2f V", currentVcom);
     } else {
         vcomMessage += "N/A";
-        LogBox::line("Current VCOM: N/A (read failed)");
+        Logger::line("Current VCOM: N/A (read failed)");
     }
     
     // Use showMessage() to properly handle font baseline positioning
@@ -261,7 +261,7 @@ void DisplayManager::showVcomTestPattern() {
             _display->fillRect(x, 40, barWidth, getHeight() - 40, BLACK);
         }
     }
-    LogBox::line("Displaying test pattern (1-bit checkerboard for Inkplate 2)");
+    Logger::line("Displaying test pattern (1-bit checkerboard for Inkplate 2)");
     #else
     // Draw 8 vertical grayscale bars (0-7 in 3-bit = 8 gray levels)
     int barWidth = getWidth() / 8;
@@ -269,11 +269,11 @@ void DisplayManager::showVcomTestPattern() {
         int x = barWidth * i;
         _display->fillRect(x, 40, barWidth, getHeight() - 40, i);
     }
-    LogBox::line("Displaying test pattern with 8 grayscale bars");
+    Logger::line("Displaying test pattern with 8 grayscale bars");
     #endif
     
     _display->display();
-    LogBox::end();
+    Logger::end();
 }
 
 #endif // DISPLAY_MODE_INKPLATE2

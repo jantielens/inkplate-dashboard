@@ -46,9 +46,9 @@ void PowerManager::begin(uint8_t buttonPin) {
     // Wake when button is pressed (LOW level, assuming active low button)
     esp_sleep_enable_ext0_wakeup((gpio_num_t)_buttonPin, 0);  // 0 = LOW, 1 = HIGH
     
-    LogBox::messagef("PowerManager initialized", "Button pin configured: GPIO %d", _buttonPin);
+    Logger::messagef("PowerManager initialized", "Button pin configured: GPIO %d", _buttonPin);
     #else
-    LogBox::message("PowerManager initialized", "No button on this board");
+    Logger::message("PowerManager initialized", "No button on this board");
     #endif
     
     printWakeupReason();
@@ -63,38 +63,32 @@ WakeupReason PowerManager::detectWakeupReason() {
     
     switch (wakeup_reason) {
         case ESP_SLEEP_WAKEUP_EXT0:
-            LogBox::message("Wakeup Detection", "Wakeup caused by button press (EXT0)");
+            Logger::message("Wakeup", "Button press (EXT0)");
             return WAKEUP_BUTTON;
             
         case ESP_SLEEP_WAKEUP_TIMER:
-            LogBox::message("Wakeup Detection", "Wakeup caused by timer");
+            Logger::message("Wakeup", "Timer");
             return WAKEUP_TIMER;
             
         case ESP_SLEEP_WAKEUP_UNDEFINED: {
             // Check if this was a hardware reset button press
             esp_reset_reason_t reset_reason = esp_reset_reason();
             
-            LogBox::begin("Wakeup Detection");
-            LogBox::linef("Reset reason code: %d", reset_reason);
-            LogBox::linef("RTC boot count: %d", rtc_boot_count);
-            LogBox::linef("RTC was running: %s", rtc_was_running ? "true" : "false");
+            Logger::begin("Wakeup Detection");
+            Logger::linef("Reset: %d, RTC boot: %d", reset_reason, rtc_boot_count);
             
             // Increment boot counter
             rtc_boot_count++;
             
             if (reset_reason == ESP_RST_POWERON) {
                 // Power-on reset - check if this might be reset button vs full power cycle
-                // Open preferences to check if device was running
                 prefs.begin("power_mgr", true);  // Read-only
                 bool was_running = prefs.getBool("was_running", false);
                 prefs.end();
                 
-                LogBox::linef("Device was running flag: %s", was_running ? "true" : "false");
-                
                 if (was_running) {
                     // Device was previously running - this is a reset button press
-                    LogBox::line("Device was running - reset button press detected");
-                    LogBox::end();
+                    Logger::end("Reset button detected");
                     
                     // Clear the flag for next time
                     prefs.begin("power_mgr", false);  // Read-write
@@ -104,9 +98,7 @@ WakeupReason PowerManager::detectWakeupReason() {
                     return WAKEUP_RESET_BUTTON;
                 } else {
                     // Device was not running - genuine first power-on or long power cycle
-                    LogBox::line("Device was not running - initial power-on or long power cycle");
-                    LogBox::line("Setting running flag for reset detection on next boot");
-                    LogBox::end();
+                    Logger::end("First boot");
                     
                     // Set flag so reset button can be detected on next boot
                     prefs.begin("power_mgr", false);  // Read-write
@@ -117,47 +109,44 @@ WakeupReason PowerManager::detectWakeupReason() {
                 }
             } else if (reset_reason == ESP_RST_SW || reset_reason == ESP_RST_DEEPSLEEP) {
                 // Software reset or wake from deep sleep
-                LogBox::line("Software reset or deep sleep wake");
-                LogBox::end();
+                Logger::end("Software reset");
                 return WAKEUP_FIRST_BOOT;
             } else if (reset_reason == ESP_RST_EXT) {
                 // External reset (reset button on some boards)
-                LogBox::line("External reset button pressed");
-                LogBox::end();
+                Logger::end("External reset");
                 return WAKEUP_RESET_BUTTON;
             } else {
-                LogBox::linef("Other reset reason: %d", reset_reason);
-                LogBox::end();
+                Logger::end("Unknown reset");
                 return WAKEUP_FIRST_BOOT;
             }
         }
             
         default:
-            LogBox::messagef("Wakeup Detection", "Wakeup caused by unknown reason: %d", wakeup_reason);
+            Logger::messagef("Wakeup", "Unknown reason: %d", wakeup_reason);
             return WAKEUP_UNKNOWN;
     }
 }
 
 void PowerManager::printWakeupReason() {
-    LogBox::begin("Current Wakeup Reason");
+    Logger::begin("Current Wakeup Reason");
     switch (_wakeupReason) {
         case WAKEUP_TIMER:
-            LogBox::line("TIMER (normal refresh cycle)");
+            Logger::line("TIMER (normal refresh cycle)");
             break;
         case WAKEUP_BUTTON:
-            LogBox::line("BUTTON (config mode requested)");
+            Logger::line("BUTTON (config mode requested)");
             break;
         case WAKEUP_FIRST_BOOT:
-            LogBox::line("FIRST_BOOT (initial setup)");
+            Logger::line("FIRST_BOOT");
             break;
         case WAKEUP_RESET_BUTTON:
-            LogBox::line("RESET_BUTTON (hardware reset pressed)");
+            Logger::line("RESET_BUTTON");
             break;
         default:
-            LogBox::line("UNKNOWN");
+            Logger::line("UNKNOWN");
             break;
     }
-    LogBox::end();
+    Logger::end();
 }
 
 bool PowerManager::isButtonPressed() {
@@ -173,35 +162,30 @@ bool PowerManager::isButtonPressed() {
 ButtonPressType PowerManager::detectButtonPressType() {
     #if defined(HAS_BUTTON) && HAS_BUTTON == false
     // Board has no button - always return no press
-    LogBox::begin("Button Detection");
-    LogBox::line("Board has no physical button");
-    LogBox::line("Skipping button detection");
-    LogBox::end();
+    Logger::message("Button", "No button on this board");
     return BUTTON_PRESS_NONE;
     #endif
     
-    LogBox::begin("Detecting button press type");
-    LogBox::linef("Wake reason: %d (WAKEUP_BUTTON=%d)", _wakeupReason, WAKEUP_BUTTON);
+    Logger::begin("Button Detection");
     
     // Check if button is currently pressed (works for any wake reason)
     bool buttonCurrentlyPressed = isButtonPressed();
-    LogBox::linef("Button currently pressed: %s", buttonCurrentlyPressed ? "YES" : "NO");
     
     if (!buttonCurrentlyPressed) {
         // For button wake, this means it was released quickly (short press)
         // For other wake reasons, no button is pressed
         if (_wakeupReason == WAKEUP_BUTTON) {
-            LogBox::line("Button already released - SHORT PRESS detected");
-            LogBox::end();
+            Logger::line("Button already released - SHORT PRESS detected");
+            Logger::end();
             return BUTTON_PRESS_SHORT;
         } else {
-            LogBox::line("No button press detected");
-            LogBox::end();
+            Logger::line("No button press detected");
+            Logger::end();
             return BUTTON_PRESS_NONE;
         }
     }
     
-    LogBox::line("Button is currently pressed, waiting to determine hold duration...");
+    Logger::line("Button is currently pressed, waiting to determine hold duration...");
     
     // Button is held down, wait for hold duration (2.5 seconds)
     const unsigned long HOLD_THRESHOLD_MS = 2500;
@@ -212,16 +196,16 @@ ButtonPressType PowerManager::detectButtonPressType() {
         if (!isButtonPressed()) {
             // Button was released before timeout
             unsigned long pressDuration = millis() - startTime;
-            LogBox::linef("Button released after %lu ms - SHORT PRESS detected", pressDuration);
-            LogBox::end();
+            Logger::linef("Button released after %lu ms - SHORT PRESS detected", pressDuration);
+            Logger::end();
             return BUTTON_PRESS_SHORT;
         }
         delay(50);  // Small delay to prevent excessive polling
     }
     
     // Button is still held after threshold - it's a long press
-    LogBox::linef("Button held for >= %lu ms - LONG PRESS detected", HOLD_THRESHOLD_MS);
-    LogBox::end();
+    Logger::linef("Button held for >= %lu ms - LONG PRESS detected", HOLD_THRESHOLD_MS);
+    Logger::end();
     return BUTTON_PRESS_LONG;
 }
 
@@ -230,7 +214,7 @@ uint64_t PowerManager::getSleepDuration(uint16_t refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)refreshRateMinutes * 60ULL * 1000000ULL;
     
-    LogBox::messagef("Sleep Duration Calculation", "Sleep duration: %u minutes = %llu microseconds", refreshRateMinutes, microseconds);
+    Logger::messagef("Sleep Duration Calculation", "Sleep duration: %u minutes = %llu microseconds", refreshRateMinutes, microseconds);
     
     return microseconds;
 }
@@ -240,13 +224,13 @@ uint64_t PowerManager::getSleepDuration(float refreshRateMinutes) {
     // 1 minute = 60 seconds = 60,000,000 microseconds
     uint64_t microseconds = (uint64_t)(refreshRateMinutes * 60.0 * 1000000.0);
     
-    LogBox::messagef("Sleep Duration Calculation", "Sleep duration: %.2f minutes = %llu microseconds", refreshRateMinutes, microseconds);
+    Logger::messagef("Sleep Duration Calculation", "Sleep duration: %.2f minutes = %llu microseconds", refreshRateMinutes, microseconds);
     
     return microseconds;
 }
 
 void PowerManager::prepareForSleep() {
-    LogBox::begin("Preparing for deep sleep");
+    Logger::begin("Preparing for deep sleep");
     
     #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
     // Turn off frontlight if active (respects minimum duration internally)
@@ -256,15 +240,15 @@ void PowerManager::prepareForSleep() {
     }
     #endif
     
-    LogBox::line("Disconnecting WiFi...");
+    Logger::line("Disconnecting WiFi...");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     
     // Small delay to ensure WiFi is fully shut down
     delay(100);
     
-    LogBox::line("Ready for deep sleep");
-    LogBox::end();
+    Logger::line("Ready for deep sleep");
+    Logger::end();
 }
 
 void PowerManager::enterDeepSleep(float durationSeconds, float loopTimeSeconds) {
@@ -287,39 +271,39 @@ void PowerManager::enterDeepSleep(float durationSeconds, float loopTimeSeconds) 
     // Mark that we were running (for reset button detection)
     rtc_was_running = true;
     
-    LogBox::begin("Entering Deep Sleep");
+    Logger::begin("Entering Deep Sleep");
     if (buttonOnlyMode) {
-        LogBox::line("Button-only mode (interval = 0)");
-        LogBox::line("No automatic refresh - wake by button press only");
+        Logger::line("Button-only mode (interval = 0)");
+        Logger::line("No automatic refresh - wake by button press only");
     } else {
-        LogBox::linef("Configured interval: %.2f seconds", durationSeconds);
+        Logger::linef("Configured interval: %.2f seconds", durationSeconds);
         if (loopTimeSeconds > 0) {
             uint64_t loopTimeMicros = (uint64_t)(loopTimeSeconds * 1000000.0);
             uint64_t targetCycleMicros = (uint64_t)(durationSeconds * 1000000.0);
             if (loopTimeMicros < targetCycleMicros) {
                 uint64_t adjustedSleepMicros = targetCycleMicros - loopTimeMicros;
                 float adjustedSleepSeconds = adjustedSleepMicros / 1000000.0;
-                LogBox::linef("Active loop time: %.3fs", loopTimeSeconds);
-                LogBox::linef("Adjusted sleep: %.3f seconds", adjustedSleepSeconds);
+                Logger::linef("Active loop time: %.3fs", loopTimeSeconds);
+                Logger::linef("Adjusted sleep: %.3f seconds", adjustedSleepSeconds);
             } else {
-                LogBox::linef("Active loop time: %.3fs (>= interval, no adjustment)", loopTimeSeconds);
+                Logger::linef("Active loop time: %.3fs (>= interval, no adjustment)", loopTimeSeconds);
             }
         }
     }
     #if defined(HAS_BUTTON) && HAS_BUTTON == true
     if (buttonOnlyMode) {
-        LogBox::line("Wake sources: BUTTON only");
+        Logger::line("Wake sources: BUTTON only");
     } else {
-        LogBox::line("Wake sources: TIMER + BUTTON");
+        Logger::line("Wake sources: TIMER + BUTTON");
     }
     #else
     if (buttonOnlyMode) {
-        LogBox::line("Wake sources: NONE (board has no button - will not wake!)");
+        Logger::line("Wake sources: NONE (board has no button - will not wake!)");
     } else {
-        LogBox::line("Wake sources: TIMER only");
+        Logger::line("Wake sources: TIMER only");
     }
     #endif
-    LogBox::end();
+    Logger::end();
     
     // Flush serial before sleeping
     Serial.flush();
@@ -332,7 +316,7 @@ void PowerManager::enterDeepSleep(float durationSeconds, float loopTimeSeconds) 
 }
 
 float PowerManager::readBatteryVoltage(void* inkplate) {
-    LogBox::begin("Reading battery voltage");
+    Logger::begin("Reading battery voltage");
     
     // If Inkplate object provided, use its built-in readBattery() method
     if (inkplate != nullptr) {
@@ -342,8 +326,8 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
         #ifndef DISPLAY_MODE_INKPLATE2
         float voltage = ((Inkplate*)inkplate)->readBattery();
         
-        LogBox::linef("Battery Voltage: %.3f V (from Inkplate library)", voltage);
-        LogBox::end();
+        Logger::linef("Battery Voltage: %.3f V (from Inkplate library)", voltage);
+        Logger::end();
         
         return voltage;
         #endif
@@ -351,7 +335,7 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
     
     #ifdef BATTERY_ADC_PIN
     // Fallback: manual ADC reading if no Inkplate object provided or Inkplate 2
-    LogBox::line("Using manual ADC reading");
+    Logger::line("Using manual ADC reading");
     
     // Configure ADC pin as input
     pinMode(BATTERY_ADC_PIN, INPUT);
@@ -381,15 +365,15 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
     float adcVoltage = (adcValue / 4095.0) * 3.3;
     float batteryVoltage = adcVoltage * 2.0;  // Account for voltage divider
     
-    LogBox::linef("ADC Value: %d (raw)", adcValue);
-    LogBox::linef("ADC Voltage: %.3f V", adcVoltage);
-    LogBox::linef("Battery Voltage: %.3f V (with divider)", batteryVoltage);
-    LogBox::end();
+    Logger::linef("ADC Value: %d (raw)", adcValue);
+    Logger::linef("ADC Voltage: %.3f V", adcVoltage);
+    Logger::linef("Battery Voltage: %.3f V (with divider)", batteryVoltage);
+    Logger::end();
     
     return batteryVoltage;
     #else
-    LogBox::line("Battery ADC pin not defined for this board");
-    LogBox::end();
+    Logger::line("Battery ADC pin not defined for this board");
+    Logger::end();
     return 0.0;
     #endif
 }
@@ -402,7 +386,7 @@ void PowerManager::markDeviceRunning() {
     
     if (!was_already_set) {
         prefs.putBool("was_running", true);
-        LogBox::message("Power Manager", "Device marked as running in NVS (one-time write)");
+        Logger::message("Power Manager", "Device marked as running in NVS (one-time write)");
     }
     
     prefs.end();
@@ -422,8 +406,8 @@ void PowerManager::enableWatchdog(uint32_t timeoutSeconds) {
         timeoutSeconds = WATCHDOG_TIMEOUT_SECONDS;
     }
     
-    LogBox::begin("Watchdog Timer");
-    LogBox::linef("Enabling watchdog with %u second timeout", timeoutSeconds);
+    Logger::begin("Watchdog Timer");
+    Logger::linef("Enabling watchdog with %u second timeout", timeoutSeconds);
     
     try {
         // Initialize watchdog task with specified timeout
@@ -431,25 +415,25 @@ void PowerManager::enableWatchdog(uint32_t timeoutSeconds) {
         esp_task_wdt_init(timeoutSeconds, true);  // true = panic on timeout
         esp_task_wdt_add(NULL);  // Monitor current task (main loop)
         
-        LogBox::line("Watchdog enabled successfully");
-        LogBox::end();
+        Logger::line("Watchdog enabled successfully");
+        Logger::end();
     } catch (...) {
-        LogBox::line("Failed to enable watchdog (may already be enabled)");
-        LogBox::end();
+        Logger::line("Failed to enable watchdog (may already be enabled)");
+        Logger::end();
     }
 }
 
 void PowerManager::disableWatchdog() {
-    LogBox::begin("Watchdog Timer");
-    LogBox::line("Disabling watchdog");
+    Logger::begin("Watchdog Timer");
+    Logger::line("Disabling watchdog");
     
     try {
         esp_task_wdt_delete(NULL);  // Remove current task from monitoring
-        LogBox::line("Watchdog disabled successfully");
-        LogBox::end();
+        Logger::line("Watchdog disabled successfully");
+        Logger::end();
     } catch (...) {
-        LogBox::line("Failed to disable watchdog (may already be disabled)");
-        LogBox::end();
+        Logger::line("Failed to disable watchdog (may already be disabled)");
+        Logger::end();
     }
 }
 

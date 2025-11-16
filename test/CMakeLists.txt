@@ -78,6 +78,12 @@ add_executable(
   ../common/src/config_logic.cpp  # Real production code!
 )
 
+add_executable(
+  logger_tests
+  unit/test_logger.cpp
+  # Logger implementation is included directly in test file
+)
+
 # =============================================================================
 # Integration Test Executables
 # =============================================================================
@@ -117,6 +123,11 @@ target_link_libraries(
 )
 
 target_link_libraries(
+  logger_tests
+  GTest::gtest_main
+)
+
+target_link_libraries(
   integration_tests
   GTest::gtest_main
 )
@@ -131,4 +142,5 @@ gtest_discover_tests(decision_tests)
 gtest_discover_tests(battery_tests)
 gtest_discover_tests(sleep_tests)
 gtest_discover_tests(config_tests)
+gtest_discover_tests(logger_tests)
 gtest_discover_tests(integration_tests)

@@ -14,23 +14,23 @@ bool APModeController::begin() {
         
         // Start configuration portal in BOOT_MODE
         if (configPortal->begin(BOOT_MODE)) {
-            LogBox::begin("Configuration Portal Active (Boot Mode)");
-            LogBox::line("1. Connect to WiFi: " + apName);
+            Logger::begin("Configuration Portal Active (Boot Mode)");
+            Logger::line("1. Connect to WiFi: " + apName);
             if (mdnsHostname.length() > 0) {
-                LogBox::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
+                Logger::line("2. Open: http://" + mdnsHostname + " or http://" + apIP);
             } else {
-                LogBox::line("2. Open: http://" + apIP);
+                Logger::line("2. Open: http://" + apIP);
             }
-            LogBox::line("3. Enter WiFi credentials");
-            LogBox::end();
+            Logger::line("3. Enter WiFi credentials");
+            Logger::end();
             return true;
         } else {
-            LogBox::message("Configuration Portal", "Failed to start configuration portal!");
+            Logger::message("Configuration Portal", "Failed to start configuration portal!");
             uiError->showPortalError();
             return false;
         }
     } else {
-        LogBox::message("Access Point", "Failed to start Access Point!");
+        Logger::message("Access Point", "Failed to start Access Point!");
         uiError->showAPStartError();
         return false;
     }

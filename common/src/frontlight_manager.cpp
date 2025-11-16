@@ -14,7 +14,7 @@ FrontlightManager::FrontlightManager(Inkplate* display)
 
 void FrontlightManager::turnOn(uint8_t brightness, unsigned long minDurationMs) {
     if (!_display) {
-        LogBox::line("FrontlightManager: Display pointer is null");
+        Logger::line("FrontlightManager: Display pointer is null");
         return;
     }
     
@@ -33,10 +33,10 @@ void FrontlightManager::turnOn(uint8_t brightness, unsigned long minDurationMs) 
     _currentBrightness = brightness;
     _minDurationMs = minDurationMs;
     
-    LogBox::begin("Frontlight");
-    LogBox::linef("Frontlight activated (brightness: %d, min duration: %lu ms)", 
+    Logger::begin("Frontlight");
+    Logger::linef("Frontlight activated (brightness: %d, min duration: %lu ms)", 
                  brightness, minDurationMs);
-    LogBox::end();
+    Logger::end();
 }
 
 void FrontlightManager::turnOff() {
@@ -49,14 +49,14 @@ void FrontlightManager::turnOff() {
         unsigned long elapsedTime = millis() - _startTime;
         if (elapsedTime < _minDurationMs) {
             unsigned long remainingTime = _minDurationMs - elapsedTime;
-            LogBox::begin("Frontlight");
-            LogBox::linef("Minimum duration: waiting %lu ms", remainingTime);
-            LogBox::end();
+            Logger::begin("Frontlight");
+            Logger::linef("Minimum duration: waiting %lu ms", remainingTime);
+            Logger::end();
             delay(remainingTime);
         }
     }
     
-    LogBox::line("Turning off frontlight");
+    Logger::line("Turning off frontlight");
     
     // Set brightness to 0 before disabling circuit
     _display->setFrontlight(0);
