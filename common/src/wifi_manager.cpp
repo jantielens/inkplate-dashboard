@@ -103,7 +103,7 @@ bool WiFiManager::isAPActive() {
     return _apActive;
 }
 
-bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount) {
+bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount, bool disableAutoReconnect) {
     Logger::begin("Connecting to WiFi");
     Logger::line("SSID: " + ssid);
     
@@ -123,8 +123,9 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     WiFi.setHostname(hostname.c_str());
     
     // Enable persistent credentials and auto-reconnect for faster connections
+    // Disable auto-reconnect for config portal to prevent connection stalls
     WiFi.persistent(true);
-    WiFi.setAutoReconnect(true);
+    WiFi.setAutoReconnect(!disableAutoReconnect);
     
     // Check if static IP is configured
     if (_configManager && _configManager->getUseStaticIP()) {
@@ -267,7 +268,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     }
 }
 
-bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
+bool WiFiManager::connectToWiFi(uint8_t* outRetryCount, bool disableAutoReconnect) {
     if (!_configManager) {
         Logger::message("WiFi Connection", "ConfigManager not set");
         if (outRetryCount) *outRetryCount = 0;
@@ -283,7 +284,7 @@ bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
         return false;
     }
     
-    return connectToWiFi(ssid, password, outRetryCount);
+    return connectToWiFi(ssid, password, outRetryCount, disableAutoReconnect);
 }
 
 void WiFiManager::disconnect() {
