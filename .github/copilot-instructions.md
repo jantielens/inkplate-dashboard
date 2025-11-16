@@ -1,4 +1,17 @@
-# Copilot Agent Instructions for inkplate-dashboard
+<!--
+GitHub Copilot Instructions for inkplate-dashboard
+
+This file provides repository-wide custom instructions for GitHub Copilot.
+Compatible with:
+- GitHub Copilot in VS Code
+- GitHub Copilot coding agent (GitHub.com)
+- GitHub Copilot Code Review
+
+Last updated: 2025-11-16
+Official documentation: https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions
+-->
+
+# Copilot Instructions for inkplate-dashboard
 
 ## Project Overview
 
