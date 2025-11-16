@@ -156,9 +156,22 @@ int ConfigPortal::getPort() {
     return _port;
 }
 
+void ConfigPortal::sendChunk(const String& chunk) {
+    if (_server != nullptr) {
+        _server->sendContent(chunk);
+    }
+}
+
 void ConfigPortal::handleRoot() {
     Logger::message("Web Request", "Serving configuration page");
-    _server->send(200, "text/html", generateConfigPage());
+    
+    // Use chunked transfer to reduce memory pressure
+    _server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+    _server->send(200, "text/html", "");
+    
+    generateConfigPage();
+    
+    _server->sendContent("");  // End chunked transfer
 }
 
 void ConfigPortal::handleCSS() {
@@ -505,7 +518,7 @@ bool ConfigPortal::validateIPv4Format(const String& ip) {
     return true;
 }
 
-String ConfigPortal::generateConfigPage() {
+void ConfigPortal::generateConfigPage() {
     // Load current configuration if available
     DashboardConfig currentConfig;
     bool hasConfig = _configManager->isConfigured() && _configManager->loadConfig(currentConfig);
@@ -519,37 +532,37 @@ String ConfigPortal::generateConfigPage() {
         hasPartialConfig = true;
     }
     
-    // Pre-allocate string to avoid reallocations (estimate: 35KB without inline CSS)
-    String html;
-    html.reserve(36000);  // Reserve 35KB
+    // Use chunked sending to reduce peak memory from 36KB to ~4KB
+    String chunk;
+    chunk.reserve(4096);  // 4KB chunks
     
-    html = CONFIG_PORTAL_PAGE_HEADER_START;
-    html += "<title>Inkplate Dashboard Setup</title>";
-    html += "<link rel='stylesheet' href='/styles.css'>";
-    html += "</head><body>";
-    html += "<div class='container'>";
-    html += "<h1>📊 Inkplate Dashboard</h1>";
+    chunk = CONFIG_PORTAL_PAGE_HEADER_START;
+    chunk += "<title>Inkplate Dashboard Setup</title>";
+    chunk += "<link rel='stylesheet' href='/styles.css'>";
+    chunk += "</head><body>";
+    chunk += "<div class='container'>";
+    chunk += "<h1>📊 Inkplate Dashboard</h1>";
     
     // Different subtitle based on mode
     if (_mode == BOOT_MODE) {
-        html += "<p class='subtitle'>Step 1: Connect to WiFi</p>";
+        chunk += "<p class='subtitle'>Step 1: Connect to WiFi</p>";
     } else if (hasConfig) {
-        html += "<p class='subtitle'>Update your dashboard configuration</p>";
+        chunk += "<p class='subtitle'>Update your dashboard configuration</p>";
     } else {
-        html += "<p class='subtitle'>Step 2: Configure your dashboard</p>";
+        chunk += "<p class='subtitle'>Step 2: Configure your dashboard</p>";
     }
     
-    html += "<div class='device-info'>";
-    html += "<strong>Device:</strong> " + _wifiManager->getAPName() + "<br>";
+    chunk += "<div class='device-info'>";
+    chunk += "<strong>Device:</strong> " + _wifiManager->getAPName() + "<br>";
     
     // Show appropriate IP address and mDNS hostname
     if (_wifiManager->isConnected()) {
         String mdnsHostname = _wifiManager->getMDNSHostname();
-        html += "<strong>IP:</strong> " + _wifiManager->getLocalIP() + "<br>";
+        chunk += "<strong>IP:</strong> " + _wifiManager->getLocalIP() + "<br>";
         
         // Show mDNS hostname if available
         if (mdnsHostname.length() > 0) {
-            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a><br>";
+            chunk += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a><br>";
         }
         
         // Show WiFi optimization info
@@ -560,142 +573,146 @@ String ConfigPortal::generateConfigPage() {
             char bssidStr[18];
             snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X",
                     bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
-            html += "<strong>WiFi Optimization:</strong> Active ✓<br>";
-            html += "<small>Channel " + String(channel) + ", BSSID " + String(bssidStr) + "</small>";
+            chunk += "<strong>WiFi Optimization:</strong> Active ✓<br>";
+            chunk += "<small>Channel " + String(channel) + ", BSSID " + String(bssidStr) + "</small>";
         } else {
-            html += "<strong>WiFi Optimization:</strong> Will activate on next power cycle";
+            chunk += "<strong>WiFi Optimization:</strong> Will activate on next power cycle";
         }
     } else {
         String mdnsHostname = _wifiManager->getMDNSHostname();
-        html += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress() + "<br>";
+        chunk += "<strong>IP:</strong> " + _wifiManager->getAPIPAddress() + "<br>";
         
         // Show mDNS hostname if available
         if (mdnsHostname.length() > 0) {
-            html += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a>";
+            chunk += "<strong>Hostname:</strong> <a href='http://" + mdnsHostname + "' target='_blank'>" + mdnsHostname + "</a>";
         }
     }
-    html += "</div>";
+    chunk += "</div>";
     
-    html += "<form action='/submit' method='POST'>";
+    chunk += "<form action='/submit' method='POST'>";
+    sendChunk(chunk);  // Send header chunk
     
     // WiFi Network Section
-    html += SECTION_START("📶", "WiFi Network");
+    chunk = "";  // Clear for next section
+    chunk += SECTION_START("📶", "WiFi Network");
     
     // WiFi SSID - always shown
-    html += "<div class='form-group'>";
-    html += "<label for='ssid'>WiFi Network Name (SSID) *</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='ssid'>WiFi Network Name (SSID) *</label>";
     if (hasConfig || hasPartialConfig) {
-        html += "<input type='text' id='ssid' name='ssid' required placeholder='Enter your WiFi network name' value='" + currentConfig.wifiSSID + "'>";
+        chunk += "<input type='text' id='ssid' name='ssid' required placeholder='Enter your WiFi network name' value='" + currentConfig.wifiSSID + "'>";
     } else {
-        html += "<input type='text' id='ssid' name='ssid' required placeholder='Enter your WiFi network name'>";
+        chunk += "<input type='text' id='ssid' name='ssid' required placeholder='Enter your WiFi network name'>";
     }
-    html += "</div>";
+    chunk += "</div>";
     
     // WiFi Password - always shown
-    html += "<div class='form-group'>";
-    html += "<label for='password'>WiFi Password</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='password'>WiFi Password</label>";
     if ((hasConfig || hasPartialConfig) && currentConfig.wifiPassword.length() > 0) {
-        html += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)' value='" + currentConfig.wifiPassword + "'>";
-        html += "<div class='help-text'>Password is set. Leave empty to keep current password.</div>";
+        chunk += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)' value='" + currentConfig.wifiPassword + "'>";
+        chunk += "<div class='help-text'>Password is set. Leave empty to keep current password.</div>";
     } else {
-        html += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)'>";
+        chunk += "<input type='password' id='password' name='password' placeholder='Enter WiFi password (leave empty if none)'>";
     }
-    html += "</div>";
+    chunk += "</div>";
     
     // Friendly Name (Device Name) - optional, shown in both modes
-    html += "<div class='form-group'>";
-    html += "<label for='friendlyname'>Device Name (optional)</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='friendlyname'>Device Name (optional)</label>";
     String currentFriendlyName = (hasConfig || hasPartialConfig) ? currentConfig.friendlyName : "";
-    html += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
-    html += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
-    html += "<div class='help-text'>";
+    chunk += "<input type='text' id='friendlyname' name='friendlyname' placeholder='e.g., Living Room' value='" + currentFriendlyName + "' maxlength='24' oninput='sanitizeFriendlyNamePreview()'>";
+    chunk += "<div id='friendlyname-preview' style='font-size: 13px; margin-top: 5px; color: #666;'></div>";
+    chunk += "<div class='help-text'>";
     if (_mode == BOOT_MODE) {
-        html += "Set a friendly name now to access Step 2 via <code>yourname.local</code> (instead of IP address). ";
-        html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
-        html += "Leave empty to use MAC-based ID.";
+        chunk += "Set a friendly name now to access Step 2 via <code>yourname.local</code> (instead of IP address). ";
+        chunk += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
+        chunk += "Leave empty to use MAC-based ID.";
     } else {
-        html += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname (e.g., <code>kitchen.local</code>). ";
-        html += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
-        html += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
-        html += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
+        chunk += "Optional user-friendly name for MQTT topics, Home Assistant, and network hostname (e.g., <code>kitchen.local</code>). ";
+        chunk += "Rules: lowercase letters (a-z), digits (0-9), hyphens (-), max 24 characters. ";
+        chunk += "No leading/trailing hyphens. Leave empty to use MAC-based ID. ";
+        chunk += "<strong>⚠️ Changing this creates a new device in Home Assistant</strong> (old entities will stop updating).";
     }
-    html += "</div>";
-    html += "</div>";
+    chunk += "</div>";
+    chunk += "</div>";
     
     // IP config only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
         // Network Settings (Static IP)
-        html += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
-        html += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Choose between automatic IP assignment (DHCP) or manual static IP configuration. Static IP can reduce wake time by 0.5-2 seconds per cycle.</div>";
+        chunk += "<div class='form-group' style='margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;'>";
+        chunk += "<label style='font-weight: bold; display: block; margin-bottom: 10px;'>🌐 Network Configuration</label>";
+        chunk += "<div class='help-text' style='margin-bottom: 15px;'>Choose between automatic IP assignment (DHCP) or manual static IP configuration. Static IP can reduce wake time by 0.5-2 seconds per cycle.</div>";
         
         bool useStaticIP = (hasConfig || hasPartialConfig) && currentConfig.useStaticIP;
     
-    html += "<div style='margin-bottom: 15px;'>";
-    html += "<label style='display: flex; align-items: center; gap: 8px; margin-bottom: 8px;'>";
-    html += "<input type='radio' name='ip_mode' value='dhcp' id='ip_mode_dhcp'" + String(!useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
-    html += "<span>DHCP (Automatic) - Default</span>";
-    html += "</label>";
-    html += "<label style='display: flex; align-items: center; gap: 8px;'>";
-    html += "<input type='radio' name='ip_mode' value='static' id='ip_mode_static'" + String(useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
-    html += "<span>Static IP (Manual)</span>";
-    html += "</label>";
-    html += "</div>";
+    chunk += "<div style='margin-bottom: 15px;'>";
+    chunk += "<label style='display: flex; align-items: center; gap: 8px; margin-bottom: 8px;'>";
+    chunk += "<input type='radio' name='ip_mode' value='dhcp' id='ip_mode_dhcp'" + String(!useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
+    chunk += "<span>DHCP (Automatic) - Default</span>";
+    chunk += "</label>";
+    chunk += "<label style='display: flex; align-items: center; gap: 8px;'>";
+    chunk += "<input type='radio' name='ip_mode' value='static' id='ip_mode_static'" + String(useStaticIP ? " checked" : "") + " onchange='toggleStaticIPFields()'>";
+    chunk += "<span>Static IP (Manual)</span>";
+    chunk += "</label>";
+    chunk += "</div>";
     
     // Static IP fields container
     String staticDisplay = useStaticIP ? "" : " style='display:none;'";
-    html += "<div id='static_ip_fields'" + staticDisplay + ">";
+    chunk += "<div id='static_ip_fields'" + staticDisplay + ">";
     
     // Static IP Address
-    html += "<div class='form-group'>";
-    html += "<label for='static_ip'>IP Address *</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='static_ip'>IP Address *</label>";
     String staticIPValue = (hasConfig || hasPartialConfig) ? currentConfig.staticIP : "";
-    html += "<input type='text' id='static_ip' name='static_ip' placeholder='e.g., 192.168.1.100' value='" + staticIPValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
-    html += "<div class='help-text'>Enter the static IP address for this device</div>";
-    html += "</div>";
+    chunk += "<input type='text' id='static_ip' name='static_ip' placeholder='e.g., 192.168.1.100' value='" + staticIPValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    chunk += "<div class='help-text'>Enter the static IP address for this device</div>";
+    chunk += "</div>";
     
     // Gateway
-    html += "<div class='form-group'>";
-    html += "<label for='gateway'>Gateway *</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='gateway'>Gateway *</label>";
     String gatewayValue = (hasConfig || hasPartialConfig) ? currentConfig.gateway : "";
-    html += "<input type='text' id='gateway' name='gateway' placeholder='e.g., 192.168.1.1' value='" + gatewayValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
-    html += "<div class='help-text'>Usually your router's IP address</div>";
-    html += "</div>";
+    chunk += "<input type='text' id='gateway' name='gateway' placeholder='e.g., 192.168.1.1' value='" + gatewayValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    chunk += "<div class='help-text'>Usually your router's IP address</div>";
+    chunk += "</div>";
     
     // Subnet Mask
-    html += "<div class='form-group'>";
-    html += "<label for='subnet'>Subnet Mask *</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='subnet'>Subnet Mask *</label>";
     String subnetValue = (hasConfig || hasPartialConfig) && currentConfig.subnet.length() > 0 ? currentConfig.subnet : "255.255.255.0";
-    html += "<input type='text' id='subnet' name='subnet' placeholder='e.g., 255.255.255.0' value='" + subnetValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
-    html += "<div class='help-text'>Typically 255.255.255.0 for home networks</div>";
-    html += "</div>";
+    chunk += "<input type='text' id='subnet' name='subnet' placeholder='e.g., 255.255.255.0' value='" + subnetValue + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    chunk += "<div class='help-text'>Typically 255.255.255.0 for home networks</div>";
+    chunk += "</div>";
     
     // Primary DNS
-    html += "<div class='form-group'>";
-    html += "<label for='dns1'>Primary DNS *</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='dns1'>Primary DNS *</label>";
     String dns1Value = (hasConfig || hasPartialConfig) && currentConfig.primaryDNS.length() > 0 ? currentConfig.primaryDNS : "8.8.8.8";
-    html += "<input type='text' id='dns1' name='dns1' placeholder='e.g., 8.8.8.8' value='" + dns1Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
-    html += "<div class='help-text'>Google DNS (8.8.8.8) or Cloudflare (1.1.1.1)</div>";
-    html += "</div>";
+    chunk += "<input type='text' id='dns1' name='dns1' placeholder='e.g., 8.8.8.8' value='" + dns1Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    chunk += "<div class='help-text'>Google DNS (8.8.8.8) or Cloudflare (1.1.1.1)</div>";
+    chunk += "</div>";
     
     // Secondary DNS (optional)
-    html += "<div class='form-group'>";
-    html += "<label for='dns2'>Secondary DNS (Optional)</label>";
+    chunk += "<div class='form-group'>";
+    chunk += "<label for='dns2'>Secondary DNS (Optional)</label>";
     String dns2Value = (hasConfig || hasPartialConfig) ? currentConfig.secondaryDNS : "";
-    html += "<input type='text' id='dns2' name='dns2' placeholder='e.g., 8.8.4.4' value='" + dns2Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
-    html += "<div class='help-text'>Backup DNS server (optional)</div>";
-    html += "</div>";
+    chunk += "<input type='text' id='dns2' name='dns2' placeholder='e.g., 8.8.4.4' value='" + dns2Value + "' pattern='^(\\d{1,3}\\.){3}\\d{1,3}$'>";
+    chunk += "<div class='help-text'>Backup DNS server (optional)</div>";
+    chunk += "</div>";
     
-        html += "</div>"; // End static_ip_fields
-        html += "</div>"; // End form-group
+        chunk += "</div>"; // End static_ip_fields
+        chunk += "</div>"; // End form-group
     } // End CONFIG_MODE check for friendly name and IP config
     
-    html += SECTION_END();
+    chunk += SECTION_END();
+    sendChunk(chunk);  // Send WiFi section
     
     // Dashboard Image Section - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += SECTION_START("🖼️", "Dashboard Images");
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Fill 1 image for single image mode, or 2+ for automatic carousel rotation. Supported formats: PNG or JPEG (baseline encoding only, not progressive). Image must match your screen resolution.</div>";
+        chunk = "";  // Clear for images section
+        chunk += SECTION_START("🖼️", "Dashboard Images");
+        chunk += "<div class='help-text' style='margin-bottom: 15px;'>Fill 1 image for single image mode, or 2+ for automatic carousel rotation. Supported formats: PNG or JPEG (baseline encoding only, not progressive). Image must match your screen resolution.</div>";
         
         // Get existing image configuration if available
         uint8_t existingCount = hasConfig ? currentConfig.imageCount : 0;
@@ -708,19 +725,19 @@ String ConfigPortal::generateConfigPage() {
             int existingInterval = hasExisting ? currentConfig.imageIntervals[i] : DEFAULT_INTERVAL_MINUTES;
             bool existingStay = hasExisting ? currentConfig.imageStay[i] : false;
             
-            html += "<div class='image-slot' id='slot_" + String(i) + "'>";
-            html += "<label>Image " + imageNum + " URL *</label>";
-            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "' required>";
-            html += "<label>Display for (minutes) *</label>";
-            html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "' required>";
-            html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
-            html += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
-            html += "<input type='checkbox' name='img_stay_" + String(i) + "'";
-            if (existingStay) html += " checked";
-            html += ">";
-            html += "Stay on this image (advance on button press)";
-            html += "</label>";
-            html += "</div>";
+            chunk += "<div class='image-slot' id='slot_" + String(i) + "'>";
+            chunk += "<label>Image " + imageNum + " URL *</label>";
+            chunk += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + imageNum + ".png' value='" + existingUrl + "' required>";
+            chunk += "<label>Display for (minutes) *</label>";
+            chunk += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "' required>";
+            chunk += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
+            chunk += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
+            chunk += "<input type='checkbox' name='img_stay_" + String(i) + "'";
+            if (existingStay) chunk += " checked";
+            chunk += ">";
+            chunk += "Stay on this image (advance on button press)";
+            chunk += "</label>";
+            chunk += "</div>";
         }
         
         // Add remaining slots (2-10) if they have data
@@ -731,143 +748,147 @@ String ConfigPortal::generateConfigPage() {
             bool existingStay = hasExisting ? currentConfig.imageStay[i] : false;
             String displayStyle = hasExisting ? "" : " style='display:none;'";
             
-            html += "<div class='image-slot' id='slot_" + String(i) + "'" + displayStyle + ">";
-            html += "<div style='display: flex; justify-content: space-between; align-items: center;'>";
-            html += "<label>Image " + String(i + 1) + " URL</label>";
-            html += "<button type='button' class='btn-remove' id='remove_" + String(i) + "' onclick='removeLastImageSlot()'>❌ Remove</button>";
-            html += "</div>";
-            html += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + String(i + 1) + ".png' value='" + existingUrl + "'>";
-            html += "<label>Display for (minutes)</label>";
-            html += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "'>";
-            html += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
-            html += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
-            html += "<input type='checkbox' name='img_stay_" + String(i) + "'";
-            if (existingStay) html += " checked";
-            html += ">";
-            html += "Stay on this image (advance on button press)";
-            html += "</label>";
-            html += "</div>";
+            chunk += "<div class='image-slot' id='slot_" + String(i) + "'" + displayStyle + ">";
+            chunk += "<div style='display: flex; justify-content: space-between; align-items: center;'>";
+            chunk += "<label>Image " + String(i + 1) + " URL</label>";
+            chunk += "<button type='button' class='btn-remove' id='remove_" + String(i) + "' onclick='removeLastImageSlot()'>❌ Remove</button>";
+            chunk += "</div>";
+            chunk += "<input type='text' name='img_url_" + String(i) + "' placeholder='https://example.com/image" + String(i + 1) + ".png' value='" + existingUrl + "'>";
+            chunk += "<label>Display for (minutes)</label>";
+            chunk += "<input type='number' name='img_int_" + String(i) + "' min='0' placeholder='5' value='" + String(existingInterval) + "'>";
+            chunk += "<div class='help-text'>Set to 0 for button-only mode (no automatic refresh - wake by button press only)</div>";
+            chunk += "<label style='display: flex; align-items: center; gap: 10px; margin-top: 10px;'>";
+            chunk += "<input type='checkbox' name='img_stay_" + String(i) + "'";
+            if (existingStay) chunk += " checked";
+            chunk += ">";
+            chunk += "Stay on this image (advance on button press)";
+            chunk += "</label>";
+            chunk += "</div>";
         }
         
         // Add button to show more slots (hidden when all 10 are visible)
         String visibleSlots = String(existingCount > 1 ? existingCount : 1);
         String buttonDisplay = existingCount >= MAX_IMAGE_SLOTS ? " style='display:none;'" : "";
-        html += "<button type='button' id='addImageBtn' onclick='addImageSlot()'" + buttonDisplay + ">➕ Add Another Image (up to 10 total)</button>";
+        chunk += "<button type='button' id='addImageBtn' onclick='addImageSlot()'" + buttonDisplay + ">➕ Add Another Image (up to 10 total)</button>";
         
         // Timezone Offset
-        html += "<div class='form-group'>";
-        html += "<label for='timezone'>Timezone Offset (UTC)</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='timezone'>Timezone Offset (UTC)</label>";
         if (hasConfig) {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
+            chunk += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='" + String(currentConfig.timezoneOffset) + "' placeholder='0'>";
         } else {
-            html += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
+            chunk += "<input type='number' id='timezone' name='timezone' min='-12' max='14' value='0' placeholder='0'>";
         }
-        html += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
-        html += "</div>";
+        chunk += "<div class='help-text'>Enter your timezone offset (range: -12 to +14). Keep in mind that Daylight Saving Time may apply in your region - you'll need to update this offset when DST changes.</div>";
+        chunk += "</div>";
         
         // Screen Rotation
-        html += "<div class='form-group'>";
-        html += "<label for='rotation'>Screen Rotation</label>";
-        html += "<select id='rotation' name='rotation'>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='rotation'>Screen Rotation</label>";
+        chunk += "<select id='rotation' name='rotation'>";
         uint8_t currentRotation = hasConfig ? currentConfig.screenRotation : 0;
-        html += "<option value='0'" + String(currentRotation == 0 ? " selected" : "") + ">0° (Landscape)</option>";
-        html += "<option value='1'" + String(currentRotation == 1 ? " selected" : "") + ">90° (Portrait)</option>";
-        html += "<option value='2'" + String(currentRotation == 2 ? " selected" : "") + ">180° (Inverted Landscape)</option>";
-        html += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
-        html += "</select>";
-        html += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
-        html += "</div>";
+        chunk += "<option value='0'" + String(currentRotation == 0 ? " selected" : "") + ">0° (Landscape)</option>";
+        chunk += "<option value='1'" + String(currentRotation == 1 ? " selected" : "") + ">90° (Portrait)</option>";
+        chunk += "<option value='2'" + String(currentRotation == 2 ? " selected" : "") + ">180° (Inverted Landscape)</option>";
+        chunk += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
+        chunk += "</select>";
+        chunk += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
+        chunk += "</div>";
         
         // Debug mode toggle
-        html += "<div class='form-group'>";
-        html += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
-        html += "<input type='checkbox' id='debugmode' name='debugmode'";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
+        chunk += "<input type='checkbox' id='debugmode' name='debugmode'";
         if (hasConfig && currentConfig.debugMode) {
-            html += " checked";
+            chunk += " checked";
         }
-        html += "> Enable on-screen debug messages";
-        html += "</label>";
-        html += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
-        html += "</div>";
+        chunk += "> Enable on-screen debug messages";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
+        chunk += "</div>";
         
         // Frontlight configuration (only for boards with HAS_FRONTLIGHT)
         #if defined(HAS_FRONTLIGHT) && HAS_FRONTLIGHT == true
-        html += "<div class='form-group'>";
-        html += "<label for='frontlight_duration'>Frontlight Duration (seconds)</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='frontlight_duration'>Frontlight Duration (seconds)</label>";
         uint8_t currentDuration = hasConfig ? currentConfig.frontlightDuration : 0;
-        html += "<input type='number' id='frontlight_duration' name='frontlight_duration' min='0' max='255' value='" + String(currentDuration) + "' placeholder='0'>";
-        html += "<div class='help-text'>How long to keep the frontlight on during manual button refresh (0 = disabled, default). When set to 0, frontlight is never activated and device goes to sleep immediately after refresh.</div>";
-        html += "</div>";
+        chunk += "<input type='number' id='frontlight_duration' name='frontlight_duration' min='0' max='255' value='" + String(currentDuration) + "' placeholder='0'>";
+        chunk += "<div class='help-text'>How long to keep the frontlight on during manual button refresh (0 = disabled, default). When set to 0, frontlight is never activated and device goes to sleep immediately after refresh.</div>";
+        chunk += "</div>";
         
-        html += "<div class='form-group'>";
-        html += "<label for='frontlight_brightness'>Frontlight Brightness (0-63)</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='frontlight_brightness'>Frontlight Brightness (0-63)</label>";
         uint8_t currentBrightness = hasConfig ? currentConfig.frontlightBrightness : 63;
-        html += "<input type='number' id='frontlight_brightness' name='frontlight_brightness' min='0' max='63' value='" + String(currentBrightness) + "' placeholder='63'>";
-        html += "<div class='help-text'>Brightness level when frontlight is active (0-63, where 63 is maximum brightness). Not used if duration is set to 0.</div>";
-        html += "</div>";
+        chunk += "<input type='number' id='frontlight_brightness' name='frontlight_brightness' min='0' max='63' value='" + String(currentBrightness) + "' placeholder='63'>";
+        chunk += "<div class='help-text'>Brightness level when frontlight is active (0-63, where 63 is maximum brightness). Not used if duration is set to 0.</div>";
+        chunk += "</div>";
         #endif
         
-        html += SECTION_END();
+        chunk += SECTION_END();
+        sendChunk(chunk);  // Send image section
         
         // MQTT Section
-        html += SECTION_START("📡", "MQTT / Home Assistant");
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Configure MQTT to send battery voltage to Home Assistant (optional)</div>";
+        chunk = "";  // Clear for MQTT section
+        chunk += SECTION_START("📡", "MQTT / Home Assistant");
+        chunk += "<div class='help-text' style='margin-bottom: 15px;'>Configure MQTT to send battery voltage to Home Assistant (optional)</div>";
         
         // MQTT Broker URL
-        html += "<div class='form-group'>";
-        html += "<label for='mqttbroker'>MQTT Broker URL</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='mqttbroker'>MQTT Broker URL</label>";
         if (hasConfig) {
-            html += "<input type='text' id='mqttbroker' name='mqttbroker' placeholder='mqtt://broker.example.com:1883' value='" + currentConfig.mqttBroker + "'>";
+            chunk += "<input type='text' id='mqttbroker' name='mqttbroker' placeholder='mqtt://broker.example.com:1883' value='" + currentConfig.mqttBroker + "'>";
         } else {
-            html += "<input type='text' id='mqttbroker' name='mqttbroker' placeholder='mqtt://broker.example.com:1883'>";
+            chunk += "<input type='text' id='mqttbroker' name='mqttbroker' placeholder='mqtt://broker.example.com:1883'>";
         }
-        html += "<div class='help-text'>Leave empty to disable MQTT reporting</div>";
-        html += "</div>";
+        chunk += "<div class='help-text'>Leave empty to disable MQTT reporting</div>";
+        chunk += "</div>";
         
         // MQTT Username
-        html += "<div class='form-group'>";
-        html += "<label for='mqttuser'>MQTT Username (optional)</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='mqttuser'>MQTT Username (optional)</label>";
         if (hasConfig) {
-            html += "<input type='text' id='mqttuser' name='mqttuser' placeholder='username' value='" + currentConfig.mqttUsername + "'>";
+            chunk += "<input type='text' id='mqttuser' name='mqttuser' placeholder='username' value='" + currentConfig.mqttUsername + "'>";
         } else {
-            html += "<input type='text' id='mqttuser' name='mqttuser' placeholder='username'>";
+            chunk += "<input type='text' id='mqttuser' name='mqttuser' placeholder='username'>";
         }
-        html += "</div>";
+        chunk += "</div>";
         
         // MQTT Password
-        html += "<div class='form-group'>";
-        html += "<label for='mqttpass'>MQTT Password (optional)</label>";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='mqttpass'>MQTT Password (optional)</label>";
         if (hasConfig && currentConfig.mqttPassword.length() > 0) {
-            html += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password' value='" + currentConfig.mqttPassword + "'>";
-            html += "<div class='help-text'>Password is set. Leave empty to keep current password.</div>";
+            chunk += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password' value='" + currentConfig.mqttPassword + "'>";
+            chunk += "<div class='help-text'>Password is set. Leave empty to keep current password.</div>";
         } else {
-            html += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password'>";
+            chunk += "<input type='password' id='mqttpass' name='mqttpass' placeholder='password'>";
         }
-        html += "</div>";
-        html += SECTION_END();
+        chunk += "</div>";
+        chunk += SECTION_END();
+        sendChunk(chunk);  // Send MQTT section
         
         // Scheduling Section
-        html += SECTION_START("🕐", "Scheduling");
+        chunk = "";  // Clear for scheduling section
+        chunk += SECTION_START("🕐", "Scheduling");
         
         // CRC32 change detection toggle
-        html += "<div class='form-group'>";
-        html += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
-        html += "<input type='checkbox' id='crc32check' name='crc32check'";
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='crc32check' style='display: flex; align-items: center; gap: 10px;'>";
+        chunk += "<input type='checkbox' id='crc32check' name='crc32check'";
         if (hasConfig && currentConfig.useCRC32Check) {
-            html += " checked";
+            chunk += " checked";
         }
-        html += "> Enable CRC32-based change detection";
-        html += "</label>";
-        html += "<div class='help-text'>Skips image download & refresh when unchanged. Works in single image mode and carousel mode (for images with stay:true flag). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
-        html += "</div>";
+        chunk += "> Enable CRC32-based change detection";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Skips image download & refresh when unchanged. Works in single image mode and carousel mode (for images with stay:true flag). Requires compatible web server that generates .crc32 checksum files (naming: image.png.crc32). Significantly extends battery life.</div>";
+        chunk += "</div>";
         
         // Hourly Schedule - Update Hours
-        html += "<div class='form-group' style='margin-top: 20px;'>";
-        html += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
-        html += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery.</div>";
+        chunk += "<div class='form-group' style='margin-top: 20px;'>";
+        chunk += "<label style='font-size: 16px; margin-bottom: 5px;'>📅 Update Hours</label>";
+        chunk += "<div class='help-text' style='margin-bottom: 15px;'>Select which hours the device should perform updates. Unchecked hours will be skipped to save battery.</div>";
         
         // 24 checkboxes in a 4x6 grid (4 columns for better UI fit)
-        html += "<div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;'>";
+        chunk += "<div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;'>";
         for (int hour = 0; hour < 24; hour++) {
             // Check if hour is enabled: use current config if available, otherwise default to enabled
             bool isEnabled = hasConfig ? 
@@ -876,75 +897,76 @@ String ConfigPortal::generateConfigPage() {
             
             int nextHour = (hour + 1) % 24;
             
-            html += "<label style='display: flex; align-items: center; gap: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; cursor: pointer;'>";
-            html += "<input type='checkbox' id='hour_" + String(hour) + "' name='hour_" + String(hour) + "' class='hour-checkbox'";
+            chunk += "<label style='display: flex; align-items: center; gap: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; cursor: pointer;'>";
+            chunk += "<input type='checkbox' id='hour_" + String(hour) + "' name='hour_" + String(hour) + "' class='hour-checkbox'";
             if (isEnabled) {
-                html += " checked";
+                chunk += " checked";
             }
-            html += "> <div style='line-height: 1.2;'><div>" + String(hour < 10 ? "0" : "") + String(hour) + ":00</div>";
-            html += "<div style='font-size: 11px; color: #999; margin-top: 1px;'>to " + String(nextHour < 10 ? "0" : "") + String(nextHour) + ":00</div></div>";
-            html += "</label>";
+            chunk += "> <div style='line-height: 1.2;'><div>" + String(hour < 10 ? "0" : "") + String(hour) + ":00</div>";
+            chunk += "<div style='font-size: 11px; color: #999; margin-top: 1px;'>to " + String(nextHour < 10 ? "0" : "") + String(nextHour) + ":00</div></div>";
+            chunk += "</label>";
         }
-        html += "</div>";
-        html += "</div>";
+        chunk += "</div>";
+        chunk += "</div>";
         
         // Battery Life Estimator - placed after all power-impacting settings
-        html += CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML;
-        html += SECTION_END();
+        chunk += CONFIG_PORTAL_BATTERY_ESTIMATOR_HTML;
+        chunk += SECTION_END();
+        sendChunk(chunk);  // Send scheduling section
     }
     
     // Submit button - text varies by mode
+    chunk = "";  // Clear for footer
     if (_mode == BOOT_MODE) {
-        html += "<button type='submit'>➡️ Next: Configure Dashboard</button>";
+        chunk += "<button type='submit'>➡️ Next: Configure Dashboard</button>";
     } else if (hasConfig) {
-        html += "<button type='submit'>🔄 Update Configuration</button>";
+        chunk += "<button type='submit'>🔄 Update Configuration</button>";
     } else {
-        html += "<button type='submit'>💾 Save Configuration</button>";
+        chunk += "<button type='submit'>💾 Save Configuration</button>";
     }
-    html += "</form>";
+    chunk += "</form>";
     
     // OTA Update button - only shown in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_FIRMWARE_UPDATE_BUTTON;
-        html += CONFIG_PORTAL_REBOOT_BUTTON;
+        chunk += CONFIG_PORTAL_FIRMWARE_UPDATE_BUTTON;
+        chunk += CONFIG_PORTAL_REBOOT_BUTTON;
     }
     
     // Factory Reset & VCOM Section - only show in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_DANGER_ZONE_START;
+        chunk += CONFIG_PORTAL_DANGER_ZONE_START;
         #ifndef DISPLAY_MODE_INKPLATE2
         // VCOM management only available on boards with TPS65186 PMIC (not Inkplate 2)
-        html += CONFIG_PORTAL_VCOM_BUTTON;
+        chunk += CONFIG_PORTAL_VCOM_BUTTON;
         #endif
-        html += CONFIG_PORTAL_DANGER_ZONE_END;
+        chunk += CONFIG_PORTAL_DANGER_ZONE_END;
     }
     
-    html += "</div>";
+    chunk += "</div>";
     
     // Modal dialog for factory reset confirmation (only in CONFIG_MODE)
     if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_RESET_MODAL_HTML;
+        chunk += CONFIG_PORTAL_RESET_MODAL_HTML;
     }
     
     // Footer with version
     String footer = CONFIG_PORTAL_FOOTER_TEMPLATE;
     footer.replace("%VERSION%", String(FIRMWARE_VERSION));
-    html += footer;
+    chunk += footer;
     
     // Factory Reset Modal JavaScript - needed in CONFIG_MODE (for factory reset button in danger zone)
     // Friendly Name Sanitization JavaScript - needed in both modes (friendly name field now in BOOT_MODE too)
     // Battery Life Estimator JavaScript - only in CONFIG_MODE
     // All scripts now served from /scripts/main.js
-    html += "<script src='/scripts/main.js'></script>";
+    chunk += "<script src='/scripts/main.js'></script>";
     
     // Add floating badge HTML before closing body - only in CONFIG_MODE
     if (_mode == CONFIG_MODE) {
-        html += CONFIG_PORTAL_BADGE_HTML;
+        chunk += CONFIG_PORTAL_BADGE_HTML;
     }
     
-    html += "</body></html>";
-    
-    return html;
+    chunk += "</body></html>";
+    sendChunk(chunk);  // Send final chunk
 }
 
 String ConfigPortal::generateSuccessPage() {

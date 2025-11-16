@@ -46,6 +46,9 @@ private:
     // HTTP handlers
     void handleRoot();
     void handleSubmit();
+    
+    // Helper for chunked sending
+    void sendChunk(const String& chunk);
     void handleFactoryReset();
     void handleReboot();
     void handleOTA();
@@ -65,7 +68,7 @@ private:
     #endif
     
     // HTML page generators
-    String generateConfigPage();
+    void generateConfigPage();  // Sends chunked HTML
     String generateSuccessPage();
     String generateErrorPage(const String& error);
     String generateFactoryResetPage();
