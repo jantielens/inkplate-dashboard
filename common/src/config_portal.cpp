@@ -1312,12 +1312,12 @@ void otaUpdateTask(void* parameter) {
     } else {
         // Show error message on display
         if (data->displayManager != nullptr) {
-            data->displayManager->clear();
-            int y = MARGIN;
-            data->displayManager->showMessage("Update Failed", MARGIN, y, FONT_HEADING1);
-            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-            data->displayManager->showMessage(ota.getLastError().c_str(), MARGIN, y, FONT_NORMAL);
-            data->displayManager->refresh();
+            Screen(data->displayManager)
+                .withLogo()
+                .addHeading1("Update Failed")
+                .addSpacing(LINE_SPACING)
+                .addText(ota.getLastError().c_str())
+                .display();
         }
         
         Logger::begin("OTA Error");
