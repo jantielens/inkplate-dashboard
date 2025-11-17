@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [1.7.1] - 2025-11-17
+
+### Changed
+- **Simplified Screen Builder API** (Issue #114)
+  - Logo and battery icons now enabled by default on all screens
+  - Battery voltage moved to constructor (3rd parameter, default 0.0f)
+  - Removed `withLogo()` and `withBattery()` methods
+  - Added `withoutLogo()` and `withoutBattery()` for opt-out
+  - Screen methods now automatically add LINE_SPACING after content
+  - Removed 21 redundant `addSpacing(LINE_SPACING)` calls
+  - Reduced screen setup code by ~60% (from 6-7 lines to 2-3 lines per screen)
+  - Constructor signature: `Screen(DisplayManager*, OverlayManager* = nullptr, float batteryVoltage = 0.0f)`
+
 ## [1.7.0] - 2025-11-17
 
 ### Added
