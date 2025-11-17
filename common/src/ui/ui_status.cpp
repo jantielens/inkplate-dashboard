@@ -1,35 +1,9 @@
 #include <src/ui/ui_status.h>
 #include <src/config.h>
 #include <src/logo_bitmap.h>
-#include <src/battery_logic.h>
 
 UIStatus::UIStatus(DisplayManager* display) 
-    : displayManager(display), overlayManager(nullptr) {
-}
-
-void UIStatus::setOverlayManager(OverlayManager* overlayMgr) {
-    overlayManager = overlayMgr;
-}
-
-void UIStatus::drawBatteryIconBottomLeft(float batteryVoltage) {
-    if (overlayManager == nullptr || batteryVoltage <= 0.0) {
-        return;
-    }
-    
-    // Medium size icon (same as OVERLAY_SIZE_MEDIUM)
-    const GFXfont* font = &Roboto_Regular12pt7b;
-    int fontHeight = displayManager->getFontHeight(font);
-    int iconHeight = fontHeight - 4;
-    int iconWidth = (iconHeight * 5) / 3;
-    
-    int batteryPercentage = calculateBatteryPercentage(batteryVoltage);
-    
-    // Bottom left position
-    int x = MARGIN;
-    int y = displayManager->getHeight() - iconHeight - MARGIN;
-    
-    // Black color (grayscale 0)
-    overlayManager->drawBatteryIcon(x, y, iconWidth, iconHeight, batteryPercentage, 0);
+    : UIBase(display) {
 }
 
 void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname, float batteryVoltage) {

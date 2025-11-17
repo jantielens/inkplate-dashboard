@@ -2,20 +2,16 @@
 #define UI_STATUS_H
 
 #include <Arduino.h>
-#include <src/display_manager.h>
-#include <src/overlay_manager.h>
+#include <src/ui/ui_base.h>
 
 /**
  * @brief Status and informational screen rendering utilities
  * 
  * Provides consistent status message displays for various operational states.
  */
-class UIStatus {
+class UIStatus : public UIBase {
 public:
     UIStatus(DisplayManager* display);
-    
-    // Set overlay manager for battery icon rendering on logo screens
-    void setOverlayManager(OverlayManager* overlayMgr);
     
     // AP Mode screens
     void showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname = "", float batteryVoltage = 0.0);
@@ -36,13 +32,6 @@ public:
     // Success screens
     void showWiFiConfigured();
     void showSettingsUpdated();
-    
-private:
-    DisplayManager* displayManager;
-    OverlayManager* overlayManager;
-    
-    // Helper to draw battery icon at bottom left (for logo screens)
-    void drawBatteryIconBottomLeft(float batteryVoltage);
 };
 
 #endif // UI_STATUS_H
