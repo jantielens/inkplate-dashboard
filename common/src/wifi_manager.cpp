@@ -12,13 +12,9 @@ void WiFiManager::setPowerManager(PowerManager* powerManager) {
 
 WiFiManager::~WiFiManager() {
     if (_apActive) {
-        stopAccessPoint();
+        stopAccessPoint();  // This already deletes _dnsServer
     }
     stopMDNS();
-    if (_dnsServer) {
-        delete _dnsServer;
-        _dnsServer = nullptr;
-    }
     disconnect();
 }
 
@@ -145,7 +141,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     WiFi.setHostname(hostname.c_str());
     
     // Enable persistent credentials and auto-reconnect for faster connections
-    // Disable auto-reconnect for config portal to prevent connection stalls
+    // Disable auto-reconnect when requested (e.g., for config portal) to prevent connection stalls
     WiFi.persistent(true);
     WiFi.setAutoReconnect(!disableAutoReconnect);
     

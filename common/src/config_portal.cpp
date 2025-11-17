@@ -166,6 +166,7 @@ void ConfigPortal::handleRoot() {
     Logger::message("Web Request", "Serving configuration page");
     
     // Use chunked transfer to reduce memory pressure
+    _server->sendHeader("Connection", "close");
     _server->setContentLength(CONTENT_LENGTH_UNKNOWN);
     _server->send(200, "text/html", "");
     
@@ -481,12 +482,14 @@ void ConfigPortal::handleNotFound() {
     // This enables mobile devices to automatically detect and open the portal
     if (_wifiManager && _wifiManager->isAPActive()) {
         // Send redirect to root page
+        _server->sendHeader("Connection", "close");
         _server->sendHeader("Location", "/", true);
         _server->send(302, "text/plain", "");
         return;
     }
     
     // If not in AP mode, show 404 error
+    _server->sendHeader("Connection", "close");
     _server->send(404, "text/html", generateErrorPage("Page not found"));
 }
 
