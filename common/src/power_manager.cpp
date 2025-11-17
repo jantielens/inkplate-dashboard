@@ -17,6 +17,15 @@ RTC_DATA_ATTR float rtcSmoothedVoltage = 0.0;
 RTC_DATA_ATTR uint32_t rtc_boot_count = 0;
 RTC_DATA_ATTR bool rtc_was_running = false;
 
+// Helper function for EMA smoothing
+static void applyEmaSmoothing(float rawValue, float alpha = 0.3) {
+    if (rtcSmoothedVoltage == 0.0) {
+        rtcSmoothedVoltage = rawValue;  // First reading
+    } else {
+        rtcSmoothedVoltage = alpha * rawValue + (1.0 - alpha) * rtcSmoothedVoltage;
+    }
+}
+
 // Preferences for persistent storage across full resets
 static Preferences prefs;
 
@@ -330,12 +339,7 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
         float rawVoltage = ((Inkplate*)inkplate)->readBattery();
         
         // Apply EMA smoothing (30% new reading, 70% history)
-        const float alpha = 0.3;
-        if (rtcSmoothedVoltage == 0.0) {
-            rtcSmoothedVoltage = rawVoltage;  // First reading
-        } else {
-            rtcSmoothedVoltage = alpha * rawVoltage + (1.0 - alpha) * rtcSmoothedVoltage;
-        }
+        applyEmaSmoothing(rawVoltage);
         
         Logger::linef("Battery Voltage: %.3f V raw, %.3f V smoothed", rawVoltage, rtcSmoothedVoltage);
         Logger::end();
@@ -371,12 +375,7 @@ float PowerManager::readBatteryVoltage(void* inkplate) {
     float rawBatteryVoltage = adcVoltage * 2.0;  // Account for voltage divider
     
     // Apply EMA smoothing (30% new reading, 70% history)
-    const float alpha = 0.3;
-    if (rtcSmoothedVoltage == 0.0) {
-        rtcSmoothedVoltage = rawBatteryVoltage;  // First reading
-    } else {
-        rtcSmoothedVoltage = alpha * rawBatteryVoltage + (1.0 - alpha) * rtcSmoothedVoltage;
-    }
+    applyEmaSmoothing(rawBatteryVoltage);
     
     Logger::linef("ADC Value: %d (raw)", adcValue);
     Logger::linef("ADC Voltage: %.3f V", adcVoltage);
