@@ -1,37 +1,37 @@
 {
-  "tag_name": "v1.6.1",
-  "published_at": "2025-11-17T07:43:03Z",
+  "tag_name": "v1.6.2",
+  "published_at": "2025-11-17T11:08:55Z",
   "assets": [
     {
       "board": "inkplate10",
-      "filename": "inkplate10-v1.6.1.bin",
-      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate10-v1.6.1.bin",
-      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate10-v1.6.1.bootloader.bin",
-      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate10-v1.6.1.partitions.bin",
+      "filename": "inkplate10-v1.6.2.bin",
+      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate10-v1.6.2.bin",
+      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate10-v1.6.2.bootloader.bin",
+      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate10-v1.6.2.partitions.bin",
       "display_name": "Inkplate 10"
     },
     {
       "board": "inkplate2",
-      "filename": "inkplate2-v1.6.1.bin",
-      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate2-v1.6.1.bin",
-      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate2-v1.6.1.bootloader.bin",
-      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate2-v1.6.1.partitions.bin",
+      "filename": "inkplate2-v1.6.2.bin",
+      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate2-v1.6.2.bin",
+      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate2-v1.6.2.bootloader.bin",
+      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate2-v1.6.2.partitions.bin",
       "display_name": "Inkplate 2"
     },
     {
       "board": "inkplate5v2",
-      "filename": "inkplate5v2-v1.6.1.bin",
-      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate5v2-v1.6.1.bin",
-      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate5v2-v1.6.1.bootloader.bin",
-      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate5v2-v1.6.1.partitions.bin",
+      "filename": "inkplate5v2-v1.6.2.bin",
+      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate5v2-v1.6.2.bin",
+      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate5v2-v1.6.2.bootloader.bin",
+      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate5v2-v1.6.2.partitions.bin",
       "display_name": "Inkplate 5 V2"
     },
     {
       "board": "inkplate6flick",
-      "filename": "inkplate6flick-v1.6.1.bin",
-      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate6flick-v1.6.1.bin",
-      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate6flick-v1.6.1.bootloader.bin",
-      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.1/inkplate6flick-v1.6.1.partitions.bin",
+      "filename": "inkplate6flick-v1.6.2.bin",
+      "url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate6flick-v1.6.2.bin",
+      "bootloader_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate6flick-v1.6.2.bootloader.bin",
+      "partitions_url": "https://jantielens.github.io/inkplate-dashboard/firmware/v1.6.2/inkplate6flick-v1.6.2.partitions.bin",
       "display_name": "Inkplate 6 Flick"
     }
   ]
