@@ -9,24 +9,34 @@
  * 
  * Eliminates manual Y-position tracking and code duplication across UI screens.
  * Provides fluent API for building screens with automatic layout.
+ * Logo and battery are enabled by default (when overlayManager is provided).
  * 
  * Example usage:
- *   Screen(displayManager, overlayManager)
- *     .withLogo()
- *     .withBattery(batteryVoltage)
+ *   // Logo + battery (default)
+ *   Screen(displayManager, overlayManager, batteryVoltage)
  *     .addHeading1("Configuration Mode")
  *     .addText("Visit the configuration portal")
- *     .addKeyValue("Network", ssid)
+ *     .display();
+ *   
+ *   // Logo only (no battery)
+ *   Screen(displayManager)
+ *     .addHeading1("OTA Update")
+ *     .display();
+ *   
+ *   // Explicit opt-out
+ *   Screen(displayManager, overlayManager, batteryVoltage)
+ *     .withoutLogo()
+ *     .addText("Minimal screen")
  *     .display();
  */
 class Screen : public UIBase {
 public:
-    Screen(DisplayManager* displayManager, OverlayManager* overlayMgr = nullptr);
+    Screen(DisplayManager* displayManager, OverlayManager* overlayMgr = nullptr, float batteryVoltage = 0.0f);
     ~Screen();
     
     // Configuration methods (return *this for chaining)
-    Screen& withLogo();
-    Screen& withBattery(float batteryVoltage);
+    Screen& withoutLogo();      // Disable logo (logo enabled by default)
+    Screen& withoutBattery();   // Disable battery (battery enabled by default if overlayManager provided)
     Screen& withRotation();  // Enable rotation (default: enabled)
     Screen& withoutRotation();  // Disable rotation
     

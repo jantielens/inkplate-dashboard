@@ -59,7 +59,6 @@ bool ConfigPortal::begin(PortalMode mode) {
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
                         Screen(_displayManager)
-                            .withLogo()
                             .addHeading1("Firmware Update")
                             .addSpacing(LINE_SPACING)
                             .addText("Installing firmware...")
@@ -1294,7 +1293,6 @@ void otaUpdateTask(void* parameter) {
         // Show success message on display
         if (data->displayManager != nullptr) {
             Screen(data->displayManager)
-                .withLogo()
                 .addHeading1("Update Complete!")
                 .addSpacing(LINE_SPACING)
                 .addText("Device will reboot now...")
@@ -1313,7 +1311,6 @@ void otaUpdateTask(void* parameter) {
         // Show error message on display
         if (data->displayManager != nullptr) {
             Screen(data->displayManager)
-                .withLogo()
                 .addHeading1("Update Failed")
                 .addSpacing(LINE_SPACING)
                 .addText(ota.getLastError().c_str())
@@ -1348,7 +1345,6 @@ void ConfigPortal::handleOTAInstall() {
     // Show visual feedback on screen
     if (_displayManager != nullptr) {
         Screen(_displayManager)
-            .withLogo()
             .addHeading1("Firmware Update")
             .addSpacing(LINE_SPACING)
             .addText("Downloading from GitHub...")

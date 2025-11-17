@@ -2,12 +2,12 @@
 #include "logo_bitmap.h"
 #include "config.h"
 
-Screen::Screen(DisplayManager* displayManager, OverlayManager* overlayMgr) : UIBase(displayManager),
-    _showLogo(false),
-    _showBattery(false),
+Screen::Screen(DisplayManager* displayManager, OverlayManager* overlayMgr, float batteryVoltage) : UIBase(displayManager),
+    _showLogo(true),  // Logo enabled by default
+    _showBattery(overlayMgr != nullptr && batteryVoltage > 0.0f),  // Battery enabled if overlayManager provided and voltage valid
     _enableRotation(true),  // Default: rotation enabled
     _currentY(MARGIN),
-    _batteryVoltage(0.0f) {
+    _batteryVoltage(batteryVoltage) {
     // Set overlay manager for battery icon support
     if (overlayMgr != nullptr) {
         setOverlayManager(overlayMgr);
@@ -16,21 +16,26 @@ Screen::Screen(DisplayManager* displayManager, OverlayManager* overlayMgr) : UIB
     displayManager->enableRotation();
     // Clear screen at construction so content can be added immediately
     displayManager->clear();
+    
+    // Draw logo immediately if enabled (updates _currentY)
+    if (_showLogo) {
+        drawLogo();
+    }
 }
 
 Screen::~Screen() {
 }
 
-Screen& Screen::withLogo() {
-    _showLogo = true;
-    // Draw logo immediately and update _currentY for subsequent content
-    drawLogo();
+Screen& Screen::withoutLogo() {
+    // Note: Logo already drawn in constructor if it was enabled
+    // This method is mainly useful if called before constructor completes
+    // or to document intent that logo should not be shown
+    _showLogo = false;
     return *this;
 }
 
-Screen& Screen::withBattery(float batteryVoltage) {
-    _showBattery = true;
-    _batteryVoltage = batteryVoltage;
+Screen& Screen::withoutBattery() {
+    _showBattery = false;
     return *this;
 }
 

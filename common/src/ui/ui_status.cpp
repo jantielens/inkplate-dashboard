@@ -7,8 +7,7 @@ UIStatus::UIStatus(DisplayManager* display)
 }
 
 void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Setup - Step 1");
     
@@ -42,8 +41,7 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char*
 }
 
 void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Config Mode Active");
     screen.addSpacing(LINE_SPACING * 2);
@@ -70,8 +68,7 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
 }
 
 void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsHostname, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Setup - Step 2");
     screen.addSpacing(LINE_SPACING * 2);
@@ -92,8 +89,7 @@ void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsH
 }
 
 void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     if (isPartialConfig) {
         screen.addHeading1("Setup - Step 2");
@@ -112,8 +108,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, 
 }
 
 void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("WiFi Failed");
     screen.addSpacing(LINE_SPACING);
@@ -126,8 +121,7 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) 
 }
 
 void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Config Mode (AP)");
     screen.addSpacing(LINE_SPACING);
@@ -161,8 +155,7 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
 }
 
 void UIStatus::showConfigModeTimeout(float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading2("Config Mode Timeout");
     screen.addSpacing(LINE_SPACING);
@@ -172,8 +165,7 @@ void UIStatus::showConfigModeTimeout(float batteryVoltage) {
 }
 
 void UIStatus::showManualRefresh(float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Manual Refresh");
     screen.addSpacing(LINE_SPACING);
@@ -183,8 +175,7 @@ void UIStatus::showManualRefresh(float batteryVoltage) {
 }
 
 void UIStatus::showWiFiConfigured(float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("WiFi Configured!");
     screen.addSpacing(LINE_SPACING * 2);
@@ -194,8 +185,7 @@ void UIStatus::showWiFiConfigured(float batteryVoltage) {
 }
 
 void UIStatus::showSettingsUpdated(float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Settings Updated!");
     screen.addSpacing(LINE_SPACING * 2);

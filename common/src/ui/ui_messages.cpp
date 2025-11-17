@@ -36,8 +36,7 @@ int UIMessages::addLineSpacing(int currentY, int multiplier) {
 }
 
 void UIMessages::showSplashScreen(const char* boardName, int width, int height, float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Inkplate Dashboard");
     screen.addSpacing(LINE_SPACING);
@@ -51,8 +50,7 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height, 
 }
 
 void UIMessages::showConfigInitError(float batteryVoltage) {
-    Screen screen(displayManager, overlayManager);
-    screen.withLogo().withBattery(batteryVoltage);
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addText("ERROR: Config Init Failed");
     
