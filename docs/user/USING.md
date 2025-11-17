@@ -146,7 +146,6 @@ Open browser to:
      - **Carousel mode**: 2+ images rotate automatically
    - **Display Intervals**: Per-image duration in minutes (default 5 minutes each)
    - **MQTT Settings** (optional): For Home Assistant integration
-   - **Debug Mode** (optional): Shows status messages on the display
 
 5. **Click "Save Configuration"**
 
@@ -255,12 +254,6 @@ Open browser to:
 - **Example appearance**: `🔋 85% 14:23`
 - **Rotation aware**: Overlay respects your screen rotation setting
 - **Battery on logo screens**: Regardless of overlay configuration, a battery icon always appears at the bottom-left of setup/status screens for configuration visibility
-
-#### Debug Mode
-- **What it is**: Shows status messages on the display during updates
-- **Default**: Disabled
-- **When to enable**: If you want to see WiFi connection status, download progress, etc.
-- **When to disable**: For a cleaner display that only shows your image
 
 #### CRC32-Based Change Detection
 - **What it is**: Checks if the image has changed before downloading it
@@ -563,9 +556,9 @@ If you have MQTT enabled for Home Assistant integration, the device will publish
 
 ### What You'll See
 
-When debug mode is disabled (which is the default setting), your display shows only your image with a clean, professional appearance and no status messages cluttering the screen. This is ideal for a polished dashboard that looks like a finished product.
+Your display maintains a clean, professional appearance showing only your dashboard image with no status messages. This is ideal for a polished dashboard that looks like a finished product.
 
-With debug mode enabled, you'll see brief status messages appear during the update process. First, the display shows information about your configuration including the network name, refresh rate, and connection status. Then as the download begins, you'll see the image URL and MQTT connection status if you have that configured. These messages help you understand what's happening during each update cycle, which can be useful for troubleshooting or just satisfying your curiosity about the process. After the status messages, your actual image appears on the display.
+All diagnostic information (WiFi connection status, download progress, errors) is available via serial logging if you need to troubleshoot. The device operates silently during normal updates, only showing screens when user interaction is required (setup, errors, manual refresh confirmation).
 
 ### Power Consumption
 

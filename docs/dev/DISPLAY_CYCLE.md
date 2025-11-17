@@ -60,11 +60,10 @@ flowchart TD
 ## 1. Setup Phase
 
 1. **Serial & power initialization** – `setup()` configures the `PowerManager` before anything else so we can interrogate the wake reason.
-2. **Config manager** – Preferences storage is opened early. We read `debugMode` immediately so display rendering decisions are made before the Inkplate is awakened.
+2. **Config manager** – Preferences storage is opened early for configuration loading.
 3. **Display splash policy** – The screen is only cleared and the splash shown when:
-   - The wake reason is `WAKEUP_FIRST_BOOT`, or
-   - `debugMode` is enabled in the stored `DashboardConfig`.
-   On timer wakes with debug disabled, the previous image remains visible until the new one is ready.
+   - The wake reason is `WAKEUP_FIRST_BOOT`
+   On timer wakes, the previous image remains visible until the new one is ready.
 
 ## 2. Mode Selection
 
@@ -78,7 +77,7 @@ After setup the firmware branches according to configuration state and wake reas
 ## 3. Normal Update Pipeline
 
 1. **Load configuration** – Fails fast if preferences cannot be retrieved.
-2. **Conditional status UI** – When `debugMode` is `true`, status messages (SSID, refresh interval, download progress, errors) are rendered to the e-ink panel. When `false`, the device stays silent until the final outcome.
+2. **Minimal status UI** – The device stays silent during normal operation until the final outcome (image or error). Only essential screens are shown (setup instructions, errors, manual refresh confirmation).
 3. **Collect telemetry data** – Battery voltage and wake reason are collected early, before WiFi connection.
 4. **Wi-Fi connection** – Attempts to associate using stored credentials. On success RSSI is captured for MQTT telemetry.
 5. **CRC32 check (optional)** – If enabled, checks if image has changed:
@@ -107,11 +106,11 @@ After setup the firmware branches according to configuration state and wake reas
 
 All config flows publish MQTT log entries when MQTT credentials are valid (e.g., “Config mode entered”, “Settings updated”).
 
-## 6. Debug Mode Summary
+## 6. Minimal UI Design
 
-`DashboardConfig.debugMode` affects only **on-screen** messaging:
+The device minimizes e-ink refreshes during normal operation:
 
-- When `false` (default) the device minimizes e-ink refreshes: no splash on wake, no progress text, only the final image or (if unavoidable) the terminal error message.
-- When `true` the previous verbose behavior is restored for troubleshooting. Serial logging is always active regardless of this flag.
-
-To toggle the flag, use the checkbox in the configuration portal.
+- Splash screen only shows on first boot
+- No intermediate progress screens during image download
+- Only essential screens are shown (setup instructions, errors, manual refresh acknowledgment)
+- Serial logging is always available for diagnostics

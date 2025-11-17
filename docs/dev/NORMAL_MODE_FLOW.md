@@ -481,11 +481,10 @@ if (wakeReason == BUTTON_WAKE && config.frontlightEnabled) {
 
 ### Future Enhancement Ideas
 
-1. **Decision Logging** (Debug Mode)
+1. **Decision Logging**
    ```cpp
-   if (config.debugMode) {
-       Logger::linef("Decision: %s", targetDecision.reason);
-   }
+   // All decisions are logged via Logger (visible in serial output)
+   Logger::linef("Decision: %s", targetDecision.reason);
    ```
 
 2. **Error Decision Function** (If retry logic becomes more complex)
@@ -540,13 +539,10 @@ if (wakeReason == BUTTON_WAKE && config.frontlightEnabled) {
 
 ### Debug Logging
 
-Enable debug mode to see decision reasons logged:
+All decision reasons are logged to serial output:
 
 ```cpp
-// In config
-config.debugMode = true;
-
-// Example log output
+// Example log output (always visible in serial monitor)
 [Normal Mode] Image target: next image (Button press - always advance)
 [Normal Mode] CRC32 action: check disabled (Always download on button wake)
 [Normal Mode] Sleep decision: 900.0s (Image interval: 15 minutes)

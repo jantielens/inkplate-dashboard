@@ -87,17 +87,18 @@ These screens **require rotation** because users need to read them:
 - `showAPModeStarting()` - First boot AP mode starting message
 - `showSplashScreen()` - Boot splash with board name and dimensions
 
-**Rationale:** Users physically interact with the device during setup/errors and MUST read these instructions. These screens persist until user action completes. For manual refresh and first boot, the user is actively looking at the device and expects readable feedback. Splash screen appears during first boot or debug mode when user is observing the device startup.
+**Rationale:** Users physically interact with the device during setup/errors and MUST read these instructions. These screens persist until user action completes. For manual refresh and first boot, the user is actively looking at the device and expects readable feedback. Splash screen appears during first boot when user is observing the device startup.
 
-**Transient Screens (Rotation Disabled)
+#### 3. No Intermediate Screens During Normal Operation
 
-These screens **skip rotation** for performance:
+During normal image download cycles, no intermediate screens are shown. The device:
+- Wakes from sleep
+- Connects to WiFi silently
+- Downloads image silently  
+- Displays the image
+- Returns to sleep
 
-**Debug/Status Messages:**
-- `showDebugStatus()` - Brief debug info overlay (debug mode only)
-- `showDownloading()` - Download progress message
-
-**Rationale:** These messages appear very briefly and are immediately replaced by the dashboard image. The 1-second rotation overhead would be noticeable for such transient content that users don't need to read in detail.
+This minimizes e-ink refreshes and battery consumption. All diagnostic information is available via serial logging.
 
 ### Code Pattern
 
@@ -187,7 +188,7 @@ void UIStatus::showManualRefresh() {
 3. Download and display image
 4. Go to sleep
 
-**Key Insight:** Only the two most transient screens (`showDebugStatus()` and `showDownloading()`) skip rotation. All other screens are rotated for optimal user experience. Normal operation without debug mode shows NO text screens, making it fast (~6s). With debug mode, the brief transient screens skip rotation to maintain speed.
+**Key Insight:** All user-facing screens are rotated for optimal user experience. Normal operation shows NO intermediate text screens during image download, making it fast (~6s). Only essential screens (setup, errors, manual refresh) are shown and all use proper rotation.
 
 ## Image Rendering
 
@@ -206,14 +207,13 @@ This ensures images are never rotated on-device (too slow), relying on user-prov
 ## Trade-offs
 
 ### Advantages
-✅ Normal operation remains fast (~6s without debug mode)
-✅ Nearly all screens are readable at correct orientation
+✅ Normal operation remains fast (~6s)
+✅ All user-facing screens are readable at correct orientation
 ✅ Minimal code complexity
-✅ Only 2 extremely transient screens skip rotation
+✅ No intermediate screens during normal operation
 
 ### Disadvantages
-❌ Two debug screens (`showDebugStatus()`, `showDownloading()`) at 0° regardless of rotation setting
-❌ Slight inconsistency in debug mode (most rotated, 2 not)
+❌ None - debug mode removed, all screens now use consistent rotation
 
 ### Rationale for Trade-offs
 
@@ -239,10 +239,9 @@ The disadvantages are minimal and acceptable because:
    - Factory reset → verify AP mode instructions are rotated
    - Config mode → verify portal URL is rotated
 
-4. **Debug mode** (expected: fast but unrotated status)
-   - Enable debug mode
-   - Verify `showDebugStatus()` appears briefly (may be 0° orientation)
-   - Verify image displays correctly
+4. **Normal operation cycle** (expected: ~6s total)
+   - Verify no intermediate screens shown during image download
+   - Verify image displays correctly at configured rotation
 
 ## Future Enhancements
 

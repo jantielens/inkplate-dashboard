@@ -26,14 +26,6 @@ Screen::Screen(DisplayManager* displayManager, OverlayManager* overlayMgr, float
 Screen::~Screen() {
 }
 
-Screen& Screen::withoutLogo() {
-    // Note: Logo already drawn in constructor if it was enabled
-    // This method is mainly useful if called before constructor completes
-    // or to document intent that logo should not be shown
-    _showLogo = false;
-    return *this;
-}
-
 Screen& Screen::withoutBattery() {
     _showBattery = false;
     return *this;
@@ -71,6 +63,13 @@ Screen& Screen::addText(const String& text) {
     return *this;
 }
 
+Screen& Screen::addIndentedText(const String& text) {
+    ensureLineHeight(nullptr);
+    displayManager->showMessage(text.c_str(), INDENT_MARGIN, _currentY, FONT_NORMAL);
+    _currentY += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    return *this;
+}
+
 Screen& Screen::addSpacing(int pixels) {
     _currentY += pixels;
     return *this;
@@ -103,6 +102,7 @@ void Screen::display() {
 }
 
 void Screen::drawLogo() {
+#if !DISPLAY_MINIMAL_UI
     // Center logo horizontally
     int screenWidth = displayManager->getWidth();
     int minLogoX = MARGIN;
@@ -122,6 +122,10 @@ void Screen::drawLogo() {
     
     // Update currentY to position content below logo
     _currentY = logoY + LOGO_HEIGHT + MARGIN;
+#else
+    // Skip logo on minimal UI boards (e.g., Inkplate 2)
+    // _currentY already initialized to MARGIN in constructor
+#endif
 }
 
 void Screen::drawBattery() {

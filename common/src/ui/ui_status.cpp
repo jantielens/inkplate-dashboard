@@ -16,7 +16,7 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char*
 #endif
     
     screen.addText("1. Connect to WiFi:");
-    screen.addText(String("   ") + apName);
+    screen.addIndentedText(apName);
     
     screen.addText("2. Open browser to:");
     
@@ -95,7 +95,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, 
     }
     
     screen.addText("Connecting to:");
-    screen.addText(String("   ") + ssid);
+    screen.addIndentedText(ssid);
     
     screen.display();
 }
@@ -118,7 +118,7 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
     screen.addText("WiFi connection failed");
     
     screen.addText("Connect to WiFi:");
-    screen.addText(String("   ") + apName);
+    screen.addIndentedText(apName);
     
     screen.addText("Open browser to:");
     

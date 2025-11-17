@@ -22,12 +22,6 @@
  *   Screen(displayManager)
  *     .addHeading1("OTA Update")
  *     .display();
- *   
- *   // Explicit opt-out
- *   Screen(displayManager, overlayManager, batteryVoltage)
- *     .withoutLogo()
- *     .addText("Minimal screen")
- *     .display();
  */
 class Screen : public UIBase {
 public:
@@ -35,7 +29,6 @@ public:
     ~Screen();
     
     // Configuration methods (return *this for chaining)
-    Screen& withoutLogo();      // Disable logo (logo enabled by default)
     Screen& withoutBattery();   // Disable battery (battery enabled by default if overlayManager provided)
     Screen& withRotation();  // Enable rotation (default: enabled)
     Screen& withoutRotation();  // Disable rotation
@@ -44,6 +37,7 @@ public:
     Screen& addHeading1(const String& text);  // Large heading
     Screen& addHeading2(const String& text);  // Medium heading
     Screen& addText(const String& text);  // Body text
+    Screen& addIndentedText(const String& text);  // Indented text (uses INDENT_MARGIN)
     Screen& addSpacing(int pixels = LINE_SPACING);  // Add vertical space
     Screen& addKeyValue(const String& key, const String& value);  // "Key: Value"
     Screen& addNumberedItem(uint8_t number, const String& text);  // "1. Text"
