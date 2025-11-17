@@ -5,6 +5,7 @@
 #include "version.h"
 #include "config.h"
 #include <src/logo_bitmap.h>
+#include <src/ui/screen.h>
 #include "logger.h"
 #include "github_ota.h"
 
@@ -1309,12 +1310,12 @@ void otaUpdateTask(void* parameter) {
     if (success) {
         // Show success message on display
         if (data->displayManager != nullptr) {
-            data->displayManager->clear();
-            int y = MARGIN;
-            data->displayManager->showMessage("Update Complete!", MARGIN, y, FONT_HEADING1);
-            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-            data->displayManager->showMessage("Device will reboot now...", MARGIN, y, FONT_NORMAL);
-            data->displayManager->refresh();
+            Screen(data->displayManager)
+                .withLogo()
+                .addHeading1("Update Complete!")
+                .addSpacing(LINE_SPACING)
+                .addText("Device will reboot now...")
+                .display();
         }
         
         Logger::message("OTA Success", "Rebooting in 3 seconds...");
@@ -1361,34 +1362,17 @@ void ConfigPortal::handleOTAInstall() {
     Logger::line("URL: " + assetUrl);
     Logger::end();
     
-    // Show visual feedback on screen (same pattern as manual OTA upload)
+    // Show visual feedback on screen
     if (_displayManager != nullptr) {
-        _displayManager->clear();
-        // Draw logo at top area for visual branding
-        int screenWidth = _displayManager->getWidth();
-        int minLogoX = MARGIN;
-        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-        int logoX;
-        if (maxLogoX <= minLogoX) {
-            logoX = minLogoX;
-        } else {
-            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-        }
-        int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-        int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-        int y = logoY;  // Start at top when logo is skipped
-#endif
-        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
-        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-        _displayManager->showMessage("Downloading from GitHub...", MARGIN, y, FONT_NORMAL);
-        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
-        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
-        _displayManager->refresh();
+        Screen(_displayManager)
+            .withLogo()
+            .addHeading1("Firmware Update")
+            .addSpacing(LINE_SPACING)
+            .addText("Downloading from GitHub...")
+            .addText("Device will reboot when complete.")
+            .addSpacing(LINE_SPACING)
+            .addText("Do not power off!")
+            .display();
     }
     
     // Allocate task data on heap (will be freed by task)
