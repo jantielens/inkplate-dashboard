@@ -52,8 +52,10 @@ public:
     
     /**
      * @brief Execute normal update cycle
+     * @param batteryVoltage Battery voltage in volts (pre-read to avoid duplicate reads)
+     * @param batteryPercentage Battery percentage 0-100 (pre-calculated for consistency)
      */
-    void execute();
+    void execute(float batteryVoltage, int batteryPercentage);
     
 private:
     Inkplate* display;

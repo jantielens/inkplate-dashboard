@@ -27,9 +27,10 @@ public:
     
     /**
      * @brief Enter AP mode and start configuration portal
+     * @param batteryVoltage Battery voltage in volts (pre-read for consistency)
      * @return true if AP mode started successfully
      */
-    bool begin();
+    bool begin(float batteryVoltage = 0.0);
     
     /**
      * @brief Handle AP mode client requests (call in loop)

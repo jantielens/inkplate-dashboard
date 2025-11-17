@@ -217,7 +217,6 @@ void ConfigPortal::handleSubmit() {
     String mqttPass = _server->arg("mqttpass");
     String timezoneStr = _server->arg("timezone");
     String rotationStr = _server->arg("rotation");
-    bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
     
     // Parse static IP configuration
@@ -420,7 +419,6 @@ void ConfigPortal::handleSubmit() {
     config.friendlyName = friendlyName;  // Save original input (with spaces, capitals, etc)
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
-    config.debugMode = debugMode;
     config.useCRC32Check = useCRC32Check;
     config.updateHours[0] = updateHours[0];
     config.updateHours[1] = updateHours[1];
@@ -848,18 +846,6 @@ void ConfigPortal::generateConfigPage() {
         chunk += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
         chunk += "</select>";
         chunk += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
-        chunk += "</div>";
-        
-        // Debug mode toggle
-        chunk += "<div class='form-group'>";
-        chunk += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
-        chunk += "<input type='checkbox' id='debugmode' name='debugmode'";
-        if (hasConfig && currentConfig.debugMode) {
-            chunk += " checked";
-        }
-        chunk += "> Enable on-screen debug messages";
-        chunk += "</label>";
-        chunk += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         chunk += "</div>";
         
         // Frontlight configuration (only for boards with HAS_FRONTLIGHT)

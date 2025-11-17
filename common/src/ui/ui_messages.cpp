@@ -1,7 +1,7 @@
 #include <src/ui/ui_messages.h>
+#include <src/ui/screen.h>
 #include <src/config.h>
 #include <src/version.h>
-#include <src/logo_bitmap.h>
 
 UIMessages::UIMessages(DisplayManager* display) 
     : UIBase(display) {
@@ -36,52 +36,25 @@ int UIMessages::addLineSpacing(int currentY, int multiplier) {
 }
 
 void UIMessages::showSplashScreen(const char* boardName, int width, int height, float batteryVoltage) {
-    // Enable rotation for splash screen
-    // User sees this on first boot or debug mode - should be readable
-    displayManager->enableRotation();
-    displayManager->clear();
-
-    // Use board-specific MARGIN for logo position
-    // Center the logo horizontally within the margins
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        // Not enough space to center, use left margin
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int textStartY = logoY + LOGO_HEIGHT + MARGIN; // spacing below logo uses MARGIN
-#else
-    int textStartY = logoY;  // Start at top when logo is skipped
-#endif
-
-    int y = textStartY;
-    y = showHeading("Inkplate Dashboard", y);
-    y = addLineSpacing(y, 2);
-    y = showNormalText("github.com/jantielens/inkplate-dashboard", y);
-    y = addLineSpacing(y, 2);
+    Screen screen(displayManager, overlayManager);
+    screen.withLogo().withBattery(batteryVoltage);
+    
+    screen.addHeading1("Inkplate Dashboard");
+    screen.addSpacing(LINE_SPACING);
+    screen.addText("github.com/jantielens/inkplate-dashboard");
+    screen.addSpacing(LINE_SPACING);
+    
     String versionInfo = String(boardName) + " - v" + String(FIRMWARE_VERSION);
-    y = showNormalText(versionInfo.c_str(), y);
+    screen.addText(versionInfo);
     
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-    
-    displayManager->refresh();
+    screen.display();
 }
 
 void UIMessages::showConfigInitError() {
-    // Enable rotation for essential error screen
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager);
+    screen.withLogo();  // Now has logo!
     
-    displayManager->clear();
-    int y = MARGIN;
-    showNormalText("ERROR: Config Init Failed", y);
-    displayManager->refresh();
+    screen.addText("ERROR: Config Init Failed");
+    
+    screen.display();
 }

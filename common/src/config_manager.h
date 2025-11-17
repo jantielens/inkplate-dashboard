@@ -15,7 +15,6 @@
 #define PREF_MQTT_BROKER "mqtt_broker"
 #define PREF_MQTT_USER "mqtt_user"
 #define PREF_MQTT_PASS "mqtt_pass"
-#define PREF_DEBUG_MODE "debug_mode"
 #define PREF_USE_CRC32 "use_crc32"
 #define PREF_LAST_CRC32 "last_crc32"
 #define PREF_UPDATE_HOURS_0 "upd_hours_0"
@@ -94,7 +93,6 @@ struct DashboardConfig {
     String mqttUsername;
     String mqttPassword;
     bool isConfigured;
-    bool debugMode;
     bool useCRC32Check;  // Enable CRC32-based change detection
     uint8_t updateHours[3];  // 24-bit bitmask: bit i = hour i enabled (0-23)
     int timezoneOffset;  // Timezone offset in hours (-12 to +14)
@@ -137,7 +135,6 @@ struct DashboardConfig {
         mqttUsername(""),
         mqttPassword(""),
         isConfigured(false),
-        debugMode(false),
         useCRC32Check(false),
         timezoneOffset(0),
         screenRotation(DEFAULT_SCREEN_ROTATION),
@@ -220,7 +217,6 @@ public:
     String getMQTTBroker();
     String getMQTTUsername();
     String getMQTTPassword();
-    bool getDebugMode();
     bool getUseCRC32Check();
     uint8_t getScreenRotation();
     
@@ -236,7 +232,6 @@ public:
     void setWiFiCredentials(const String& ssid, const String& password);
     void setFriendlyName(const String& name);
     void setMQTTConfig(const String& broker, const String& username, const String& password);
-    void setDebugMode(bool enabled);
     void setUseCRC32Check(bool enabled);
     void setScreenRotation(uint8_t rotation);
     

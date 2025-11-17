@@ -25,8 +25,6 @@ public:
     void showConfigModeTimeout();
     
     // Normal operation screens
-    void showDebugStatus(const char* ssid, int refreshMinutes, float batteryVoltage = 0.0);
-    void showDownloading(const char* url, bool mqttConnected, float batteryVoltage = 0.0);
     void showManualRefresh(float batteryVoltage = 0.0);
     
     // Success screens

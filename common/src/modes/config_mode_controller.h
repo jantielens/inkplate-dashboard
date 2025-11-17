@@ -28,9 +28,10 @@ public:
     
     /**
      * @brief Enter config mode and start configuration portal
+     * @param batteryVoltage Battery voltage in volts (pre-read for consistency)
      * @return true if config mode started successfully
      */
-    bool begin();
+    bool begin(float batteryVoltage = 0.0);
     
     /**
      * @brief Handle config mode client requests (call in loop)
@@ -67,6 +68,7 @@ private:
     void* display;
     
     bool hasPartialConfig;
+    float batteryVoltage;
     
     bool startConfigPortalWithWiFi(const String& localIP);
     bool startConfigPortalWithAP();
