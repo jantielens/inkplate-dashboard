@@ -1144,8 +1144,8 @@ Once configured, your device will automatically appear in Home Assistant as "Ink
 When MQTT is configured, your device publishes the following sensors to Home Assistant:
 
 **Battery Monitoring:**
-- `sensor.inkplate_battery_voltage` - Battery voltage in volts (e.g., 4.2V when fully charged)
-- `sensor.inkplate_battery_percentage` - Battery percentage calculated from Li-ion discharge curve (0-100%)
+- `sensor.inkplate_battery_voltage` - Battery voltage in volts (e.g., 4.13V when fully charged)
+- `sensor.inkplate_battery_percentage` - Battery percentage calculated from real-world Li-ion discharge curve (0-100%, linear with runtime)
 
 **Performance Monitoring:**
 - `sensor.inkplate_loop_time` - Total time for complete update cycle in seconds

@@ -252,11 +252,12 @@ Total Test time (real) = 1.15 sec
 #### Battery Logic Tests
 
 **Out-of-Range Tests:**
-- Voltage below 3.0V returns 0%
-- Voltage above 4.2V returns 100%
+- Voltage below 3.43V returns 0%
+- Voltage above 4.13V returns 100%
 
 **Exact Map Point Tests:**
-- All 22 voltage points return exact percentages (4.20V→100%, 4.15V→95%, ..., 3.00V→0%)
+- All 21 voltage points return exact percentages (4.13V→100%, 4.12V→95%, ..., 3.43V→0%)
+- Based on real-world 192-hour discharge test data (GitHub issue #57)
 
 **Interpolation Tests:**
 - Mid-point between map values uses linear interpolation
