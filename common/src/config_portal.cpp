@@ -58,32 +58,15 @@ bool ConfigPortal::begin(PortalMode mode) {
                     
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
-                        _displayManager->clear();
-                        // Draw logo at top area for visual branding
-                        int screenWidth = _displayManager->getWidth();
-                        int minLogoX = MARGIN;
-                        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-                        int logoX;
-                        if (maxLogoX <= minLogoX) {
-                            logoX = minLogoX;
-                        } else {
-                            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-                        }
-                        int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-                        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-                        int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-                        int y = logoY;  // Start at top when logo is skipped
-#endif
-                        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
-                        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-                        _displayManager->showMessage("Installing firmware...", MARGIN, y, FONT_NORMAL);
-                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-                        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
-                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-                        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
-                        _displayManager->refresh();
+                        Screen(_displayManager)
+                            .withLogo()
+                            .addHeading1("Firmware Update")
+                            .addSpacing(LINE_SPACING)
+                            .addText("Installing firmware...")
+                            .addText("Device will reboot when complete.")
+                            .addSpacing(LINE_SPACING)
+                            .addText("Do not power off!")
+                            .display();
                     }
                     
                     // Disable watchdog timer to prevent reboot during update
