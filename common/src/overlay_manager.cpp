@@ -2,9 +2,6 @@
 #include "battery_logic.h"
 #include "board_config.h"
 #include "logger.h"
-#include <src/fonts/FreeSans7pt7b.h>
-#include <src/fonts/Roboto_Regular12pt7b.h>
-#include <src/fonts/Roboto_Bold20pt7b.h>
 
 OverlayManager::OverlayManager(Inkplate* display, DisplayManager* displayManager) {
     _display = display;
@@ -29,19 +26,28 @@ void OverlayManager::drawBatteryIcon(int x, int y, int width, int height, int pe
     if (percentage > 100) percentage = 100;
     
     // Battery body dimensions
-    int bodyWidth = width - 2;  // Leave space for terminal
+    int bodyWidth = width - 4;  // Leave space for terminal (increased from 2 to 4)
     int bodyHeight = height;
     int bodyX = x;
     int bodyY = y;
     
-    // Battery terminal (positive tip) - small rectangle on the right
-    int terminalWidth = 2;
-    int terminalHeight = height / 3;
+    // Battery terminal (positive tip) - thicker rectangle on the right
+    // Use smaller terminal width for small icons, larger for medium/large
+    int terminalWidth = (height < 12) ? 2 : 4;
+    int terminalHeight = height / 2;
     int terminalX = x + bodyWidth;
     int terminalY = y + (height - terminalHeight) / 2;
     
+    // Use rounded corners for medium and large icons
+    bool useRoundedCorners = (height >= 12);
+    int cornerRadius = useRoundedCorners ? 4 : 0;  // More pronounced corners
+    
     // Draw battery outline (body)
-    _display->drawRect(bodyX, bodyY, bodyWidth, bodyHeight, color);
+    if (useRoundedCorners) {
+        _display->drawRoundRect(bodyX, bodyY, bodyWidth, bodyHeight, cornerRadius, color);
+    } else {
+        _display->drawRect(bodyX, bodyY, bodyWidth, bodyHeight, color);
+    }
     
     // Draw battery terminal
     _display->fillRect(terminalX, terminalY, terminalWidth, terminalHeight, color);
@@ -54,11 +60,21 @@ void OverlayManager::drawBatteryIcon(int x, int y, int width, int height, int pe
     
     // Draw battery fill level
     if (fillWidth > 0) {
-        _display->fillRect(bodyX + fillPadding, 
-                          bodyY + fillPadding, 
-                          fillWidth, 
-                          fillableHeight, 
-                          color);
+        if (useRoundedCorners) {
+            // Use rounded rect for fill to match the outline
+            _display->fillRoundRect(bodyX + fillPadding, 
+                                   bodyY + fillPadding, 
+                                   fillWidth, 
+                                   fillableHeight, 
+                                   cornerRadius - 1,  // Slightly smaller radius for inner fill
+                                   color);
+        } else {
+            _display->fillRect(bodyX + fillPadding, 
+                              bodyY + fillPadding, 
+                              fillWidth, 
+                              fillableHeight, 
+                              color);
+        }
     }
 }
 
@@ -113,8 +129,17 @@ void OverlayManager::renderOverlay(const DashboardConfig& config,
     const GFXfont* font = getFontForSize(config.overlaySize);
     int fontHeight = _displayManager->getFontHeight(font);
     
-    // Determine text color
-    int textColor = (config.overlayTextColor == OVERLAY_COLOR_WHITE) ? WHITE : BLACK;
+    // Determine text color (using display's grayscale values)
+    int textColor;
+    if (config.overlayTextColor == OVERLAY_COLOR_WHITE) {
+        textColor = 7;  // White (lightest gray on 3-bit displays)
+    } else if (config.overlayTextColor == OVERLAY_COLOR_LIGHT_GRAY) {
+        textColor = 5;  // Light gray (~70%)
+    } else if (config.overlayTextColor == OVERLAY_COLOR_DARK_GRAY) {
+        textColor = 2;  // Dark gray (~30%)
+    } else {
+        textColor = 0;  // Black
+    }
     
     // Build overlay text string
     String overlayText = "";
@@ -162,7 +187,9 @@ void OverlayManager::renderOverlay(const DashboardConfig& config,
     if (iconWidth > 0) {
         totalWidth += iconWidth + iconPadding;
     }
-    int totalHeight = fontHeight;
+    // Use actual text bounding box height instead of fontHeight
+    // This accounts for descenders and ensures proper bottom positioning
+    int totalHeight = textHeight;
     
     // Calculate overlay position
     int overlayX, overlayY;
@@ -171,10 +198,32 @@ void OverlayManager::renderOverlay(const DashboardConfig& config,
     Logger::linef("Position: %d,%d Size: %dx%d", overlayX, overlayY, totalWidth, totalHeight);
     Logger::linef("Text: %s", overlayText.c_str());
     
+    // Calculate baseline Y position (GFXfonts use baseline positioning)
+    // For top positions: overlayY is where we want the top, so baseline is overlayY - y1
+    // For bottom positions: overlayY + totalHeight is where we want the bottom
+    // y1 is negative and represents distance from baseline to top of tallest character
+    // textHeight includes both the height above baseline (-y1) and any descenders below
+    int baselineY;
+    if (config.overlayPosition == OVERLAY_POS_BOTTOM_LEFT || 
+        config.overlayPosition == OVERLAY_POS_BOTTOM_RIGHT) {
+        // For bottom positioning: work backwards from desired bottom edge
+        // overlayY + totalHeight = bottom edge position
+        // Baseline should be at: bottom edge - descenders
+        // Since textHeight = -y1 + descenders, descenders = textHeight - (-y1)
+        baselineY = overlayY + totalHeight - (textHeight - (-y1));
+    } else {
+        // For top positioning: overlayY is the top edge
+        baselineY = overlayY - y1;
+    }
+    
     // Draw battery icon if enabled
     int currentX = overlayX;
     if (iconWidth > 0) {
-        int iconY = overlayY + (totalHeight - iconHeight) / 2;
+        // Vertically center the icon with the text's visual height (cap height)
+        // y1 is negative, so -y1 gives the height above baseline
+        // This centers the icon with the main body of the text, ignoring descenders
+        int textVisibleHeight = -y1;  // Height of text above baseline (cap height area)
+        int iconY = baselineY - textVisibleHeight - ((iconHeight - textVisibleHeight) / 2);
         drawBatteryIcon(currentX, iconY, iconWidth, iconHeight, batteryPercentage, textColor);
         currentX += iconWidth + iconPadding;
     }
@@ -183,11 +232,6 @@ void OverlayManager::renderOverlay(const DashboardConfig& config,
     if (overlayText.length() > 0) {
         _display->setFont(font);
         _display->setTextColor(textColor);
-        
-        // Calculate baseline Y position (GFXfonts use baseline positioning)
-        // y1 is negative and represents distance from baseline to top
-        int baselineY = overlayY - y1;
-        
         _display->setCursor(currentX, baselineY);
         _display->print(overlayText);
     }

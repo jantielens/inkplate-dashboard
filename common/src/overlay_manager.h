@@ -28,15 +28,6 @@ public:
                       const char* updateTimeStr = "",
                       unsigned long cycleTimeMs = 0);
     
-private:
-    Inkplate* _display;
-    DisplayManager* _displayManager;
-    
-    /**
-     * @brief Get font for overlay based on size setting
-     */
-    const GFXfont* getFontForSize(uint8_t size);
-    
     /**
      * @brief Draw battery icon at specified position
      * 
@@ -45,9 +36,18 @@ private:
      * @param width Icon width in pixels
      * @param height Icon height in pixels
      * @param percentage Battery percentage (0-100)
-     * @param color Icon color (BLACK or WHITE)
+     * @param color Icon color (grayscale 0-7)
      */
     void drawBatteryIcon(int x, int y, int width, int height, int percentage, int color);
+    
+private:
+    Inkplate* _display;
+    DisplayManager* _displayManager;
+    
+    /**
+     * @brief Get font for overlay based on size setting
+     */
+    const GFXfont* getFontForSize(uint8_t size);
     
     /**
      * @brief Calculate overlay position based on configuration

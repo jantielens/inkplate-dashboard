@@ -221,20 +221,17 @@ bool ImageManager::downloadAndDisplay(const char* url,
     // This method handles the HTTP(S) download internally
     bool success = false;
     
-    // Temporarily set rotation to 0 for image drawing
-    // Images are expected to be pre-rotated by the user to match their desired orientation
-    // This avoids expensive on-device rotation during image rendering
-    uint8_t currentRotation = ((Adafruit_GFX*)_display)->getRotation();
-    _display->setRotation(0);
+    // Draw image at rotation 0 (images should be pre-rotated by user)
+    _displayManager->disableRotation();
     
     // Draw the image directly from URL
     // The InkPlate library's drawImage method downloads and renders in one operation
     if (_display->drawImage(url, 0, 0, true, false)) {
         Logger::line("Image downloaded and displayed successfully!");
         
-        // Restore the original rotation before calling display()
-        // This ensures text overlays (like version label) use correct rotation
-        _display->setRotation(currentRotation);
+        // Enable configured rotation before rendering overlay
+        // This ensures overlay always uses the user's configured rotation
+        _displayManager->enableRotation();
         
         // Render overlay if overlay manager is configured
         if (_overlayManager != nullptr && _configManager != nullptr) {
@@ -249,8 +246,6 @@ bool ImageManager::downloadAndDisplay(const char* url,
         
         success = true;
     } else {
-        // Restore rotation even on failure
-        _display->setRotation(currentRotation);
         showError("Failed to download or draw image (check URL, format: PNG or baseline JPEG, size must match screen)");
         success = false;
     }

@@ -2,9 +2,35 @@
 #include <src/config.h>
 #include <src/version.h>
 #include <src/logo_bitmap.h>
+#include <src/battery_logic.h>
 
 UIMessages::UIMessages(DisplayManager* display) 
-    : displayManager(display) {
+    : displayManager(display), overlayManager(nullptr) {
+}
+
+void UIMessages::setOverlayManager(OverlayManager* overlayMgr) {
+    overlayManager = overlayMgr;
+}
+
+void UIMessages::drawBatteryIconBottomLeft(float batteryVoltage) {
+    if (overlayManager == nullptr || batteryVoltage <= 0.0) {
+        return;
+    }
+    
+    // Medium size icon (same as OVERLAY_SIZE_MEDIUM)
+    const GFXfont* font = &Roboto_Regular12pt7b;
+    int fontHeight = displayManager->getFontHeight(font);
+    int iconHeight = fontHeight - 4;
+    int iconWidth = (iconHeight * 5) / 3;
+    
+    int batteryPercentage = calculateBatteryPercentage(batteryVoltage);
+    
+    // Bottom left position
+    int x = MARGIN;
+    int y = displayManager->getHeight() - iconHeight - MARGIN;
+    
+    // Black color (grayscale 0)
+    overlayManager->drawBatteryIcon(x, y, iconWidth, iconHeight, batteryPercentage, 0);
 }
 
 int UIMessages::showHeading(const char* text, int startY, bool clearFirst) {
@@ -35,7 +61,7 @@ int UIMessages::addLineSpacing(int currentY, int multiplier) {
     return currentY + (LINE_SPACING * multiplier);
 }
 
-void UIMessages::showSplashScreen(const char* boardName, int width, int height) {
+void UIMessages::showSplashScreen(const char* boardName, int width, int height, float batteryVoltage) {
     // Enable rotation for splash screen
     // User sees this on first boot or debug mode - should be readable
     displayManager->enableRotation();
@@ -69,6 +95,10 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height) 
     y = addLineSpacing(y, 2);
     String versionInfo = String(boardName) + " - v" + String(FIRMWARE_VERSION);
     y = showNormalText(versionInfo.c_str(), y);
+    
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+    
     displayManager->refresh();
 }
 

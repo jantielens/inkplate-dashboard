@@ -283,9 +283,11 @@ void NormalModeController::execute() {
     // Prepare overlay parameters (if overlay is enabled)
     char updateTimeStr[16] = "";
     if (config.overlayEnabled && config.overlayShowUpdateTime) {
-        // Format current time as HH:MM
+        // Format current time as HH:MM with timezone offset applied
         time_t currentTime = time(nullptr);
-        struct tm* timeInfo = localtime(&currentTime);
+        // Apply timezone offset (convert hours to seconds)
+        currentTime += (config.timezoneOffset * 3600);
+        struct tm* timeInfo = gmtime(&currentTime);  // Use gmtime since we already applied offset
         strftime(updateTimeStr, sizeof(updateTimeStr), "%H:%M", timeInfo);
     }
     

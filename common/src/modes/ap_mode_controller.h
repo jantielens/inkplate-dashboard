@@ -3,6 +3,7 @@
 
 #include <src/wifi_manager.h>
 #include <src/config_portal.h>
+#include <src/power_manager.h>
 #include <src/ui/ui_status.h>
 #include <src/ui/ui_error.h>
 #include <src/logger.h>
@@ -17,6 +18,12 @@
 class APModeController {
 public:
     APModeController(WiFiManager* wifi, ConfigPortal* portal, UIStatus* uiStatus, UIError* uiError);
+    
+    // Set power manager for battery voltage reading
+    void setPowerManager(PowerManager* power);
+    
+    // Set display pointer for battery reading
+    void setDisplay(void* display);
     
     /**
      * @brief Enter AP mode and start configuration portal
@@ -40,6 +47,8 @@ private:
     ConfigPortal* configPortal;
     UIStatus* uiStatus;
     UIError* uiError;
+    PowerManager* powerManager;
+    void* display;
 };
 
 #endif // AP_MODE_CONTROLLER_H

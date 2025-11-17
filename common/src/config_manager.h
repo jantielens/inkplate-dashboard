@@ -81,7 +81,9 @@
 
 // Overlay text color enum (matches config)
 #define OVERLAY_COLOR_BLACK 0
-#define OVERLAY_COLOR_WHITE 1
+#define OVERLAY_COLOR_DARK_GRAY 1
+#define OVERLAY_COLOR_LIGHT_GRAY 2
+#define OVERLAY_COLOR_WHITE 3
 
 // Configuration data structure
 struct DashboardConfig {
@@ -124,7 +126,7 @@ struct DashboardConfig {
     bool overlayShowUpdateTime;        // Show last update time
     bool overlayShowCycleTime;         // Show last cycle/loop time
     uint8_t overlaySize;               // 0=Small, 1=Medium, 2=Large
-    uint8_t overlayTextColor;          // 0=Black, 1=White
+    uint8_t overlayTextColor;          // 0=Black, 1=Dark Gray, 2=Light Gray, 3=White
     
     // Constructor with defaults
     DashboardConfig() : 

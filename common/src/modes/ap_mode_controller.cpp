@@ -1,7 +1,15 @@
 #include <src/modes/ap_mode_controller.h>
 
 APModeController::APModeController(WiFiManager* wifi, ConfigPortal* portal, UIStatus* uiStatus, UIError* uiError)
-    : wifiManager(wifi), configPortal(portal), uiStatus(uiStatus), uiError(uiError) {
+    : wifiManager(wifi), configPortal(portal), uiStatus(uiStatus), uiError(uiError), powerManager(nullptr), display(nullptr) {
+}
+
+void APModeController::setPowerManager(PowerManager* power) {
+    powerManager = power;
+}
+
+void APModeController::setDisplay(void* disp) {
+    display = disp;
 }
 
 bool APModeController::begin() {
@@ -10,7 +18,12 @@ bool APModeController::begin() {
         String apIP = wifiManager->getAPIPAddress();
         String mdnsHostname = wifiManager->getMDNSHostname();
         
-        uiStatus->showAPModeSetup(apName.c_str(), apIP.c_str(), mdnsHostname.c_str());
+        float batteryVoltage = 0.0;
+        if (powerManager != nullptr && display != nullptr) {
+            batteryVoltage = powerManager->readBatteryVoltage(display);
+        }
+        
+        uiStatus->showAPModeSetup(apName.c_str(), apIP.c_str(), mdnsHostname.c_str(), batteryVoltage);
         
         // Start configuration portal in BOOT_MODE
         if (configPortal->begin(BOOT_MODE)) {

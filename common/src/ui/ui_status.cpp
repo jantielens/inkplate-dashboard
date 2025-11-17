@@ -1,12 +1,38 @@
 #include <src/ui/ui_status.h>
 #include <src/config.h>
 #include <src/logo_bitmap.h>
+#include <src/battery_logic.h>
 
 UIStatus::UIStatus(DisplayManager* display) 
-    : displayManager(display) {
+    : displayManager(display), overlayManager(nullptr) {
 }
 
-void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname) {
+void UIStatus::setOverlayManager(OverlayManager* overlayMgr) {
+    overlayManager = overlayMgr;
+}
+
+void UIStatus::drawBatteryIconBottomLeft(float batteryVoltage) {
+    if (overlayManager == nullptr || batteryVoltage <= 0.0) {
+        return;
+    }
+    
+    // Medium size icon (same as OVERLAY_SIZE_MEDIUM)
+    const GFXfont* font = &Roboto_Regular12pt7b;
+    int fontHeight = displayManager->getFontHeight(font);
+    int iconHeight = fontHeight - 4;
+    int iconWidth = (iconHeight * 5) / 3;
+    
+    int batteryPercentage = calculateBatteryPercentage(batteryVoltage);
+    
+    // Bottom left position
+    int x = MARGIN;
+    int y = displayManager->getHeight() - iconHeight - MARGIN;
+    
+    // Black color (grayscale 0)
+    overlayManager->drawBatteryIcon(x, y, iconWidth, iconHeight, batteryPercentage, 0);
+}
+
+void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname, float batteryVoltage) {
     // Enable rotation for essential setup screen (user needs to read instructions)
     displayManager->enableRotation();
     
@@ -63,10 +89,13 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char*
     
     displayManager->showMessage("3. Enter WiFi settings", MARGIN, y, FONT_NORMAL);
     
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+    
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname) {
+void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
     // Enable rotation for essential setup screen (user needs to read URL)
     displayManager->enableRotation();
     
@@ -117,10 +146,13 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
         displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
     }
 
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsHostname) {
+void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsHostname, float batteryVoltage) {
     // Enable rotation for essential setup screen (user needs to read URL)
     displayManager->enableRotation();
     
@@ -164,10 +196,13 @@ void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsH
         displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
     }
     
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+    
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) {
+void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, float batteryVoltage) {
     // Enable rotation for essential setup screen
     displayManager->enableRotation();
     
@@ -204,10 +239,13 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig) 
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     displayManager->showMessage(ssid, INDENT_MARGIN, y, FONT_NORMAL);
 
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeWiFiFailed(const char* ssid) {
+void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) {
     // Enable rotation for essential error screen
     displayManager->enableRotation();
     
@@ -224,10 +262,12 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid) {
     
     displayManager->showMessage("Starting AP mode...", MARGIN, y, FONT_NORMAL);
     
+    // No logo on this screen, no battery icon
+    
     displayManager->refresh();
 }
 
-void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname) {
+void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
     // Enable rotation for essential setup screen (user needs to read instructions)
     displayManager->enableRotation();
     
@@ -269,6 +309,8 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
         displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
     }
     
+    // No logo on this screen, no battery icon
+    
     displayManager->refresh();
 }
 
@@ -286,7 +328,7 @@ void UIStatus::showConfigModeTimeout() {
     displayManager->refresh();
 }
 
-void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes) {
+void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes, float batteryVoltage) {
     // Transient debug message - skip rotation for performance
     // This screen appears briefly before image download in debug mode
     int y = MARGIN;
@@ -302,10 +344,11 @@ void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes) {
     y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
     
     displayManager->showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
+    // No logo on this screen, no battery icon
     displayManager->refresh();
 }
 
-void UIStatus::showDownloading(const char* url, bool mqttConnected) {
+void UIStatus::showDownloading(const char* url, bool mqttConnected, float batteryVoltage) {
     // Transient status message - skip rotation for performance
     // This screen appears briefly before image replaces it
     displayManager->clear();
@@ -320,10 +363,11 @@ void UIStatus::showDownloading(const char* url, bool mqttConnected) {
     if (mqttConnected) {
         displayManager->showMessage("MQTT: Connected", MARGIN, y, FONT_NORMAL);
     }
+    // No logo on this screen, no battery icon
     displayManager->refresh();
 }
 
-void UIStatus::showManualRefresh() {
+void UIStatus::showManualRefresh(float batteryVoltage) {
     // Enable rotation for manual refresh acknowledgment
     // User intentionally triggered this, so they're likely looking at the screen
     displayManager->enableRotation();
@@ -350,6 +394,9 @@ void UIStatus::showManualRefresh() {
     displayManager->showMessage("Manual Refresh", MARGIN, y, FONT_HEADING1);
     y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
     displayManager->showMessage("Button pressed - updating...", MARGIN, y, FONT_NORMAL);
+    
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
     
     displayManager->refresh();
 }

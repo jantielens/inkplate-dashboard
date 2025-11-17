@@ -23,6 +23,9 @@ public:
                         MQTTManager* mqtt, PowerManager* power,
                         UIStatus* uiStatus, UIError* uiError);
     
+    // Set display pointer for battery reading
+    void setDisplay(void* display);
+    
     /**
      * @brief Enter config mode and start configuration portal
      * @return true if config mode started successfully
@@ -61,6 +64,7 @@ private:
     PowerManager* powerManager;
     UIStatus* uiStatus;
     UIError* uiError;
+    void* display;
     
     bool hasPartialConfig;
     

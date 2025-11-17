@@ -928,7 +928,9 @@ void ConfigPortal::generateConfigPage() {
         uint8_t overlayColor = hasConfig ? currentConfig.overlayTextColor : OVERLAY_COLOR_BLACK;
         chunk += "<select id='overlay_color' name='overlay_color'>";
         chunk += "<option value='0'"; if (overlayColor == OVERLAY_COLOR_BLACK) chunk += " selected"; chunk += ">Black (Default)</option>";
-        chunk += "<option value='1'"; if (overlayColor == OVERLAY_COLOR_WHITE) chunk += " selected"; chunk += ">White</option>";
+        chunk += "<option value='1'"; if (overlayColor == OVERLAY_COLOR_DARK_GRAY) chunk += " selected"; chunk += ">Dark Gray</option>";
+        chunk += "<option value='2'"; if (overlayColor == OVERLAY_COLOR_LIGHT_GRAY) chunk += " selected"; chunk += ">Light Gray</option>";
+        chunk += "<option value='3'"; if (overlayColor == OVERLAY_COLOR_WHITE) chunk += " selected"; chunk += ">White</option>";
         chunk += "</select>";
         chunk += "<div class='help-text'>Choose color for best contrast with your dashboard image background</div>";
         chunk += "</div>";
