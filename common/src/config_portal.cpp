@@ -880,7 +880,112 @@ void ConfigPortal::generateConfigPage() {
         #endif
         
         chunk += SECTION_END();
-        sendChunk(chunk);  // Send image section
+        sendChunk(chunk);  // Send display settings section
+        
+        // Overlay Section
+        chunk = "";  // Clear for overlay section
+        chunk += SECTION_START("📊", "Status Overlay");
+        chunk += "<div class='help-text' style='margin-bottom: 15px;'>Display battery and update status directly on your dashboard images</div>";
+        
+        // Overlay Enable/Disable
+        chunk += "<div class='form-group checkbox-group'>";
+        chunk += "<label>";
+        bool overlayEnabled = hasConfig ? currentConfig.overlayEnabled : false;
+        chunk += "<input type='checkbox' name='overlay_enabled' id='overlay_enabled' ";
+        if (overlayEnabled) chunk += "checked ";
+        chunk += ">";
+        chunk += " Enable status overlay";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Show battery, time, and cycle information on top of dashboard images</div>";
+        chunk += "</div>";
+        
+        // Overlay Position
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='overlay_position'>Overlay Position</label>";
+        uint8_t overlayPosition = hasConfig ? currentConfig.overlayPosition : OVERLAY_POS_TOP_RIGHT;
+        chunk += "<select id='overlay_position' name='overlay_position'>";
+        chunk += "<option value='0'"; if (overlayPosition == OVERLAY_POS_TOP_LEFT) chunk += " selected"; chunk += ">Top Left</option>";
+        chunk += "<option value='1'"; if (overlayPosition == OVERLAY_POS_TOP_RIGHT) chunk += " selected"; chunk += ">Top Right</option>";
+        chunk += "<option value='2'"; if (overlayPosition == OVERLAY_POS_BOTTOM_LEFT) chunk += " selected"; chunk += ">Bottom Left</option>";
+        chunk += "<option value='3'"; if (overlayPosition == OVERLAY_POS_BOTTOM_RIGHT) chunk += " selected"; chunk += ">Bottom Right</option>";
+        chunk += "</select>";
+        chunk += "</div>";
+        
+        // Overlay Size
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='overlay_size'>Overlay Size</label>";
+        uint8_t overlaySize = hasConfig ? currentConfig.overlaySize : OVERLAY_SIZE_MEDIUM;
+        chunk += "<select id='overlay_size' name='overlay_size'>";
+        chunk += "<option value='0'"; if (overlaySize == OVERLAY_SIZE_SMALL) chunk += " selected"; chunk += ">Small</option>";
+        chunk += "<option value='1'"; if (overlaySize == OVERLAY_SIZE_MEDIUM) chunk += " selected"; chunk += ">Medium (Default)</option>";
+        chunk += "<option value='2'"; if (overlaySize == OVERLAY_SIZE_LARGE) chunk += " selected"; chunk += ">Large</option>";
+        chunk += "</select>";
+        chunk += "</div>";
+        
+        // Overlay Color
+        chunk += "<div class='form-group'>";
+        chunk += "<label for='overlay_color'>Text Color</label>";
+        uint8_t overlayColor = hasConfig ? currentConfig.overlayTextColor : OVERLAY_COLOR_BLACK;
+        chunk += "<select id='overlay_color' name='overlay_color'>";
+        chunk += "<option value='0'"; if (overlayColor == OVERLAY_COLOR_BLACK) chunk += " selected"; chunk += ">Black (Default)</option>";
+        chunk += "<option value='1'"; if (overlayColor == OVERLAY_COLOR_WHITE) chunk += " selected"; chunk += ">White</option>";
+        chunk += "</select>";
+        chunk += "<div class='help-text'>Choose color for best contrast with your dashboard image background</div>";
+        chunk += "</div>";
+        
+        // Overlay Content Options
+        chunk += "<div class='help-text' style='margin: 15px 0 10px 0; font-weight: bold;'>Display Options:</div>";
+        
+        // Battery Icon
+        chunk += "<div class='form-group checkbox-group'>";
+        chunk += "<label>";
+        bool showBatteryIcon = hasConfig ? currentConfig.overlayShowBatteryIcon : true;
+        chunk += "<input type='checkbox' name='overlay_battery_icon' id='overlay_battery_icon' ";
+        if (showBatteryIcon) chunk += "checked ";
+        chunk += ">";
+        chunk += " Show battery icon";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Display battery icon filled to match current percentage</div>";
+        chunk += "</div>";
+        
+        // Battery Percentage
+        chunk += "<div class='form-group checkbox-group'>";
+        chunk += "<label>";
+        bool showBatteryPct = hasConfig ? currentConfig.overlayShowBatteryPercentage : true;
+        chunk += "<input type='checkbox' name='overlay_battery_pct' id='overlay_battery_pct' ";
+        if (showBatteryPct) chunk += "checked ";
+        chunk += ">";
+        chunk += " Show battery percentage";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Display battery percentage as text (e.g., \"85%\")</div>";
+        chunk += "</div>";
+        
+        // Update Time
+        chunk += "<div class='form-group checkbox-group'>";
+        chunk += "<label>";
+        bool showUpdateTime = hasConfig ? currentConfig.overlayShowUpdateTime : true;
+        chunk += "<input type='checkbox' name='overlay_update_time' id='overlay_update_time' ";
+        if (showUpdateTime) chunk += "checked ";
+        chunk += ">";
+        chunk += " Show last update time";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Display time of last image update (e.g., \"11:25\")</div>";
+        chunk += "</div>";
+        
+        // Cycle Time
+        chunk += "<div class='form-group checkbox-group'>";
+        chunk += "<label>";
+        bool showCycleTime = hasConfig ? currentConfig.overlayShowCycleTime : false;
+        chunk += "<input type='checkbox' name='overlay_cycle_time' id='overlay_cycle_time' ";
+        if (showCycleTime) chunk += "checked ";
+        chunk += ">";
+        chunk += " Show last cycle time";
+        chunk += "</label>";
+        chunk += "<div class='help-text'>Display loop duration in seconds (for debugging performance)</div>";
+        chunk += "</div>";
+        
+        chunk += SECTION_END();
+        sendChunk(chunk);  // Send overlay section
         
         // MQTT Section
         chunk = "";  // Clear for MQTT section
