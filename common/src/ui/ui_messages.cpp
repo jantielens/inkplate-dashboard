@@ -50,9 +50,9 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height, 
     screen.display();
 }
 
-void UIMessages::showConfigInitError() {
+void UIMessages::showConfigInitError(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addText("ERROR: Config Init Failed");
     

@@ -6,9 +6,9 @@ UIError::UIError(DisplayManager* display)
     : UIBase(display) {
 }
 
-void UIError::showWiFiError(const char* ssid, const char* status) {
+void UIError::showWiFiError(const char* ssid, const char* status, float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("WiFi Error!");
     screen.addSpacing(LINE_SPACING);
@@ -30,9 +30,9 @@ void UIError::showWiFiError(const char* ssid, const char* status) {
     screen.display();
 }
 
-void UIError::showImageError(const char* url, const char* error) {
+void UIError::showImageError(const char* url, const char* error, float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("Image Error!");
     screen.addSpacing(LINE_SPACING);
@@ -51,36 +51,36 @@ void UIError::showImageError(const char* url, const char* error) {
     screen.display();
 }
 
-void UIError::showAPStartError() {
+void UIError::showAPStartError(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addText("ERROR: AP Start Failed");
     
     screen.display();
 }
 
-void UIError::showPortalError() {
+void UIError::showPortalError(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addText("ERROR: Portal Failed");
     
     screen.display();
 }
 
-void UIError::showConfigLoadError() {
+void UIError::showConfigLoadError(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addText("ERROR: Config Load Failed");
     
     screen.display();
 }
 
-void UIError::showConfigModeFailure() {
+void UIError::showConfigModeFailure(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("Config Mode Failed");
     screen.addSpacing(LINE_SPACING);

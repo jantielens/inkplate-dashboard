@@ -14,12 +14,12 @@ public:
     UIError(DisplayManager* display);
     
     // Error screens
-    void showWiFiError(const char* ssid, const char* status);
-    void showImageError(const char* url, const char* error);
-    void showAPStartError();
-    void showPortalError();
-    void showConfigLoadError();
-    void showConfigModeFailure();
+    void showWiFiError(const char* ssid, const char* status, float batteryVoltage = 0.0);
+    void showImageError(const char* url, const char* error, float batteryVoltage = 0.0);
+    void showAPStartError(float batteryVoltage = 0.0);
+    void showPortalError(float batteryVoltage = 0.0);
+    void showConfigLoadError(float batteryVoltage = 0.0);
+    void showConfigModeFailure(float batteryVoltage = 0.0);
 };
 
 #endif // UI_ERROR_H

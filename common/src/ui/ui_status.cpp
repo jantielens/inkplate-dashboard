@@ -113,7 +113,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, 
 
 void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("WiFi Failed");
     screen.addSpacing(LINE_SPACING);
@@ -127,7 +127,7 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) 
 
 void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("Config Mode (AP)");
     screen.addSpacing(LINE_SPACING);
@@ -160,9 +160,9 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
     screen.display();
 }
 
-void UIStatus::showConfigModeTimeout() {
+void UIStatus::showConfigModeTimeout(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading2("Config Mode Timeout");
     screen.addSpacing(LINE_SPACING);
@@ -182,9 +182,9 @@ void UIStatus::showManualRefresh(float batteryVoltage) {
     screen.display();
 }
 
-void UIStatus::showWiFiConfigured() {
+void UIStatus::showWiFiConfigured(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("WiFi Configured!");
     screen.addSpacing(LINE_SPACING * 2);
@@ -193,9 +193,9 @@ void UIStatus::showWiFiConfigured() {
     screen.display();
 }
 
-void UIStatus::showSettingsUpdated() {
+void UIStatus::showSettingsUpdated(float batteryVoltage) {
     Screen screen(displayManager, overlayManager);
-    screen.withLogo();  // Now has logo!
+    screen.withLogo().withBattery(batteryVoltage);
     
     screen.addHeading1("Settings Updated!");
     screen.addSpacing(LINE_SPACING * 2);

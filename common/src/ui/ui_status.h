@@ -22,14 +22,14 @@ public:
     void showConfigModeConnecting(const char* ssid, bool isPartialConfig, float batteryVoltage = 0.0);
     void showConfigModeWiFiFailed(const char* ssid, float batteryVoltage = 0.0);
     void showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname = "", float batteryVoltage = 0.0);
-    void showConfigModeTimeout();
+    void showConfigModeTimeout(float batteryVoltage = 0.0);
     
     // Normal operation screens
     void showManualRefresh(float batteryVoltage = 0.0);
     
     // Success screens
-    void showWiFiConfigured();
-    void showSettingsUpdated();
+    void showWiFiConfigured(float batteryVoltage = 0.0);
+    void showSettingsUpdated(float batteryVoltage = 0.0);
 };
 
 #endif // UI_STATUS_H
