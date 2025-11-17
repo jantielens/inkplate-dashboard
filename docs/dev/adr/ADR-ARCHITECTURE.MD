@@ -171,22 +171,59 @@ Manages power states, wake sources, and watchdog protection.
 - `enterDeepSleep()` - Enter deep sleep with timer and button wake sources
 
 #### ImageManager (`image_manager.h/cpp`)
-Handles image download and display.
+Handles image download and display with optional overlay rendering.
 
 **Responsibilities:**
 - Download PNG images from HTTP/HTTPS URLs
 - Display images on e-ink screen
+- Render status overlay on top of images (if enabled)
 - Store/retrieve last image CRC32 for change detection
 - Provide download progress and error reporting
 
 **Key Methods:**
-- `downloadAndDisplay()` - Download and show image from URL
+- `downloadAndDisplay()` - Download and show image from URL with optional overlay
 - `checkCRC32Changed()` - Fetch and compare CRC32 hash
 - `saveCRC32()` / `loadCRC32()` - Persist CRC32 value
 - `getLastError()` - Get error message from last operation
+- `setOverlayManager()` - Wire overlay manager for status rendering
 
 **CRC32 Feature:**
 The server can provide a `.crc32` file alongside the image (e.g., `image.png.crc32`) containing a hex CRC32 hash. The device checks this before downloading to skip unchanged images, saving battery and bandwidth.
+
+**Overlay Integration:**
+After successful image display, ImageManager renders an optional status overlay using OverlayManager (see below).
+
+#### OverlayManager (`overlay_manager.h/cpp`)
+Renders configurable status overlays on dashboard images.
+
+**Purpose:** Display battery level, update time, and cycle time information on top of dashboard images for at-a-glance status monitoring.
+
+**Responsibilities:**
+- Render battery icon with fill level (rounded corners for medium/large sizes)
+- Render battery percentage text
+- Render update time (24-hour format, timezone-aware)
+- Render cycle time (performance metric)
+- Position overlay at configured corner
+- Respect user color and size preferences
+
+**Key Methods:**
+- `renderOverlay()` - Main rendering method, respects DashboardConfig settings
+- `drawBatteryIcon()` - Public helper for drawing battery icon at arbitrary positions (used by UI components)
+- `getFontForSize()` - Get GFXfont based on size setting (Small/Medium/Large)
+- `calculateOverlayPosition()` - Calculate X/Y coordinates for configured position
+
+**Configuration (via DashboardConfig):**
+- **Position**: Top Left, Top Right, Bottom Left, Bottom Right
+- **Size**: Small (7pt), Medium (12pt), Large (20pt)
+- **Color**: Black (0), Dark Gray (2), Light Gray (5), White (7)
+- **Elements**: Battery icon, battery %, update time, cycle time (all toggleable)
+
+**Technical Details:**
+- Uses GFXfont baseline positioning for text
+- Battery icon uses proportional scaling (3:5 aspect ratio)
+- Respects `DISPLAY_MINIMAL_UI` board flag
+- Rotation-aware positioning
+- Grayscale color values (0-7 for 3-bit displays)
 
 #### MQTTManager (`mqtt_manager.h/cpp`)
 Manages MQTT connectivity and Home Assistant integration with optimized battery-powered operation.
@@ -254,10 +291,25 @@ Web-based configuration interface.
 
 ### UI Components (common/src/ui/)
 
-The UI layer provides reusable display components for different screens and messages.
+The UI layer provides reusable display components for different screens and messages. All UI classes inherit from UIBase for shared functionality.
+
+#### UIBase (`ui_base.h/cpp`)
+Base class providing common UI rendering functionality.
+
+**Purpose:** Eliminate code duplication across UI components by centralizing shared patterns.
+
+**Members:**
+- `displayManager` - Display abstraction layer
+- `overlayManager` - Overlay rendering manager (for battery icons on logo screens)
+
+**Methods:**
+- `setOverlayManager()` - Wire overlay manager for battery icon rendering
+- `drawBatteryIconBottomLeft()` - Render medium-sized black battery icon at bottom-left (used on logo screens)
+
+**Inheritance:** Extended by UIMessages, UIError, and UIStatus.
 
 #### UIMessages (`ui_messages.h/cpp`)
-General purpose message rendering.
+General purpose message rendering. Inherits from UIBase.
 
 **Methods:**
 - `showSplashScreen()` - Boot splash with board name and resolution
@@ -267,7 +319,7 @@ General purpose message rendering.
 - `showConfigInitError()` - Configuration initialization failure
 
 #### UIError (`ui_error.h/cpp`)
-Error screen displays.
+Error screen displays. Inherits from UIBase.
 
 **Methods:**
 - `showWiFiError()` - WiFi connection failed
@@ -278,7 +330,7 @@ Error screen displays.
 - `showConfigModeFailure()` - Config mode entry failed
 
 #### UIStatus (`ui_status.h/cpp`)
-Status and progress screens.
+Status and progress screens. Inherits from UIBase.
 
 **Methods:**
 - `showAPModeSetup()` - AP mode with SSID and IP
@@ -289,6 +341,8 @@ Status and progress screens.
 - `showWiFiConfigured()` - WiFi credentials saved (AP mode)
 - `showSettingsUpdated()` - Configuration updated (config mode)
 - `showDebugStatus()` - Debug info (WiFi, refresh rate)
+
+**Battery Icon Feature:** All logo screens (splash, setup screens, manual refresh) automatically display a medium-sized black battery icon at bottom-left, independent of user overlay configuration.
 
 ### Mode Controllers (common/src/modes/)
 

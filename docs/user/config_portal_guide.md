@@ -252,6 +252,90 @@ Users can still configure everything in one step by navigating to `http://192.16
 - **Note**: Only needed if your broker requires authentication
 - **Security**: Stored securely in ESP32 NVS
 
+### On-Image Overlay (Optional)
+
+Configure a status overlay that appears on top of your dashboard images with battery level, update time, and cycle time information.
+
+#### Enable Overlay
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Unchecked (disabled)
+- **Description**: Enable status overlay on dashboard images
+- **Note**: When disabled, all other overlay options are hidden
+
+#### Overlay Position
+- **Required**: When overlay enabled
+- **Type**: Dropdown
+- **Default**: Top Right
+- **Options**: Top Left, Top Right, Bottom Left, Bottom Right
+- **Description**: Where to place the overlay on the image
+- **Note**: Overlay respects configured screen rotation
+
+#### Overlay Size
+- **Required**: When overlay enabled
+- **Type**: Dropdown
+- **Default**: Medium
+- **Options**: 
+  - **Small** - Compact size (~7pt font, ~8px battery icon)
+  - **Medium** - Standard size (~12pt font, ~12px battery icon)
+  - **Large** - Large size (~20pt font, ~20px battery icon)
+- **Description**: Font and icon size for overlay text
+- **Recommendation**: Use Medium for most displays, Small for Inkplate 2, Large for Inkplate 10
+
+#### Overlay Color
+- **Required**: When overlay enabled
+- **Type**: Dropdown
+- **Default**: Black
+- **Options**: Black, Dark Gray, Light Gray, White
+- **Description**: Text and icon color for the overlay
+- **Use Cases**:
+  - **Black/Dark Gray** - Best for light-colored images
+  - **White/Light Gray** - Best for dark-colored images
+- **Technical**: Uses grayscale values (0=black, 2=dark gray, 5=light gray, 7=white)
+
+#### Show Battery Icon
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Checked (enabled)
+- **Description**: Display battery icon with fill level in overlay
+- **Note**: Icon shows battery percentage visually with rounded corners (medium/large sizes)
+
+#### Show Battery Percentage
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Checked (enabled)
+- **Description**: Display battery percentage as text (e.g., "85%")
+- **Note**: Calculated from battery voltage using LiPo discharge curve
+
+#### Show Update Time
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Checked (enabled)
+- **Description**: Display last update time (e.g., "14:23")
+- **Format**: 24-hour time format (HH:MM)
+- **Note**: Time respects timezone offset setting
+
+#### Show Cycle Time
+- **Required**: No
+- **Type**: Checkbox
+- **Default**: Unchecked (disabled)
+- **Description**: Display cycle/loop time in seconds (e.g., "8.5s")
+- **Use Cases**: Debugging, performance monitoring
+- **Note**: Shows total time from wake to sleep
+
+#### Overlay Preview
+The overlay appears as a compact status bar on your dashboard image:
+```
+🔋 85% 14:23
+```
+
+Or with all options enabled:
+```
+🔋 85% 14:23 8.5s
+```
+
+**Battery Icon on Logo Screens**: Independently of overlay configuration, a medium-sized black battery icon appears at the bottom-left corner of all setup/status screens that display the Inkplate logo (splash screen, setup screens, manual refresh, etc.). This provides battery status visibility during device configuration.
+
 ### Frontlight Configuration (Inkplate 6 Flick Only)
 
 **Note**: These fields only appear when using an Inkplate 6 Flick device with built-in frontlight support.
@@ -305,8 +389,10 @@ Configuration options are organized into clearly separated sections:
 
 1. **📶 WiFi Network** - Network credentials
 2. **🖼️ Dashboard Images** - Image URLs with individual display intervals (carousel support)
-3. **📡 MQTT / Home Assistant** - Optional MQTT integration
-4. **🕐 Scheduling** - Update hours, CRC32 change detection, battery estimator
+3. **📊 On-Image Overlay** - Status overlay with battery, time, and cycle information
+4. **📡 MQTT / Home Assistant** - Optional MQTT integration
+5. **🕐 Scheduling** - Update hours, CRC32 change detection, battery estimator
+6. **💡 Frontlight** - Frontlight settings (Inkplate 6 Flick only)
 
 Each section features:
 - Clear icon-based headers
