@@ -39,9 +39,7 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height, 
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Inkplate Dashboard");
-    screen.addSpacing(LINE_SPACING);
     screen.addText("github.com/jantielens/inkplate-dashboard");
-    screen.addSpacing(LINE_SPACING);
     
     String versionInfo = String(boardName) + " - v" + String(FIRMWARE_VERSION);
     screen.addText(versionInfo);

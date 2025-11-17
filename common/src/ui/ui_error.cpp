@@ -10,17 +10,14 @@ void UIError::showWiFiError(const char* ssid, const char* status, float batteryV
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("WiFi Error!");
-    screen.addSpacing(LINE_SPACING);
     
     String ssidMsg = "SSID: " + String(ssid);
     screen.addText(ssidMsg);
     
     String statusMsg = "Status: " + String(status);
     screen.addText(statusMsg);
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("Failed to connect to WiFi.");
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("Trying again in 1 minute");
     screen.addText("(or press button).");
@@ -33,14 +30,12 @@ void UIError::showImageError(const char* url, const char* error, float batteryVo
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Image Error!");
-    screen.addSpacing(LINE_SPACING);
     
     // Show URL with extra space for potential wrapping
     screen.addText(url);
     screen.addSpacing(LINE_SPACING * 2);
     
     screen.addText("Failed to download or draw image.");
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("Trying again in 1 minute");
     screen.addText("(or press button).");

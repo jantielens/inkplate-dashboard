@@ -12,14 +12,11 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char*
     screen.addHeading1("Setup - Step 1");
     
 #if !DISPLAY_MINIMAL_UI
-    screen.addSpacing(LINE_SPACING);
     screen.addHeading2("Connect WiFi");
 #endif
     
-    screen.addSpacing(LINE_SPACING);
     screen.addText("1. Connect to WiFi:");
     screen.addText(String("   ") + apName);
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("2. Open browser to:");
     
@@ -34,7 +31,6 @@ void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char*
         screen.addText(url);
     }
     
-    screen.addSpacing(LINE_SPACING);
     screen.addText("3. Enter WiFi settings");
     
     screen.display();
@@ -56,7 +52,6 @@ void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int tim
     } else {
         String url = "   http://" + String(localIP);
         screen.addHeading2(url);
-        screen.addSpacing(LINE_SPACING);
     }
     
     if (hasTimeout) {
@@ -96,9 +91,7 @@ void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, 
         screen.addSpacing(LINE_SPACING * 2);
     } else {
         screen.addHeading1("Config Mode");
-        screen.addSpacing(LINE_SPACING);
         screen.addText("Active for 5 minutes");
-        screen.addSpacing(LINE_SPACING);
     }
     
     screen.addText("Connecting to:");
@@ -111,10 +104,8 @@ void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) 
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("WiFi Failed");
-    screen.addSpacing(LINE_SPACING);
     screen.addText("Cannot connect to:");
     screen.addText(ssid);
-    screen.addSpacing(LINE_SPACING);
     screen.addText("Starting AP mode...");
     
     screen.display();
@@ -124,13 +115,10 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Config Mode (AP)");
-    screen.addSpacing(LINE_SPACING);
     screen.addText("WiFi connection failed");
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("Connect to WiFi:");
     screen.addText(String("   ") + apName);
-    screen.addSpacing(LINE_SPACING);
     
     screen.addText("Open browser to:");
     
@@ -146,7 +134,6 @@ void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bo
     }
     
     if (hasTimeout) {
-        screen.addSpacing(LINE_SPACING);
         String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
         screen.addText(timeoutMsg);
     }
@@ -158,7 +145,6 @@ void UIStatus::showConfigModeTimeout(float batteryVoltage) {
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading2("Config Mode Timeout");
-    screen.addSpacing(LINE_SPACING);
     screen.addText("Going to sleep...");
     
     screen.display();
@@ -168,7 +154,6 @@ void UIStatus::showManualRefresh(float batteryVoltage) {
     Screen screen(displayManager, overlayManager, batteryVoltage);
     
     screen.addHeading1("Manual Refresh");
-    screen.addSpacing(LINE_SPACING);
     screen.addText("Button pressed - updating...");
     
     screen.display();
