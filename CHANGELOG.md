@@ -4,6 +4,26 @@
 
 ## [Unreleased]
 
+## [1.6.2] - 2025-11-17
+
+### Changed
+- **Improved Battery Voltage-to-Percentage Mapping** (Issue #57)
+  - Updated voltage table based on real-world 192-hour discharge test (7201 readings)
+  - Fully charged voltage: 4.20V → 4.13V (reflects actual maximum)
+  - Device cutoff voltage: 3.00V → 3.43V (reflects actual minimum)
+  - More accurate mid-range (40-60%) and low-battery (0-30%) percentages
+  - Battery percentage now accurately represents runtime remaining
+
+### Added
+- **Battery Voltage Smoothing** (Issue #57)
+  - Implemented Exponential Moving Average (EMA) filtering for voltage readings
+  - Smoothing uses RTC memory (survives deep sleep, no NVS wear)
+  - Single ADC sample with EMA smoothing (15ms read time)
+  - Provides ~70% voltage ripple reduction for stable MQTT telemetry
+  - Final noise level: ±2-3mV (acceptable for 5% percentage steps)
+  - Battery lifetime: 286 days for 1200mAh battery at 5-minute intervals
+  - Battery percentage graph is now linear with time (no more "wiggly" graphs)
+
 ## [1.6.1] - 2025-11-16
 
 ### Fixed

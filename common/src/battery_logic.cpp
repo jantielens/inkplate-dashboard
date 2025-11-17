@@ -2,33 +2,34 @@
 
 int calculateBatteryPercentage(float voltage) {
     // Lithium-ion discharge curve for ESP32 devices
-    // Based on typical Li-ion/LiPo battery discharge characteristics
-    // Voltage range: 4.2V (100%) to 3.0V (0%)
+    // Based on real-world discharge test (Nov 2025, 192-hour runtime)
+    // Voltage range: 4.13V (100%) to 3.43V (0% - device cutoff)
+    // Data source: GitHub issue #57 battery discharge test
     
     // Voltage to percentage mapping (non-linear discharge curve)
-    // These values represent the typical discharge curve of a lithium-ion battery
+    // These values represent actual measured discharge behavior
     const float voltageMap[][2] = {
-        {4.20, 100},  // Fully charged
-        {4.15, 95},
-        {4.11, 90},
-        {4.08, 85},
+        {4.13, 100},  // Fully charged (real-world maximum)
+        {4.12, 95},
+        {4.08, 90},
+        {4.04, 85},
         {4.02, 80},
-        {3.98, 75},
-        {3.95, 70},
-        {3.91, 65},
-        {3.87, 60},
-        {3.85, 55},
-        {3.84, 50},
+        {4.00, 75},
+        {3.98, 70},
+        {3.95, 65},
+        {3.92, 60},
+        {3.88, 55},
+        {3.85, 50},   // Mid-point
         {3.82, 45},
-        {3.80, 40},
-        {3.79, 35},
-        {3.77, 30},
-        {3.75, 25},
-        {3.73, 20},
-        {3.71, 15},
-        {3.69, 10},
-        {3.61, 5},
-        {3.00, 0}     // Empty/cutoff voltage
+        {3.79, 40},
+        {3.75, 35},
+        {3.71, 30},
+        {3.66, 25},
+        {3.64, 20},   // Low battery warning threshold
+        {3.59, 15},
+        {3.53, 10},
+        {3.47, 5},
+        {3.43, 0}     // Device cutoff (stops refreshing)
     };
     
     const int mapSize = sizeof(voltageMap) / sizeof(voltageMap[0]);
