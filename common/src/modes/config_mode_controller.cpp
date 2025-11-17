@@ -15,7 +15,10 @@ void ConfigModeController::setDisplay(void* disp) {
     display = disp;
 }
 
-bool ConfigModeController::begin() {
+bool ConfigModeController::begin(float batteryVoltage) {
+    // Store battery voltage for use in UI screens
+    this->batteryVoltage = batteryVoltage;
+    
     DashboardConfig config;
     hasPartialConfig = configManager->hasWiFiConfig() && !configManager->isFullyConfigured();
     
@@ -39,10 +42,6 @@ bool ConfigModeController::begin() {
     
     // Show config mode message (skip on slow displays to reduce screen updates)
 #if DISPLAY_FAST_REFRESH
-    float batteryVoltage = 0.0;
-    if (powerManager != nullptr && display != nullptr) {
-        batteryVoltage = powerManager->readBatteryVoltage(display);
-    }
     uiStatus->showConfigModeConnecting(config.wifiSSID.c_str(), hasPartialConfig, batteryVoltage);
 #endif
     
@@ -70,10 +69,6 @@ bool ConfigModeController::begin() {
         
         // Show WiFi failed message (skip on slow displays to reduce screen updates)
 #if DISPLAY_FAST_REFRESH
-        float batteryVoltage = 0.0;
-        if (powerManager != nullptr && display != nullptr) {
-            batteryVoltage = powerManager->readBatteryVoltage(display);
-        }
         uiStatus->showConfigModeWiFiFailed(config.wifiSSID.c_str(), batteryVoltage);
         delay(2000);
 #endif
@@ -84,11 +79,6 @@ bool ConfigModeController::begin() {
 
 bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
     String mdnsHostname = wifiManager->getMDNSHostname();
-    
-    float batteryVoltage = 0.0;
-    if (powerManager != nullptr && display != nullptr) {
-        batteryVoltage = powerManager->readBatteryVoltage(display);
-    }
     
     // Show appropriate config mode screen
     if (hasPartialConfig) {
@@ -134,11 +124,6 @@ bool ConfigModeController::startConfigPortalWithAP() {
         String apName = wifiManager->getAPName();
         String apIP = wifiManager->getAPIPAddress();
         String mdnsHostname = wifiManager->getMDNSHostname();
-        
-        float batteryVoltage = 0.0;
-        if (powerManager != nullptr && display != nullptr) {
-            batteryVoltage = powerManager->readBatteryVoltage(display);
-        }
         
         uiStatus->showConfigModeAPFallback(apName.c_str(), apIP.c_str(), !hasPartialConfig, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str(), batteryVoltage);
         

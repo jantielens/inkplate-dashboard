@@ -23,7 +23,7 @@ public:
     
     // Composite screens
     void showSplashScreen(const char* boardName, int width, int height, float batteryVoltage = 0.0);
-    void showConfigInitError();
+    void showConfigInitError(float batteryVoltage = 0.0);
     
 private:
     int addLineSpacing(int currentY, int multiplier = 1);

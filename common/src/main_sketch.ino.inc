@@ -82,15 +82,13 @@ void setup() {
     // Wire up power manager to WiFi manager for smart connection strategy
     wifiManager.setPowerManager(&powerManager);
 
-    // Initialize configuration early to determine debug behavior and rotation
+    // Initialize configuration early to determine rotation
     bool configInitialized = configManager.begin();
-    bool debugModeEnabled = false;
     uint8_t screenRotation = 0;
     if (configInitialized && configManager.isConfigured()) {
-        debugModeEnabled = configManager.getDebugMode();
         screenRotation = configManager.getScreenRotation();
     }
-    bool shouldShowSplash = ((wakeReason == WAKEUP_FIRST_BOOT) || debugModeEnabled);
+    bool shouldShowSplash = (wakeReason == WAKEUP_FIRST_BOOT);
 #if !DISPLAY_FAST_REFRESH
     // Skip splash screen on slow displays to reduce boot time
     shouldShowSplash = false;
@@ -105,6 +103,7 @@ void setup() {
     // Set overlay manager for UI components (for battery icon on logo screens)
     uiMessages.setOverlayManager(&overlayManager);
     uiStatus.setOverlayManager(&overlayManager);
+    uiError.setOverlayManager(&overlayManager);
     
     // Set power manager and display for mode controllers (for battery icon)
     apModeController.setPowerManager(&powerManager);
@@ -114,8 +113,11 @@ void setup() {
     // Initialize display with rotation
     displayManager.init(shouldShowSplash, screenRotation);
     
+    // Read battery once early for consistent reporting throughout setup
+    float batteryVoltage = powerManager.readBatteryVoltage(&display);
+    int batteryPercentage = PowerManager::calculateBatteryPercentage(batteryVoltage);
+    
     if (shouldShowSplash) {
-        float batteryVoltage = powerManager.readBatteryVoltage(&display);
         uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT, batteryVoltage);
         #ifndef DISPLAY_MODE_INKPLATE2
         // Read and log the panel VCOM for diagnostic purposes (not available on Inkplate 2)
@@ -151,10 +153,10 @@ void setup() {
         Logger::line("Hardware reset button detected (button-less board) - entering config mode");
         Logger::end();
         if (isFullyConfigured) {
-            configModeController.begin();
+            configModeController.begin(batteryVoltage);
             configModeActive = true;
         } else {
-            apModeController.begin();
+            apModeController.begin(batteryVoltage);
             apModeActive = true;
         }
         return;
@@ -174,7 +176,7 @@ void setup() {
         Logger::begin("Mode Selection");
         Logger::line("Device NOT configured - entering AP mode (boot mode)");
         Logger::end();
-        apModeController.begin();
+        apModeController.begin(batteryVoltage);
         apModeActive = true;
         return;
     }
@@ -184,7 +186,7 @@ void setup() {
         Logger::begin("Mode Selection");
         Logger::line("WiFi configured but missing Image URL - auto-entering config mode");
         Logger::end();
-        configModeController.begin();
+        configModeController.begin(batteryVoltage);
         configModeActive = true;
         return;
     }
@@ -203,7 +205,7 @@ void setup() {
             Logger::begin("Mode Selection");
             Logger::line("Long button press detected - entering config mode");
             Logger::end();
-            configModeController.begin();
+            configModeController.begin(batteryVoltage);
             configModeActive = true;
             return;
         } else if (pressType == BUTTON_PRESS_SHORT && wakeReason == WAKEUP_BUTTON) {
@@ -214,11 +216,10 @@ void setup() {
             Logger::end();
             
             // Show immediate visual feedback for manual refresh
-            float batteryVoltage = powerManager.readBatteryVoltage(&display);
             uiStatus.showManualRefresh(batteryVoltage);
             delay(1500); // Show message for 1.5 seconds
             
-            normalModeController.execute();
+            normalModeController.execute(batteryVoltage, batteryPercentage);
             return;
         }
         // If no button press or short press during non-button wake, continue to normal operation
@@ -229,7 +230,8 @@ void setup() {
         Logger::begin("Mode Selection");
         Logger::line("Device is fully configured - entering normal operation mode");
         Logger::end();
-        normalModeController.execute();
+        
+        normalModeController.execute(batteryVoltage, batteryPercentage);
         return;
     }
     
@@ -237,7 +239,7 @@ void setup() {
     Logger::begin("Mode Selection");
     Logger::line("WARNING: Unexpected state - entering AP mode");
     Logger::end();
-    apModeController.begin();
+    apModeController.begin(batteryVoltage);
     apModeActive = true;
 }
 

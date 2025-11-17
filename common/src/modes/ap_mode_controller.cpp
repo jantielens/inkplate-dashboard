@@ -12,16 +12,11 @@ void APModeController::setDisplay(void* disp) {
     display = disp;
 }
 
-bool APModeController::begin() {
+bool APModeController::begin(float batteryVoltage) {
     if (wifiManager->startAccessPoint()) {
         String apName = wifiManager->getAPName();
         String apIP = wifiManager->getAPIPAddress();
         String mdnsHostname = wifiManager->getMDNSHostname();
-        
-        float batteryVoltage = 0.0;
-        if (powerManager != nullptr && display != nullptr) {
-            batteryVoltage = powerManager->readBatteryVoltage(display);
-        }
         
         uiStatus->showAPModeSetup(apName.c_str(), apIP.c_str(), mdnsHostname.c_str(), batteryVoltage);
         

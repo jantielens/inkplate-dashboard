@@ -5,6 +5,7 @@
 #include "version.h"
 #include "config.h"
 #include <src/logo_bitmap.h>
+#include <src/ui/screen.h>
 #include "logger.h"
 #include "github_ota.h"
 
@@ -57,32 +58,14 @@ bool ConfigPortal::begin(PortalMode mode) {
                     
                     // Show visual feedback on screen
                     if (_displayManager != nullptr) {
-                        _displayManager->clear();
-                        // Draw logo at top area for visual branding
-                        int screenWidth = _displayManager->getWidth();
-                        int minLogoX = MARGIN;
-                        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-                        int logoX;
-                        if (maxLogoX <= minLogoX) {
-                            logoX = minLogoX;
-                        } else {
-                            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-                        }
-                        int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-                        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-                        int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-                        int y = logoY;  // Start at top when logo is skipped
-#endif
-                        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
-                        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-                        _displayManager->showMessage("Installing firmware...", MARGIN, y, FONT_NORMAL);
-                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-                        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
-                        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-                        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
-                        _displayManager->refresh();
+                        Screen(_displayManager)
+                            .addHeading1("Firmware Update")
+                            .addSpacing(LINE_SPACING)
+                            .addText("Installing firmware...")
+                            .addText("Device will reboot when complete.")
+                            .addSpacing(LINE_SPACING)
+                            .addText("Do not power off!")
+                            .display();
                     }
                     
                     // Disable watchdog timer to prevent reboot during update
@@ -217,7 +200,6 @@ void ConfigPortal::handleSubmit() {
     String mqttPass = _server->arg("mqttpass");
     String timezoneStr = _server->arg("timezone");
     String rotationStr = _server->arg("rotation");
-    bool debugMode = _server->hasArg("debugmode") && _server->arg("debugmode") == "on";
     bool useCRC32Check = _server->hasArg("crc32check") && _server->arg("crc32check") == "on";
     
     // Parse static IP configuration
@@ -420,7 +402,6 @@ void ConfigPortal::handleSubmit() {
     config.friendlyName = friendlyName;  // Save original input (with spaces, capitals, etc)
     config.mqttBroker = mqttBroker;
     config.mqttUsername = mqttUser;
-    config.debugMode = debugMode;
     config.useCRC32Check = useCRC32Check;
     config.updateHours[0] = updateHours[0];
     config.updateHours[1] = updateHours[1];
@@ -848,18 +829,6 @@ void ConfigPortal::generateConfigPage() {
         chunk += "<option value='3'" + String(currentRotation == 3 ? " selected" : "") + ">270° (Portrait Inverted)</option>";
         chunk += "</select>";
         chunk += "<div class='help-text'>Select the orientation of your display. Important: Your images must be oriented to match this setting (e.g., for 90° portrait, provide a portrait-oriented image).</div>";
-        chunk += "</div>";
-        
-        // Debug mode toggle
-        chunk += "<div class='form-group'>";
-        chunk += "<label for='debugmode' style='display: flex; align-items: center; gap: 10px;'>";
-        chunk += "<input type='checkbox' id='debugmode' name='debugmode'";
-        if (hasConfig && currentConfig.debugMode) {
-            chunk += " checked";
-        }
-        chunk += "> Enable on-screen debug messages";
-        chunk += "</label>";
-        chunk += "<div class='help-text'>When disabled, only the final image or error appears on the display.</div>";
         chunk += "</div>";
         
         // Frontlight configuration (only for boards with HAS_FRONTLIGHT)
@@ -1323,12 +1292,11 @@ void otaUpdateTask(void* parameter) {
     if (success) {
         // Show success message on display
         if (data->displayManager != nullptr) {
-            data->displayManager->clear();
-            int y = MARGIN;
-            data->displayManager->showMessage("Update Complete!", MARGIN, y, FONT_HEADING1);
-            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-            data->displayManager->showMessage("Device will reboot now...", MARGIN, y, FONT_NORMAL);
-            data->displayManager->refresh();
+            Screen(data->displayManager)
+                .addHeading1("Update Complete!")
+                .addSpacing(LINE_SPACING)
+                .addText("Device will reboot now...")
+                .display();
         }
         
         Logger::message("OTA Success", "Rebooting in 3 seconds...");
@@ -1342,12 +1310,11 @@ void otaUpdateTask(void* parameter) {
     } else {
         // Show error message on display
         if (data->displayManager != nullptr) {
-            data->displayManager->clear();
-            int y = MARGIN;
-            data->displayManager->showMessage("Update Failed", MARGIN, y, FONT_HEADING1);
-            y += data->displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-            data->displayManager->showMessage(ota.getLastError().c_str(), MARGIN, y, FONT_NORMAL);
-            data->displayManager->refresh();
+            Screen(data->displayManager)
+                .addHeading1("Update Failed")
+                .addSpacing(LINE_SPACING)
+                .addText(ota.getLastError().c_str())
+                .display();
         }
         
         Logger::begin("OTA Error");
@@ -1375,34 +1342,16 @@ void ConfigPortal::handleOTAInstall() {
     Logger::line("URL: " + assetUrl);
     Logger::end();
     
-    // Show visual feedback on screen (same pattern as manual OTA upload)
+    // Show visual feedback on screen
     if (_displayManager != nullptr) {
-        _displayManager->clear();
-        // Draw logo at top area for visual branding
-        int screenWidth = _displayManager->getWidth();
-        int minLogoX = MARGIN;
-        int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-        int logoX;
-        if (maxLogoX <= minLogoX) {
-            logoX = minLogoX;
-        } else {
-            logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-        }
-        int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-        _displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-        int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-        int y = logoY;  // Start at top when logo is skipped
-#endif
-        _displayManager->showMessage("Firmware Update", MARGIN, y, FONT_HEADING1);
-        y += _displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-        _displayManager->showMessage("Downloading from GitHub...", MARGIN, y, FONT_NORMAL);
-        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-        _displayManager->showMessage("Device will reboot when complete.", MARGIN, y, FONT_NORMAL);
-        y += _displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-        _displayManager->showMessage("Do not power off!", MARGIN, y, FONT_NORMAL);
-        _displayManager->refresh();
+        Screen(_displayManager)
+            .addHeading1("Firmware Update")
+            .addSpacing(LINE_SPACING)
+            .addText("Downloading from GitHub...")
+            .addText("Device will reboot when complete.")
+            .addSpacing(LINE_SPACING)
+            .addText("Do not power off!")
+            .display();
     }
     
     // Allocate task data on heap (will be freed by task)

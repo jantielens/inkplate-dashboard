@@ -78,7 +78,6 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.mqttBroker = _preferences.getString(PREF_MQTT_BROKER, "");
     config.mqttUsername = _preferences.getString(PREF_MQTT_USER, "");
     config.mqttPassword = _preferences.getString(PREF_MQTT_PASS, "");
-    config.debugMode = _preferences.getBool(PREF_DEBUG_MODE, false);
     config.useCRC32Check = _preferences.getBool(PREF_USE_CRC32, false);
     
     // Load hourly schedule (3 bytes for 24-bit bitmask)
@@ -190,7 +189,6 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     _preferences.putString(PREF_MQTT_USER, config.mqttUsername);
     _preferences.putString(PREF_MQTT_PASS, config.mqttPassword);
     _preferences.putBool(PREF_CONFIGURED, true);
-    _preferences.putBool(PREF_DEBUG_MODE, config.debugMode);
     _preferences.putBool(PREF_USE_CRC32, config.useCRC32Check);
     
     // Save hourly schedule (3 bytes for 24-bit bitmask)
@@ -320,13 +318,6 @@ String ConfigManager::getMQTTPassword() {
     return _preferences.getString(PREF_MQTT_PASS, "");
 }
 
-bool ConfigManager::getDebugMode() {
-    if (!_initialized && !begin()) {
-        return false;
-    }
-    return _preferences.getBool(PREF_DEBUG_MODE, false);
-}
-
 void ConfigManager::setWiFiCredentials(const String& ssid, const String& password) {
     if (!_initialized && !begin()) {
         Logger::message("ConfigManager Error", "ConfigManager not initialized");
@@ -358,18 +349,6 @@ void ConfigManager::setMQTTConfig(const String& broker, const String& username, 
     _preferences.putString(PREF_MQTT_USER, username);
     _preferences.putString(PREF_MQTT_PASS, password);
     Logger::message("Config Update", "MQTT configuration updated");
-}
-
-void ConfigManager::setDebugMode(bool enabled) {
-    if (!_initialized && !begin()) {
-        Logger::message("ConfigManager Error", "ConfigManager not initialized");
-        return;
-    }
-
-    _preferences.putBool(PREF_DEBUG_MODE, enabled);
-    Logger::begin("Config Update");
-    Logger::line("Debug mode updated: " + String(enabled ? "ON" : "OFF"));
-    Logger::end();
 }
 
 void ConfigManager::setUseCRC32Check(bool enabled) {

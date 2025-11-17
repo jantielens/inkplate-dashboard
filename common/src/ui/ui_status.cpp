@@ -1,404 +1,180 @@
 #include <src/ui/ui_status.h>
+#include <src/ui/screen.h>
 #include <src/config.h>
-#include <src/logo_bitmap.h>
 
 UIStatus::UIStatus(DisplayManager* display) 
     : UIBase(display) {
 }
 
 void UIStatus::showAPModeSetup(const char* apName, const char* apIP, const char* mdnsHostname, float batteryVoltage) {
-    // Enable rotation for essential setup screen (user needs to read instructions)
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    // Center logo horizontally and leave space for text
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-    int y = logoY;  // Start at top when logo is skipped
-#endif
-    
-    displayManager->showMessage("Setup - Step 1", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+    screen.addHeading1("Setup - Step 1");
     
 #if !DISPLAY_MINIMAL_UI
-    displayManager->showMessage("Connect WiFi", MARGIN, y, FONT_HEADING2);
-    y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+    screen.addHeading2("Connect WiFi");
 #endif
     
-    displayManager->showMessage("1. Connect to WiFi:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage(apName, INDENT_MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+    screen.addText("1. Connect to WiFi:");
+    screen.addIndentedText(apName);
     
-    displayManager->showMessage("2. Open browser to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    screen.addText("2. Open browser to:");
     
     // Show mDNS hostname if available
     if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
-        String mdnsUrl = "http://" + String(mdnsHostname);
-        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
-        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-        
-        // Show IP as alternative
-        String ipUrl = "or http://" + String(apIP);
-        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        String mdnsUrl = "   http://" + String(mdnsHostname);
+        screen.addText(mdnsUrl);
+        String ipUrl = "   or http://" + String(apIP);
+        screen.addText(ipUrl);
     } else {
-        // Fallback to IP only
-        String url = "http://" + String(apIP);
-        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        String url = "   http://" + String(apIP);
+        screen.addText(url);
     }
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
-    displayManager->showMessage("3. Enter WiFi settings", MARGIN, y, FONT_NORMAL);
+    screen.addText("3. Enter WiFi settings");
     
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-    
-    displayManager->refresh();
+    screen.display();
 }
 
 void UIStatus::showConfigModeSetup(const char* localIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
-    // Enable rotation for essential setup screen (user needs to read URL)
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    // Center logo horizontally and leave space for text
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-    int y = logoY;  // Start at top when logo is skipped
-#endif
-
-    displayManager->showMessage("Config Mode Active", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
-
-    displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-
+    screen.addHeading1("Config Mode Active");
+    screen.addSpacing(LINE_SPACING * 2);
+    screen.addText("Open browser to:");
+    
     // Show mDNS hostname if available
     if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
-        String mdnsUrl = "http://" + String(mdnsHostname);
-        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
-        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING;
-        
-        // Show IP as alternative
-        String ipUrl = "or http://" + String(localIP);
-        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
-        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+        String mdnsUrl = "   http://" + String(mdnsHostname);
+        screen.addHeading2(mdnsUrl);
+        String ipUrl = "   or http://" + String(localIP);
+        screen.addText(ipUrl);
     } else {
-        // Fallback to IP only
-        String url = "http://" + String(localIP);
-        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
-        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
+        String url = "   http://" + String(localIP);
+        screen.addHeading2(url);
     }
-
+    
     if (hasTimeout) {
         String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
-        displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
+        screen.addText(timeoutMsg);
     }
-
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-
-    displayManager->refresh();
+    
+    screen.display();
 }
 
 void UIStatus::showConfigModePartialSetup(const char* localIP, const char* mdnsHostname, float batteryVoltage) {
-    // Enable rotation for essential setup screen (user needs to read URL)
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    // Center logo horizontally and leave space for text
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-    int y = logoY;  // Start at top when logo is skipped
-#endif
-    
-    displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
-    
-    displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    screen.addHeading1("Setup - Step 2");
+    screen.addSpacing(LINE_SPACING * 2);
+    screen.addText("Open browser to:");
     
     // Show mDNS hostname if available
     if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
-        String mdnsUrl = "http://" + String(mdnsHostname);
-        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
-        y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING;
-        
-        // Show IP as alternative
-        String ipUrl = "or http://" + String(localIP);
-        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        String mdnsUrl = "   http://" + String(mdnsHostname);
+        screen.addHeading2(mdnsUrl);
+        String ipUrl = "   or http://" + String(localIP);
+        screen.addText(ipUrl);
     } else {
-        // Fallback to IP only
-        String url = "http://" + String(localIP);
-        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_HEADING2);
+        String url = "   http://" + String(localIP);
+        screen.addHeading2(url);
     }
     
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-    
-    displayManager->refresh();
+    screen.display();
 }
 
 void UIStatus::showConfigModeConnecting(const char* ssid, bool isPartialConfig, float batteryVoltage) {
-    // Enable rotation for essential setup screen
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    // Center logo horizontally and leave space for text
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-    int y = logoY;  // Start at top when logo is skipped
-#endif
-
     if (isPartialConfig) {
-        displayManager->showMessage("Setup - Step 2", MARGIN, y, FONT_HEADING1);
-        y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
+        screen.addHeading1("Setup - Step 2");
+        screen.addSpacing(LINE_SPACING * 2);
     } else {
-        displayManager->showMessage("Config Mode", MARGIN, y, FONT_HEADING1);
-        y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-        displayManager->showMessage("Active for 5 minutes", MARGIN, y, FONT_NORMAL);
-        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
+        screen.addHeading1("Config Mode");
+        screen.addText("Active for 5 minutes");
     }
-
-    displayManager->showMessage("Connecting to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage(ssid, INDENT_MARGIN, y, FONT_NORMAL);
-
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-
-    displayManager->refresh();
+    
+    screen.addText("Connecting to:");
+    screen.addIndentedText(ssid);
+    
+    screen.display();
 }
 
 void UIStatus::showConfigModeWiFiFailed(const char* ssid, float batteryVoltage) {
-    // Enable rotation for essential error screen
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    int y = MARGIN;
+    screen.addHeading1("WiFi Failed");
+    screen.addText("Cannot connect to:");
+    screen.addText(ssid);
+    screen.addText("Starting AP mode...");
     
-    displayManager->showMessage("WiFi Failed", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-    
-    displayManager->showMessage("Cannot connect to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage(ssid, MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-    
-    displayManager->showMessage("Starting AP mode...", MARGIN, y, FONT_NORMAL);
-    
-    // No logo on this screen, no battery icon
-    
-    displayManager->refresh();
+    screen.display();
 }
 
 void UIStatus::showConfigModeAPFallback(const char* apName, const char* apIP, bool hasTimeout, int timeoutMinutes, const char* mdnsHostname, float batteryVoltage) {
-    // Enable rotation for essential setup screen (user needs to read instructions)
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    int y = MARGIN;
+    screen.addHeading1("Config Mode (AP)");
+    screen.addText("WiFi connection failed");
     
-    displayManager->showMessage("Config Mode (AP)", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
+    screen.addText("Connect to WiFi:");
+    screen.addIndentedText(apName);
     
-    displayManager->showMessage("WiFi connection failed", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-    
-    displayManager->showMessage("Connect to WiFi:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    displayManager->showMessage(apName, INDENT_MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
-    
-    displayManager->showMessage("Open browser to:", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
+    screen.addText("Open browser to:");
     
     // Show mDNS hostname if available
     if (mdnsHostname != nullptr && strlen(mdnsHostname) > 0) {
-        String mdnsUrl = "http://" + String(mdnsHostname);
-        displayManager->showMessage(mdnsUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
-        y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-        
-        // Show IP as alternative
-        String ipUrl = "or http://" + String(apIP);
-        displayManager->showMessage(ipUrl.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        String mdnsUrl = "   http://" + String(mdnsHostname);
+        screen.addText(mdnsUrl);
+        String ipUrl = "   or http://" + String(apIP);
+        screen.addText(ipUrl);
     } else {
-        // Fallback to IP only
-        String url = "http://" + String(apIP);
-        displayManager->showMessage(url.c_str(), INDENT_MARGIN, y, FONT_NORMAL);
+        String url = "   http://" + String(apIP);
+        screen.addText(url);
     }
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING * 2;
     
     if (hasTimeout) {
         String timeoutMsg = "Timeout: " + String(timeoutMinutes) + " minutes";
-        displayManager->showMessage(timeoutMsg.c_str(), MARGIN, y, FONT_NORMAL);
+        screen.addText(timeoutMsg);
     }
     
-    // No logo on this screen, no battery icon
-    
-    displayManager->refresh();
+    screen.display();
 }
 
-void UIStatus::showConfigModeTimeout() {
-    // Enable rotation for essential message
-    displayManager->enableRotation();
+void UIStatus::showConfigModeTimeout(float batteryVoltage) {
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    int y = MARGIN;
+    screen.addHeading2("Config Mode Timeout");
+    screen.addText("Going to sleep...");
     
-    displayManager->showMessage("Config Mode Timeout", MARGIN, y, FONT_HEADING2);
-    y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
-    displayManager->showMessage("Going to sleep...", MARGIN, y, FONT_NORMAL);
-    
-    displayManager->refresh();
-}
-
-void UIStatus::showDebugStatus(const char* ssid, int refreshMinutes, float batteryVoltage) {
-    // Transient debug message - skip rotation for performance
-    // This screen appears briefly before image download in debug mode
-    int y = MARGIN;
-    displayManager->showMessage("Status: Configured", MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
-    String ssidMsg = "SSID: " + String(ssid);
-    displayManager->showMessage(ssidMsg.c_str(), MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
-    String refreshMsg = "Refresh: " + String(refreshMinutes) + " min";
-    displayManager->showMessage(refreshMsg.c_str(), MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
-    displayManager->showMessage("Connecting to WiFi...", MARGIN, y, FONT_NORMAL);
-    // No logo on this screen, no battery icon
-    displayManager->refresh();
-}
-
-void UIStatus::showDownloading(const char* url, bool mqttConnected, float batteryVoltage) {
-    // Transient status message - skip rotation for performance
-    // This screen appears briefly before image replaces it
-    displayManager->clear();
-    int y = MARGIN;
-    
-    displayManager->showMessage("Downloading...", MARGIN, y, FONT_HEADING2);
-    y += displayManager->getFontHeight(FONT_HEADING2) + LINE_SPACING * 2;
-    
-    displayManager->showMessage(url, MARGIN, y, FONT_NORMAL);
-    y += displayManager->getFontHeight(FONT_NORMAL) + LINE_SPACING;
-    
-    if (mqttConnected) {
-        displayManager->showMessage("MQTT: Connected", MARGIN, y, FONT_NORMAL);
-    }
-    // No logo on this screen, no battery icon
-    displayManager->refresh();
+    screen.display();
 }
 
 void UIStatus::showManualRefresh(float batteryVoltage) {
-    // Enable rotation for manual refresh acknowledgment
-    // User intentionally triggered this, so they're likely looking at the screen
-    displayManager->enableRotation();
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    // Place logo for manual refresh
-    int screenWidth = displayManager->getWidth();
-    int minLogoX = MARGIN;
-    int maxLogoX = screenWidth - LOGO_WIDTH - MARGIN;
-    int logoX;
-    if (maxLogoX <= minLogoX) {
-        logoX = minLogoX;
-    } else {
-        logoX = minLogoX + (maxLogoX - minLogoX) / 2;
-    }
-    int logoY = MARGIN;
-#if !DISPLAY_MINIMAL_UI
-    displayManager->drawBitmap(logo_bitmap, logoX, logoY, LOGO_WIDTH, LOGO_HEIGHT);
-    int y = logoY + LOGO_HEIGHT + MARGIN;
-#else
-    int y = logoY;  // Start at top when logo is skipped
-#endif
+    screen.addHeading1("Manual Refresh");
+    screen.addText("Button pressed - updating...");
     
-    displayManager->showMessage("Manual Refresh", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 2;
-    displayManager->showMessage("Button pressed - updating...", MARGIN, y, FONT_NORMAL);
-    
-    // Draw battery icon at bottom left
-    drawBatteryIconBottomLeft(batteryVoltage);
-    
-    displayManager->refresh();
+    screen.display();
 }
 
-void UIStatus::showWiFiConfigured() {
-    // Enable rotation for success confirmation screen
-    displayManager->enableRotation();
+void UIStatus::showWiFiConfigured(float batteryVoltage) {
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    int y = MARGIN;
+    screen.addHeading1("WiFi Configured!");
+    screen.addSpacing(LINE_SPACING * 2);
+    screen.addText("Restarting...");
     
-    displayManager->showMessage("WiFi Configured!", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
-    displayManager->showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
-    
-    displayManager->refresh();
+    screen.display();
 }
 
-void UIStatus::showSettingsUpdated() {
-    // Enable rotation for success confirmation screen
-    displayManager->enableRotation();
+void UIStatus::showSettingsUpdated(float batteryVoltage) {
+    Screen screen(displayManager, overlayManager, batteryVoltage);
     
-    displayManager->clear();
-    int y = MARGIN;
+    screen.addHeading1("Settings Updated!");
+    screen.addSpacing(LINE_SPACING * 2);
+    screen.addText("Restarting...");
     
-    displayManager->showMessage("Settings Updated!", MARGIN, y, FONT_HEADING1);
-    y += displayManager->getFontHeight(FONT_HEADING1) + LINE_SPACING * 3;
-    displayManager->showMessage("Restarting...", MARGIN, y, FONT_NORMAL);
-    
-    displayManager->refresh();
+    screen.display();
 }

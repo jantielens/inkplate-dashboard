@@ -22,6 +22,7 @@ This folder contains records of architectural decisions and deep-dive technical 
 | [OVERLAY_SYSTEM.MD](ADR-OVERLAY_SYSTEM.MD) | On-image status overlay system with battery icon on logo screens (v1.7.0) |
 | [ROTATION_PERFORMANCE_OPTIMIZATION.md](ROTATION_PERFORMANCE_OPTIMIZATION.md) | Screen rotation performance optimization |
 | [SCREEN_ROTATION_IMPLEMENTATION.md](SCREEN_ROTATION_IMPLEMENTATION.md) | Implementation of screen rotation feature |
+| [SCREEN_BUILDER.MD](ADR-SCREEN_BUILDER.MD) | Screen builder pattern with default-on logo/battery and automatic spacing (v1.7.1) |
 | [TESTING.md](TESTING.md) | Testing the CI/CD workflow |
 | [TESTING_RETRY_MECHANISM.md](TESTING_RETRY_MECHANISM.md) | Testing the image download retry mechanism |
 | [UNIT_TESTING.MD](ADR-UNIT_TESTING.MD) | Unit testing pattern for embedded firmware with CMake/Google Test (v1.5.2+) |

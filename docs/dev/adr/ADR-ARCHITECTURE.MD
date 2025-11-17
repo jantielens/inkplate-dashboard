@@ -336,11 +336,9 @@ Status and progress screens. Inherits from UIBase.
 - `showAPModeSetup()` - AP mode with SSID and IP
 - `showConfigModeSetup()` - Config mode with network info
 - `showConfigModeConnecting()` - Connecting to WiFi in config mode
-- `showDownloading()` - Image download in progress
 - `showManualRefresh()` - Manual refresh triggered
 - `showWiFiConfigured()` - WiFi credentials saved (AP mode)
 - `showSettingsUpdated()` - Configuration updated (config mode)
-- `showDebugStatus()` - Debug info (WiFi, refresh rate)
 
 **Battery Icon Feature:** All logo screens (splash, setup screens, manual refresh) automatically display a medium-sized black battery icon at bottom-left, independent of user overlay configuration.
 

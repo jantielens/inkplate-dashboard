@@ -61,7 +61,8 @@ The Inkplate Dashboard uses a **two-step setup** to make configuration easier:
    - Device Name (can be changed/set if not done in Step 1)
    - MQTT settings (optional)
    - Network configuration (optional - Static IP)
-   - Display settings, debug mode, etc.
+   - Network configuration (static IP, WiFi channel)
+   - Display settings, screen rotation, etc.
 
 5. **Device saves all settings and enters normal operation**
 

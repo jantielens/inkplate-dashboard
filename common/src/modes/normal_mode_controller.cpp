@@ -15,7 +15,7 @@ NormalModeController::NormalModeController(Inkplate* disp, ConfigManager* config
       uiStatus(uiStatus), uiError(uiError), imageStateIndex(stateIndex) {
 }
 
-void NormalModeController::execute() {
+void NormalModeController::execute(float batteryVoltage, int batteryPercentage) {
     /*
      * TRUTH TABLE: Normal Mode Execution Paths
      * ==========================================
@@ -105,12 +105,7 @@ void NormalModeController::execute() {
         timings.image_retry_count = 0;  // Carousel mode - retry count not applicable
     }
     
-    if (config.debugMode) {
-        int debugInterval = config.getAverageInterval();
-        uiStatus->showDebugStatus(config.wifiSSID.c_str(), debugInterval);
-    }
-    
-    // Collect telemetry data early
+    // Collect telemetry data early (use passed battery values for consistency)
     String deviceId = wifiManager->getDeviceIdentifier();
     String deviceName;
     if (config.friendlyName.length() > 0) {
@@ -122,8 +117,6 @@ void NormalModeController::execute() {
         }
         deviceName = "Inkplate Dashboard " + deviceNameSuffix;
     }
-    float batteryVoltage = powerManager->readBatteryVoltage(display);
-    int batteryPercentage = PowerManager::calculateBatteryPercentage(batteryVoltage);
     WakeupReason wakeReason = powerManager->getWakeupReason();
     
     // Connect to WiFi (measure timing)
@@ -276,10 +269,6 @@ void NormalModeController::execute() {
     }
     
     // Download and display image
-    if (config.debugMode) {
-        uiStatus->showDownloading(currentImageUrl.c_str(), false);
-    }
-    
     // Prepare overlay parameters (if overlay is enabled)
     char updateTimeStr[16] = "";
     if (config.overlayEnabled && config.overlayShowUpdateTime) {

@@ -4,6 +4,28 @@
 
 ## [Unreleased]
 
+## [1.7.1] - 2025-11-17
+
+### Changed
+- **Simplified Screen Builder API** (Issue #114)
+  - Logo and battery icons now enabled by default on all screens
+  - Battery voltage moved to constructor (3rd parameter, default 0.0f)
+  - Removed `withLogo()` and `withBattery()` methods
+  - Added `withoutBattery()` for opt-out (logo controlled by DISPLAY_MINIMAL_UI board config)
+  - Screen methods now automatically add LINE_SPACING after content
+  - Removed 21 redundant `addSpacing(LINE_SPACING)` calls
+  - Reduced screen setup code by ~60% (from 6-7 lines to 2-3 lines per screen)
+  - Constructor signature: `Screen(DisplayManager*, OverlayManager* = nullptr, float batteryVoltage = 0.0f)`
+
+### Removed
+- **Debug Mode Configuration** (Issue #113)
+  - Removed `debugMode` configuration parameter from all code
+  - Removed debug mode toggle from web configuration portal
+  - Removed `showDebugStatus()` and `showDownloading()` intermediate status screens
+  - Splash screen now only shows on first boot (not on every boot)
+  - Cleaner user experience with fewer transient screens
+  - Users should use serial logging for diagnostics instead
+
 ## [1.7.0] - 2025-11-17
 
 ### Added
