@@ -2,7 +2,7 @@
 #include "logger.h"
 
 WiFiManager::WiFiManager(ConfigManager* configManager) 
-    : _configManager(configManager), _powerManager(nullptr), _apActive(false), _mdnsActive(false) {
+    : _configManager(configManager), _powerManager(nullptr), _apActive(false), _mdnsActive(false), _dnsServer(nullptr) {
     _apName = String(AP_SSID_PREFIX) + generateDeviceID();
 }
 
@@ -12,7 +12,7 @@ void WiFiManager::setPowerManager(PowerManager* powerManager) {
 
 WiFiManager::~WiFiManager() {
     if (_apActive) {
-        stopAccessPoint();
+        stopAccessPoint();  // This already deletes _dnsServer
     }
     stopMDNS();
     disconnect();
@@ -53,6 +53,9 @@ bool WiFiManager::startAccessPoint() {
     // Disconnect from any WiFi network first
     WiFi.mode(WIFI_AP);
     
+    // Disable power saving for better AP performance and responsiveness
+    WiFi.setSleep(false);
+    
     // Start AP with no password (open network)
     bool success = WiFi.softAP(_apName.c_str());
     
@@ -61,6 +64,15 @@ bool WiFiManager::startAccessPoint() {
         IPAddress ip = WiFi.softAPIP();
         Logger::line("Access Point started successfully");
         Logger::line("IP Address: " + ip.toString());
+        
+        // Start DNS server for captive portal
+        if (_dnsServer) {
+            delete _dnsServer;
+            _dnsServer = nullptr;
+        }
+        _dnsServer = new DNSServer();
+        _dnsServer->start(DNS_PORT, "*", ip);  // Redirect all domains to AP IP
+        Logger::line("DNS server started for captive portal");
         
         // Start mDNS service
         if (startMDNS()) {
@@ -82,6 +94,14 @@ bool WiFiManager::startAccessPoint() {
 void WiFiManager::stopAccessPoint() {
     if (_apActive) {
         Logger::message("Access Point", "Stopping Access Point...");
+        
+        // Stop DNS server
+        if (_dnsServer) {
+            _dnsServer->stop();
+            delete _dnsServer;
+            _dnsServer = nullptr;
+        }
+        
         stopMDNS();
         WiFi.softAPdisconnect(true);
         _apActive = false;
@@ -103,7 +123,7 @@ bool WiFiManager::isAPActive() {
     return _apActive;
 }
 
-bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount) {
+bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint8_t* outRetryCount, bool disableAutoReconnect) {
     Logger::begin("Connecting to WiFi");
     Logger::line("SSID: " + ssid);
     
@@ -123,8 +143,9 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     WiFi.setHostname(hostname.c_str());
     
     // Enable persistent credentials and auto-reconnect for faster connections
+    // Disable auto-reconnect when requested (e.g., for config portal) to prevent connection stalls
     WiFi.persistent(true);
-    WiFi.setAutoReconnect(true);
+    WiFi.setAutoReconnect(!disableAutoReconnect);
     
     // Check if static IP is configured
     if (_configManager && _configManager->getUseStaticIP()) {
@@ -267,7 +288,7 @@ bool WiFiManager::connectToWiFi(const String& ssid, const String& password, uint
     }
 }
 
-bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
+bool WiFiManager::connectToWiFi(uint8_t* outRetryCount, bool disableAutoReconnect) {
     if (!_configManager) {
         Logger::message("WiFi Connection", "ConfigManager not set");
         if (outRetryCount) *outRetryCount = 0;
@@ -283,7 +304,7 @@ bool WiFiManager::connectToWiFi(uint8_t* outRetryCount) {
         return false;
     }
     
-    return connectToWiFi(ssid, password, outRetryCount);
+    return connectToWiFi(ssid, password, outRetryCount, disableAutoReconnect);
 }
 
 void WiFiManager::disconnect() {
@@ -410,4 +431,10 @@ String WiFiManager::getMDNSHostname() {
         return getDeviceIdentifier() + ".local";
     }
     return "";
+}
+
+void WiFiManager::handleDNS() {
+    if (_dnsServer && _apActive) {
+        _dnsServer->processNextRequest();
+    }
 }

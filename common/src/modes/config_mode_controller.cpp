@@ -39,7 +39,8 @@ bool ConfigModeController::begin() {
 #endif
     
     // Connect to configured WiFi
-    if (wifiManager->connectToWiFi()) {
+    // Disable auto-reconnect to prevent background reconnections from stalling the web portal
+    if (wifiManager->connectToWiFi(nullptr, true)) {
         String localIP = wifiManager->getLocalIP();
         
         // Publish log message for config mode entry (if MQTT is configured)
