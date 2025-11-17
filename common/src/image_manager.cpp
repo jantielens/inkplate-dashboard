@@ -7,11 +7,16 @@ ImageManager::ImageManager(Inkplate* display, DisplayManager* displayManager) {
     _display = display;
     _displayManager = displayManager;
     _configManager = nullptr;
+    _overlayManager = nullptr;
     _lastError = "";
 }
 
 void ImageManager::setConfigManager(ConfigManager* configManager) {
     _configManager = configManager;
+}
+
+void ImageManager::setOverlayManager(OverlayManager* overlayManager) {
+    _overlayManager = overlayManager;
 }
 
 bool ImageManager::isHttps(const char* url) {
@@ -193,7 +198,10 @@ void ImageManager::saveCRC32(uint32_t crc32Value) {
     _configManager->setLastCRC32(crc32Value);
 }
 
-bool ImageManager::downloadAndDisplay(const char* url) {
+bool ImageManager::downloadAndDisplay(const char* url,
+                                     float batteryVoltage,
+                                     const char* updateTimeStr,
+                                     unsigned long cycleTimeMs) {
     _lastError = "";
     
     Logger::begin("Starting image download");
@@ -227,6 +235,14 @@ bool ImageManager::downloadAndDisplay(const char* url) {
         // Restore the original rotation before calling display()
         // This ensures text overlays (like version label) use correct rotation
         _display->setRotation(currentRotation);
+        
+        // Render overlay if overlay manager is configured
+        if (_overlayManager != nullptr && _configManager != nullptr) {
+            DashboardConfig config;
+            if (_configManager->loadConfig(config)) {
+                _overlayManager->renderOverlay(config, batteryVoltage, updateTimeStr, cycleTimeMs);
+            }
+        }
         
         // Actually refresh the e-ink display to show the new image
         _display->display();

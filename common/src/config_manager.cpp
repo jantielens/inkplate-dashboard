@@ -120,6 +120,16 @@ bool ConfigManager::loadConfig(DashboardConfig& config) {
     config.frontlightDuration = _preferences.getUChar(PREF_FRONTLIGHT_DURATION, 0);  // Default: disabled
     config.frontlightBrightness = _preferences.getUChar(PREF_FRONTLIGHT_BRIGHTNESS, 63);  // Default: max brightness
     
+    // Load overlay configuration
+    config.overlayEnabled = _preferences.getBool(PREF_OVERLAY_ENABLED, false);
+    config.overlayPosition = _preferences.getUChar(PREF_OVERLAY_POSITION, OVERLAY_POS_TOP_RIGHT);
+    config.overlayShowBatteryIcon = _preferences.getBool(PREF_OVERLAY_SHOW_BATTERY_ICON, true);
+    config.overlayShowBatteryPercentage = _preferences.getBool(PREF_OVERLAY_SHOW_BATTERY_PCT, true);
+    config.overlayShowUpdateTime = _preferences.getBool(PREF_OVERLAY_SHOW_UPDATE_TIME, true);
+    config.overlayShowCycleTime = _preferences.getBool(PREF_OVERLAY_SHOW_CYCLE_TIME, false);
+    config.overlaySize = _preferences.getUChar(PREF_OVERLAY_SIZE, OVERLAY_SIZE_MEDIUM);
+    config.overlayTextColor = _preferences.getUChar(PREF_OVERLAY_TEXT_COLOR, OVERLAY_COLOR_BLACK);
+    
     // Validate configuration
     if (config.wifiSSID.length() == 0 || config.imageCount == 0) {
         Logger::message("Config Error", "Invalid configuration: missing SSID or images");
@@ -236,6 +246,16 @@ bool ConfigManager::saveConfig(const DashboardConfig& config) {
     // Save frontlight configuration (only for boards with HAS_FRONTLIGHT)
     _preferences.putUChar(PREF_FRONTLIGHT_DURATION, config.frontlightDuration);
     _preferences.putUChar(PREF_FRONTLIGHT_BRIGHTNESS, config.frontlightBrightness);
+    
+    // Save overlay configuration
+    _preferences.putBool(PREF_OVERLAY_ENABLED, config.overlayEnabled);
+    _preferences.putUChar(PREF_OVERLAY_POSITION, config.overlayPosition);
+    _preferences.putBool(PREF_OVERLAY_SHOW_BATTERY_ICON, config.overlayShowBatteryIcon);
+    _preferences.putBool(PREF_OVERLAY_SHOW_BATTERY_PCT, config.overlayShowBatteryPercentage);
+    _preferences.putBool(PREF_OVERLAY_SHOW_UPDATE_TIME, config.overlayShowUpdateTime);
+    _preferences.putBool(PREF_OVERLAY_SHOW_CYCLE_TIME, config.overlayShowCycleTime);
+    _preferences.putUChar(PREF_OVERLAY_SIZE, config.overlaySize);
+    _preferences.putUChar(PREF_OVERLAY_TEXT_COLOR, config.overlayTextColor);
     
     Logger::begin("Config Saved");
     if (config.imageCount == 1) {

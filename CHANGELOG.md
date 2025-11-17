@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2025-11-17
+
+### Added
+- **Configurable On-Image Overlay for Battery & Update Status** (Issue #TBD)
+  - User-configurable overlay system for displaying status information directly on dashboard images
+  - Overlay options via web portal:
+    - Enable/disable overlay
+    - Position: Top left, top right, bottom left, bottom right
+    - Show battery icon (filled to match battery percentage)
+    - Show battery percentage text
+    - Show last update time (HH:MM format)
+    - Show last cycle time (loop duration in seconds)
+    - Size: Small, Medium (default), Large
+    - Text color: Black (default) or White
+  - Overlay renders after image download and before display refresh
+  - Non-destructive rendering on display buffer
+  - Respects display rotation
+  - Default preset: Medium size, top-right position, shows battery icon & percentage + update time
+  - Improves usability for battery-powered and wall-mounted dashboards
+  - Provides "glanceable" status without needing to wake device or check Home Assistant
+
 ## [1.6.2] - 2025-11-17
 
 ### Changed

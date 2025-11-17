@@ -14,6 +14,7 @@
 #include <src/wifi_manager.h>
 #include <src/config_portal.h>
 #include <src/image_manager.h>
+#include <src/overlay_manager.h>
 #include <src/power_manager.h>
 #include <src/mqtt_manager.h>
 #include <src/logger.h>
@@ -37,6 +38,7 @@ DisplayManager displayManager(&display);
 ConfigManager configManager;
 WiFiManager wifiManager(&configManager);
 ConfigPortal configPortal(&configManager, &wifiManager, &displayManager);
+OverlayManager overlayManager(&display, &displayManager);
 ImageManager imageManager(&display, &displayManager);
 PowerManager powerManager;
 MQTTManager mqttManager(&configManager);
@@ -96,6 +98,9 @@ void setup() {
     
     // Set config manager for image manager (for CRC32 storage)
     imageManager.setConfigManager(&configManager);
+    
+    // Set overlay manager for image manager (for status overlay)
+    imageManager.setOverlayManager(&overlayManager);
     
     // Initialize display with rotation
     displayManager.init(shouldShowSplash, screenRotation);

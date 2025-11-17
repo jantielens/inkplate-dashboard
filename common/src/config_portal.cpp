@@ -319,6 +319,34 @@ void ConfigPortal::handleSubmit() {
         }
     }
     
+    // Parse overlay configuration
+    bool overlayEnabled = _server->hasArg("overlay_enabled") && _server->arg("overlay_enabled") == "on";
+    String overlayPosStr = _server->arg("overlay_position");
+    bool overlayShowBatteryIcon = _server->hasArg("overlay_battery_icon") && _server->arg("overlay_battery_icon") == "on";
+    bool overlayShowBatteryPct = _server->hasArg("overlay_battery_pct") && _server->arg("overlay_battery_pct") == "on";
+    bool overlayShowUpdateTime = _server->hasArg("overlay_update_time") && _server->arg("overlay_update_time") == "on";
+    bool overlayShowCycleTime = _server->hasArg("overlay_cycle_time") && _server->arg("overlay_cycle_time") == "on";
+    String overlaySizeStr = _server->arg("overlay_size");
+    String overlayColorStr = _server->arg("overlay_color");
+    
+    // Parse and validate overlay position
+    uint8_t overlayPosition = overlayPosStr.toInt();
+    if (overlayPosition > OVERLAY_POS_BOTTOM_RIGHT) {
+        overlayPosition = OVERLAY_POS_TOP_RIGHT;  // Default to top-right on invalid input
+    }
+    
+    // Parse and validate overlay size
+    uint8_t overlaySize = overlaySizeStr.toInt();
+    if (overlaySize > OVERLAY_SIZE_LARGE) {
+        overlaySize = OVERLAY_SIZE_MEDIUM;  // Default to medium on invalid input
+    }
+    
+    // Parse and validate overlay color
+    uint8_t overlayColor = overlayColorStr.toInt();
+    if (overlayColor > OVERLAY_COLOR_WHITE) {
+        overlayColor = OVERLAY_COLOR_BLACK;  // Default to black on invalid input
+    }
+    
     // Validate input
     if (ssid.length() == 0) {
         _server->send(400, "text/html", generateErrorPage("WiFi SSID is required"));
@@ -419,6 +447,16 @@ void ConfigPortal::handleSubmit() {
     // Save frontlight configuration
     config.frontlightDuration = frontlightDuration;
     config.frontlightBrightness = frontlightBrightness;
+    
+    // Save overlay configuration
+    config.overlayEnabled = overlayEnabled;
+    config.overlayPosition = overlayPosition;
+    config.overlayShowBatteryIcon = overlayShowBatteryIcon;
+    config.overlayShowBatteryPercentage = overlayShowBatteryPct;
+    config.overlayShowUpdateTime = overlayShowUpdateTime;
+    config.overlayShowCycleTime = overlayShowCycleTime;
+    config.overlaySize = overlaySize;
+    config.overlayTextColor = overlayColor;
     
     // Handle WiFi password - if empty and device is configured, keep existing password
     if (password.length() == 0 && _configManager->isConfigured()) {

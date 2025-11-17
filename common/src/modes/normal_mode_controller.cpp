@@ -280,8 +280,23 @@ void NormalModeController::execute() {
         uiStatus->showDownloading(currentImageUrl.c_str(), false);
     }
     
+    // Prepare overlay parameters (if overlay is enabled)
+    char updateTimeStr[16] = "";
+    if (config.overlayEnabled && config.overlayShowUpdateTime) {
+        // Format current time as HH:MM
+        time_t currentTime = time(nullptr);
+        struct tm* timeInfo = localtime(&currentTime);
+        strftime(updateTimeStr, sizeof(updateTimeStr), "%H:%M", timeInfo);
+    }
+    
+    unsigned long cycleTimeMs = (config.overlayEnabled && config.overlayShowCycleTime) 
+                                ? (millis() - loopStartTime) : 0;
+    
     timerStart = millis();
-    bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str());
+    bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str(), 
+                                                    batteryVoltage,
+                                                    updateTimeStr,
+                                                    cycleTimeMs);
     timings.image_ms = millis() - timerStart;
     
     // DECISION POINT 3: Handle result (success or failure)

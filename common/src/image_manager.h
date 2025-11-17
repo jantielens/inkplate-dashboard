@@ -4,6 +4,7 @@
 #include "Inkplate.h"
 #include "display_manager.h"
 #include "config_manager.h"
+#include "overlay_manager.h"
 
 class ImageManager {
 public:
@@ -11,6 +12,9 @@ public:
     
     // Set config manager for CRC32 storage
     void setConfigManager(ConfigManager* configManager);
+    
+    // Set overlay manager for status overlay rendering
+    void setOverlayManager(OverlayManager* overlayManager);
     
     // Check if image has changed based on CRC32
     // Returns true if changed or check failed (should download)
@@ -24,7 +28,14 @@ public:
     void saveCRC32(uint32_t crc32Value);
     
     // Download and display image from URL
-    bool downloadAndDisplay(const char* url);
+    // Optional parameters for overlay rendering:
+    //   batteryVoltage: battery voltage in volts (0.0 if not available)
+    //   updateTimeStr: last update time string (empty if not tracking)
+    //   cycleTimeMs: last cycle/loop time in milliseconds (0 if not tracking)
+    bool downloadAndDisplay(const char* url, 
+                           float batteryVoltage = 0.0,
+                           const char* updateTimeStr = "",
+                           unsigned long cycleTimeMs = 0);
     
     // Get last error message
     const char* getLastError();
@@ -33,6 +44,7 @@ private:
     Inkplate* _display;
     DisplayManager* _displayManager;
     ConfigManager* _configManager;
+    OverlayManager* _overlayManager;
     String _lastError;
     
     // Helper functions
