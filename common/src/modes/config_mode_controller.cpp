@@ -8,7 +8,11 @@ ConfigModeController::ConfigModeController(ConfigManager* config, WiFiManager* w
                                            UIStatus* uiStatus, UIError* uiError)
     : configManager(config), wifiManager(wifi), configPortal(portal),
       mqttManager(mqtt), powerManager(power), uiStatus(uiStatus), uiError(uiError),
-      hasPartialConfig(false) {
+      display(nullptr), hasPartialConfig(false) {
+}
+
+void ConfigModeController::setDisplay(void* disp) {
+    display = disp;
 }
 
 bool ConfigModeController::begin() {
@@ -35,7 +39,11 @@ bool ConfigModeController::begin() {
     
     // Show config mode message (skip on slow displays to reduce screen updates)
 #if DISPLAY_FAST_REFRESH
-    uiStatus->showConfigModeConnecting(config.wifiSSID.c_str(), hasPartialConfig);
+    float batteryVoltage = 0.0;
+    if (powerManager != nullptr && display != nullptr) {
+        batteryVoltage = powerManager->readBatteryVoltage(display);
+    }
+    uiStatus->showConfigModeConnecting(config.wifiSSID.c_str(), hasPartialConfig, batteryVoltage);
 #endif
     
     // Connect to configured WiFi
@@ -62,7 +70,11 @@ bool ConfigModeController::begin() {
         
         // Show WiFi failed message (skip on slow displays to reduce screen updates)
 #if DISPLAY_FAST_REFRESH
-        uiStatus->showConfigModeWiFiFailed(config.wifiSSID.c_str());
+        float batteryVoltage = 0.0;
+        if (powerManager != nullptr && display != nullptr) {
+            batteryVoltage = powerManager->readBatteryVoltage(display);
+        }
+        uiStatus->showConfigModeWiFiFailed(config.wifiSSID.c_str(), batteryVoltage);
         delay(2000);
 #endif
         
@@ -73,11 +85,16 @@ bool ConfigModeController::begin() {
 bool ConfigModeController::startConfigPortalWithWiFi(const String& localIP) {
     String mdnsHostname = wifiManager->getMDNSHostname();
     
+    float batteryVoltage = 0.0;
+    if (powerManager != nullptr && display != nullptr) {
+        batteryVoltage = powerManager->readBatteryVoltage(display);
+    }
+    
     // Show appropriate config mode screen
     if (hasPartialConfig) {
-        uiStatus->showConfigModePartialSetup(localIP.c_str(), mdnsHostname.c_str());
+        uiStatus->showConfigModePartialSetup(localIP.c_str(), mdnsHostname.c_str(), batteryVoltage);
     } else {
-        uiStatus->showConfigModeSetup(localIP.c_str(), true, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str());
+        uiStatus->showConfigModeSetup(localIP.c_str(), true, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str(), batteryVoltage);
     }
     
     // Start configuration portal in CONFIG_MODE
@@ -118,7 +135,12 @@ bool ConfigModeController::startConfigPortalWithAP() {
         String apIP = wifiManager->getAPIPAddress();
         String mdnsHostname = wifiManager->getMDNSHostname();
         
-        uiStatus->showConfigModeAPFallback(apName.c_str(), apIP.c_str(), !hasPartialConfig, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str());
+        float batteryVoltage = 0.0;
+        if (powerManager != nullptr && display != nullptr) {
+            batteryVoltage = powerManager->readBatteryVoltage(display);
+        }
+        
+        uiStatus->showConfigModeAPFallback(apName.c_str(), apIP.c_str(), !hasPartialConfig, CONFIG_MODE_TIMEOUT_MS / 60000, mdnsHostname.c_str(), batteryVoltage);
         
         // Start configuration portal in CONFIG_MODE (with AP)
         if (configPortal->begin(CONFIG_MODE)) {

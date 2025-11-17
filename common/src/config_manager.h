@@ -43,6 +43,16 @@
 #define PREF_FRONTLIGHT_DURATION "fl_duration"  // Duration in seconds (0 = disabled)
 #define PREF_FRONTLIGHT_BRIGHTNESS "fl_bright"  // Brightness level (0-63)
 
+// Overlay configuration keys
+#define PREF_OVERLAY_ENABLED "ovl_enabled"
+#define PREF_OVERLAY_POSITION "ovl_pos"
+#define PREF_OVERLAY_SHOW_BATTERY_ICON "ovl_bat_icon"
+#define PREF_OVERLAY_SHOW_BATTERY_PCT "ovl_bat_pct"
+#define PREF_OVERLAY_SHOW_UPDATE_TIME "ovl_upd_time"
+#define PREF_OVERLAY_SHOW_CYCLE_TIME "ovl_cyc_time"
+#define PREF_OVERLAY_SIZE "ovl_size"
+#define PREF_OVERLAY_TEXT_COLOR "ovl_txt_col"
+
 // Carousel configuration keys
 #define PREF_CONFIG_VERSION "cfg_ver"
 #define PREF_IMAGE_COUNT "img_count"
@@ -57,6 +67,23 @@
 
 // Default values
 #define DEFAULT_SCREEN_ROTATION 0  // 0 degrees (landscape)
+
+// Overlay position enum (matches config)
+#define OVERLAY_POS_TOP_LEFT 0
+#define OVERLAY_POS_TOP_RIGHT 1
+#define OVERLAY_POS_BOTTOM_LEFT 2
+#define OVERLAY_POS_BOTTOM_RIGHT 3
+
+// Overlay size enum (matches config)
+#define OVERLAY_SIZE_SMALL 0
+#define OVERLAY_SIZE_MEDIUM 1
+#define OVERLAY_SIZE_LARGE 2
+
+// Overlay text color enum (matches config)
+#define OVERLAY_COLOR_BLACK 0
+#define OVERLAY_COLOR_DARK_GRAY 1
+#define OVERLAY_COLOR_LIGHT_GRAY 2
+#define OVERLAY_COLOR_WHITE 3
 
 // Configuration data structure
 struct DashboardConfig {
@@ -91,6 +118,16 @@ struct DashboardConfig {
     uint8_t frontlightDuration;   // Duration in seconds (0 = disabled, default 0)
     uint8_t frontlightBrightness; // Brightness level (0-63, default 63)
     
+    // Overlay configuration (on-image status display)
+    bool overlayEnabled;               // Enable/disable overlay
+    uint8_t overlayPosition;           // 0=TL, 1=TR, 2=BL, 3=BR
+    bool overlayShowBatteryIcon;       // Show battery icon
+    bool overlayShowBatteryPercentage; // Show battery percentage text
+    bool overlayShowUpdateTime;        // Show last update time
+    bool overlayShowCycleTime;         // Show last cycle/loop time
+    uint8_t overlaySize;               // 0=Small, 1=Medium, 2=Large
+    uint8_t overlayTextColor;          // 0=Black, 1=Dark Gray, 2=Light Gray, 3=White
+    
     // Constructor with defaults
     DashboardConfig() : 
         wifiSSID(""),
@@ -112,7 +149,15 @@ struct DashboardConfig {
         secondaryDNS(""),
         imageCount(0),
         frontlightDuration(0),      // Default: disabled
-        frontlightBrightness(63) {  // Default: max brightness
+        frontlightBrightness(63),   // Default: max brightness
+        overlayEnabled(false),      // Default: disabled
+        overlayPosition(OVERLAY_POS_TOP_RIGHT),
+        overlayShowBatteryIcon(true),
+        overlayShowBatteryPercentage(true),
+        overlayShowUpdateTime(true),
+        overlayShowCycleTime(false),
+        overlaySize(OVERLAY_SIZE_MEDIUM),
+        overlayTextColor(OVERLAY_COLOR_BLACK) {
         // Initialize all hours enabled by default (0xFF = all bits set)
         updateHours[0] = 0xFF;  // Hours 0-7
         updateHours[1] = 0xFF;  // Hours 8-15

@@ -67,6 +67,12 @@ add_executable(
 )
 
 add_executable(
+  overlay_tests
+  unit/test_overlay_logic.cpp
+  ../common/src/battery_logic.cpp  # Real production code! (used by overlay)
+)
+
+add_executable(
   sleep_tests
   unit/test_sleep_logic.cpp
   ../common/src/sleep_logic.cpp  # Real production code!
@@ -113,6 +119,11 @@ target_link_libraries(
 )
 
 target_link_libraries(
+  overlay_tests
+  GTest::gtest_main
+)
+
+target_link_libraries(
   sleep_tests
   GTest::gtest_main
 )
@@ -140,6 +151,7 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(decision_tests)
 gtest_discover_tests(battery_tests)
+gtest_discover_tests(overlay_tests)
 gtest_discover_tests(sleep_tests)
 gtest_discover_tests(config_tests)
 gtest_discover_tests(logger_tests)

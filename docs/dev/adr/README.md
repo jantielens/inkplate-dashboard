@@ -19,6 +19,7 @@ This folder contains records of architectural decisions and deep-dive technical 
 | [MODES.md](MODES.md) | Device modes and configuration details |
 | [MQTT_FORCE_UPDATE.md](ADR-MQTT_FORCE_UPDATE.md) | MQTT sensor force_update logic refactoring for Home Assistant diagnostics (v1.3.4) |
 | [NETWORK_TIMEOUT_OPTIMIZATION.md](ADR-NETWORK_TIMEOUT_OPTIMIZATION.md) | Network timeout optimization and retry telemetry (v1.3.3) |
+| [OVERLAY_SYSTEM.MD](ADR-OVERLAY_SYSTEM.MD) | On-image status overlay system with battery icon on logo screens (v1.7.0) |
 | [ROTATION_PERFORMANCE_OPTIMIZATION.md](ROTATION_PERFORMANCE_OPTIMIZATION.md) | Screen rotation performance optimization |
 | [SCREEN_ROTATION_IMPLEMENTATION.md](SCREEN_ROTATION_IMPLEMENTATION.md) | Implementation of screen rotation feature |
 | [TESTING.md](TESTING.md) | Testing the CI/CD workflow |

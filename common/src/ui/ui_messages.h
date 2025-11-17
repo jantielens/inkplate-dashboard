@@ -2,7 +2,7 @@
 #define UI_MESSAGES_H
 
 #include <Arduino.h>
-#include <src/display_manager.h>
+#include <src/ui/ui_base.h>
 
 /**
  * @brief Centralized UI message rendering utilities
@@ -11,7 +11,7 @@
  * messages on the e-ink display, reducing code duplication and ensuring
  * uniform formatting across the application.
  */
-class UIMessages {
+class UIMessages : public UIBase {
 public:
     UIMessages(DisplayManager* display);
     
@@ -22,12 +22,10 @@ public:
     int showTextWithSpacing(const char* text, int currentY, int extraSpacing = 0);
     
     // Composite screens
-    void showSplashScreen(const char* boardName, int width, int height);
+    void showSplashScreen(const char* boardName, int width, int height, float batteryVoltage = 0.0);
     void showConfigInitError();
     
 private:
-    DisplayManager* displayManager;
-    
     int addLineSpacing(int currentY, int multiplier = 1);
 };
 

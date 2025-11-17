@@ -7,11 +7,16 @@ ImageManager::ImageManager(Inkplate* display, DisplayManager* displayManager) {
     _display = display;
     _displayManager = displayManager;
     _configManager = nullptr;
+    _overlayManager = nullptr;
     _lastError = "";
 }
 
 void ImageManager::setConfigManager(ConfigManager* configManager) {
     _configManager = configManager;
+}
+
+void ImageManager::setOverlayManager(OverlayManager* overlayManager) {
+    _overlayManager = overlayManager;
 }
 
 bool ImageManager::isHttps(const char* url) {
@@ -193,7 +198,10 @@ void ImageManager::saveCRC32(uint32_t crc32Value) {
     _configManager->setLastCRC32(crc32Value);
 }
 
-bool ImageManager::downloadAndDisplay(const char* url) {
+bool ImageManager::downloadAndDisplay(const char* url,
+                                     float batteryVoltage,
+                                     const char* updateTimeStr,
+                                     unsigned long cycleTimeMs) {
     _lastError = "";
     
     Logger::begin("Starting image download");
@@ -213,28 +221,31 @@ bool ImageManager::downloadAndDisplay(const char* url) {
     // This method handles the HTTP(S) download internally
     bool success = false;
     
-    // Temporarily set rotation to 0 for image drawing
-    // Images are expected to be pre-rotated by the user to match their desired orientation
-    // This avoids expensive on-device rotation during image rendering
-    uint8_t currentRotation = ((Adafruit_GFX*)_display)->getRotation();
-    _display->setRotation(0);
+    // Draw image at rotation 0 (images should be pre-rotated by user)
+    _displayManager->disableRotation();
     
     // Draw the image directly from URL
     // The InkPlate library's drawImage method downloads and renders in one operation
     if (_display->drawImage(url, 0, 0, true, false)) {
         Logger::line("Image downloaded and displayed successfully!");
         
-        // Restore the original rotation before calling display()
-        // This ensures text overlays (like version label) use correct rotation
-        _display->setRotation(currentRotation);
+        // Enable configured rotation before rendering overlay
+        // This ensures overlay always uses the user's configured rotation
+        _displayManager->enableRotation();
+        
+        // Render overlay if overlay manager is configured
+        if (_overlayManager != nullptr && _configManager != nullptr) {
+            DashboardConfig config;
+            if (_configManager->loadConfig(config)) {
+                _overlayManager->renderOverlay(config, batteryVoltage, updateTimeStr, cycleTimeMs);
+            }
+        }
         
         // Actually refresh the e-ink display to show the new image
         _display->display();
         
         success = true;
     } else {
-        // Restore rotation even on failure
-        _display->setRotation(currentRotation);
         showError("Failed to download or draw image (check URL, format: PNG or baseline JPEG, size must match screen)");
         success = false;
     }

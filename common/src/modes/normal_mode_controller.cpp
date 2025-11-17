@@ -280,8 +280,25 @@ void NormalModeController::execute() {
         uiStatus->showDownloading(currentImageUrl.c_str(), false);
     }
     
+    // Prepare overlay parameters (if overlay is enabled)
+    char updateTimeStr[16] = "";
+    if (config.overlayEnabled && config.overlayShowUpdateTime) {
+        // Format current time as HH:MM with timezone offset applied
+        time_t currentTime = time(nullptr);
+        // Apply timezone offset (convert hours to seconds)
+        currentTime += (config.timezoneOffset * 3600);
+        struct tm* timeInfo = gmtime(&currentTime);  // Use gmtime since we already applied offset
+        strftime(updateTimeStr, sizeof(updateTimeStr), "%H:%M", timeInfo);
+    }
+    
+    unsigned long cycleTimeMs = (config.overlayEnabled && config.overlayShowCycleTime) 
+                                ? (millis() - loopStartTime) : 0;
+    
     timerStart = millis();
-    bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str());
+    bool success = imageManager->downloadAndDisplay(currentImageUrl.c_str(), 
+                                                    batteryVoltage,
+                                                    updateTimeStr,
+                                                    cycleTimeMs);
     timings.image_ms = millis() - timerStart;
     
     // DECISION POINT 3: Handle result (success or failure)

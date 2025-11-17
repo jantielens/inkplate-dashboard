@@ -240,6 +240,22 @@ Open browser to:
 
 ### Optional Settings
 
+#### On-Image Overlay
+- **What it is**: A status overlay displayed on top of your dashboard images
+- **Default**: Disabled
+- **What it shows**: Battery level (icon + percentage), update time, and optionally cycle time
+- **Position options**: Top Left, Top Right, Bottom Left, Bottom Right
+- **Size options**: Small, Medium, Large (affects font and icon size)
+- **Color options**: Black, Dark Gray, Light Gray, White (choose based on image background)
+- **Customizable elements**:
+  - **Battery Icon** - Visual battery level indicator with rounded corners
+  - **Battery Percentage** - Numeric battery level (e.g., "85%")
+  - **Update Time** - Last update time in 24-hour format (e.g., "14:23")
+  - **Cycle Time** - Performance metric showing cycle duration (e.g., "8.5s")
+- **Example appearance**: `🔋 85% 14:23`
+- **Rotation aware**: Overlay respects your screen rotation setting
+- **Battery on logo screens**: Regardless of overlay configuration, a battery icon always appears at the bottom-left of setup/status screens for configuration visibility
+
 #### Debug Mode
 - **What it is**: Shows status messages on the display during updates
 - **Default**: Disabled

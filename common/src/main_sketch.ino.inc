@@ -14,6 +14,7 @@
 #include <src/wifi_manager.h>
 #include <src/config_portal.h>
 #include <src/image_manager.h>
+#include <src/overlay_manager.h>
 #include <src/power_manager.h>
 #include <src/mqtt_manager.h>
 #include <src/logger.h>
@@ -37,6 +38,7 @@ DisplayManager displayManager(&display);
 ConfigManager configManager;
 WiFiManager wifiManager(&configManager);
 ConfigPortal configPortal(&configManager, &wifiManager, &displayManager);
+OverlayManager overlayManager(&display, &displayManager);
 ImageManager imageManager(&display, &displayManager);
 PowerManager powerManager;
 MQTTManager mqttManager(&configManager);
@@ -97,11 +99,24 @@ void setup() {
     // Set config manager for image manager (for CRC32 storage)
     imageManager.setConfigManager(&configManager);
     
+    // Set overlay manager for image manager (for status overlay)
+    imageManager.setOverlayManager(&overlayManager);
+    
+    // Set overlay manager for UI components (for battery icon on logo screens)
+    uiMessages.setOverlayManager(&overlayManager);
+    uiStatus.setOverlayManager(&overlayManager);
+    
+    // Set power manager and display for mode controllers (for battery icon)
+    apModeController.setPowerManager(&powerManager);
+    apModeController.setDisplay(&display);
+    configModeController.setDisplay(&display);
+    
     // Initialize display with rotation
     displayManager.init(shouldShowSplash, screenRotation);
     
     if (shouldShowSplash) {
-        uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT);
+        float batteryVoltage = powerManager.readBatteryVoltage(&display);
+        uiMessages.showSplashScreen(BOARD_NAME, SCREEN_WIDTH, SCREEN_HEIGHT, batteryVoltage);
         #ifndef DISPLAY_MODE_INKPLATE2
         // Read and log the panel VCOM for diagnostic purposes (not available on Inkplate 2)
         double panelVcom = displayManager.readPanelVCOM();
@@ -199,7 +214,8 @@ void setup() {
             Logger::end();
             
             // Show immediate visual feedback for manual refresh
-            uiStatus.showManualRefresh();
+            float batteryVoltage = powerManager.readBatteryVoltage(&display);
+            uiStatus.showManualRefresh(batteryVoltage);
             delay(1500); // Show message for 1.5 seconds
             
             normalModeController.execute();

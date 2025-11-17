@@ -4,7 +4,7 @@
 #include <src/logo_bitmap.h>
 
 UIMessages::UIMessages(DisplayManager* display) 
-    : displayManager(display) {
+    : UIBase(display) {
 }
 
 int UIMessages::showHeading(const char* text, int startY, bool clearFirst) {
@@ -35,7 +35,7 @@ int UIMessages::addLineSpacing(int currentY, int multiplier) {
     return currentY + (LINE_SPACING * multiplier);
 }
 
-void UIMessages::showSplashScreen(const char* boardName, int width, int height) {
+void UIMessages::showSplashScreen(const char* boardName, int width, int height, float batteryVoltage) {
     // Enable rotation for splash screen
     // User sees this on first boot or debug mode - should be readable
     displayManager->enableRotation();
@@ -69,6 +69,10 @@ void UIMessages::showSplashScreen(const char* boardName, int width, int height) 
     y = addLineSpacing(y, 2);
     String versionInfo = String(boardName) + " - v" + String(FIRMWARE_VERSION);
     y = showNormalText(versionInfo.c_str(), y);
+    
+    // Draw battery icon at bottom left
+    drawBatteryIconBottomLeft(batteryVoltage);
+    
     displayManager->refresh();
 }
 
