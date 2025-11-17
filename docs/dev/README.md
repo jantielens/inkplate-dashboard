@@ -42,6 +42,7 @@ If you're using **GitHub Copilot**, check out [`.github/copilot-instructions.md`
 | [ADR-PULL_REQUEST_TEMPLATE.MD](adr/ADR-PULL_REQUEST_TEMPLATE.MD) | Pull request template for contributors |
 | [ADR-ROTATION_PERFORMANCE_OPTIMIZATION.MD](adr/ADR-ROTATION_PERFORMANCE_OPTIMIZATION.MD) | Screen rotation performance optimization |
 | [ADR-SCREEN_ROTATION_IMPLEMENTATION.MD](adr/ADR-SCREEN_ROTATION_IMPLEMENTATION.MD) | Implementation of screen rotation feature |
+| [ADR-SCREEN_BUILDER.MD](adr/ADR-SCREEN_BUILDER.MD) | Screen builder pattern with default-on logo/battery and automatic spacing (v1.7.1) |
 | [ADR-TESTING.MD](adr/ADR-TESTING.MD) | Testing the CI/CD workflow |
 | [ADR-TESTING_RETRY_MECHANISM.MD](adr/ADR-TESTING_RETRY_MECHANISM.MD) | Testing the image download retry mechanism |
 | [ADR-TIMEZONE_ANALYSIS_REPORT.MD](adr/ADR-TIMEZONE_ANALYSIS_REPORT.MD) | Analysis of timezone handling and DST feasibility |
