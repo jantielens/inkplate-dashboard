@@ -66,9 +66,11 @@ bool WiFiManager::startAccessPoint() {
         Logger::line("IP Address: " + ip.toString());
         
         // Start DNS server for captive portal
-        if (!_dnsServer) {
-            _dnsServer = new DNSServer();
+        if (_dnsServer) {
+            delete _dnsServer;
+            _dnsServer = nullptr;
         }
+        _dnsServer = new DNSServer();
         _dnsServer->start(DNS_PORT, "*", ip);  // Redirect all domains to AP IP
         Logger::line("DNS server started for captive portal");
         
